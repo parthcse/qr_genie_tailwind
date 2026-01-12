@@ -1,0 +1,30 @@
+{
+  "name": "qr-genie-tailwind",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "5.7.0",
+    "bcryptjs": "^2.4.3",
+    "cookie": "^1.1.1",
+    "jsonwebtoken": "9.0.2",
+    "nanoid": "^5.1.6",
+    "next": "^16.1.1",
+    "prisma": "5.7.0",
+    "qrcode": "1.5.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-icons": "^5.5.0",
+    "recharts": "^3.5.1",
+    "resend": "^6.6.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14"
+  }
+}

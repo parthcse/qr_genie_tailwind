@@ -1,0 +1,71 @@
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user")
+  plan      String   @default("free")   // "free" or "pro"
+  trialEndsAt DateTime?
+  resetToken String?
+  resetTokenExpires DateTime?
+  qrCodes   QRCode[]
+  folders   Folder[]
+  createdAt DateTime @default(now())
+}
+
+model QRCode {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  type       String   @default("website")
+  targetUrl  String
+  name       String?
+  qrColor    String   @default("#000000")
+  bgColor    String   @default("#ffffff")
+  meta       String?
+  createdAt  DateTime @default(now())
+  scanCount  Int      @default(0)
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  folder     Folder?  @relation(fields: [folderId], references: [id])
+  folderId   String?
+
+  // NEW:
+  scanEvents ScanEvent[]
+}
+
+model ScanEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userAgent String?
+  ip        String?
+  os        String?
+
+  // NEW:
+  country   String?
+  region    String?
+  city      String?
+
+  qrCode    QRCode   @relation(fields: [qrCodeId], references: [id])
+  qrCodeId  String
+}
+
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  qrCodes   QRCode[]
+  createdAt DateTime @default(now())
+}
+
