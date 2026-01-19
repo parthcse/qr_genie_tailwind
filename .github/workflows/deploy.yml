@@ -1,0 +1,44 @@
+name: Deploy Next.js to AWS Lightsail
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
+
+    - name: Upload Files to Server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
+        target: ${{ secrets.REMOTE_PATH }}
+        strip_components: 0
+
+    - name: SSH & Deploy Commands
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          cd ${{ secrets.REMOTE_PATH }}
+          echo "Installing dependencies..."
+          npm ci --production=false
+          echo "Generating Prisma client..."
+          npm run prisma:generate
+          echo "Running database migrations..."
+          npm run migrate
+          echo "Building Next.js application..."
+          npm run build
+          echo "Restarting application with PM2..."
+          pm2 restart qr-genie-next || pm2 start ecosystem.config.js
+          pm2 save
