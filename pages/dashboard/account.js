@@ -9,7 +9,7 @@ export default function AccountPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 text-[11px]">
           <p className="mb-2 text-[11px] font-medium text-slate-800">
-            Personal information rer
+            Personal information rer testing
           </p>
           {/* TODO: wire to real user info */}
           <p className="text-slate-600">
