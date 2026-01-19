@@ -13,6 +13,16 @@ jobs:
     - name: Checkout Source Code
       uses: actions/checkout@v3
 
+    - name: Test SSH Connection
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
+        timeout: 30s
+        script: echo "SSH connection successful"
+
     - name: Upload Files to Server
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -20,7 +30,7 @@ jobs:
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
-        timeout: 60s
+        timeout: 300s
         source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
         target: ${{ secrets.REMOTE_PATH }}
         strip_components: 0
@@ -32,7 +42,7 @@ jobs:
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
-        timeout: 60s
+        timeout: 600s
         script: |
           cd ${{ secrets.REMOTE_PATH }}
           npm install
