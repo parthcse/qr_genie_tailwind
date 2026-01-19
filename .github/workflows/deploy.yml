@@ -29,6 +29,7 @@ jobs:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        timeout: 1800 # 30 minutes
         script: |
           cd ${{ secrets.REMOTE_PATH }}
           echo "Installing dependencies..."
