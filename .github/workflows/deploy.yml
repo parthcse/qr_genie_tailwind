@@ -1,9 +1,9 @@
-name: Deploy Next.js to AWS Lightsail
+name: Safe Deploy Next.js to AWS Lightsail
 
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
   deploy:
@@ -23,7 +23,19 @@ jobs:
         timeout: 30s
         script: echo "SSH connection successful"
 
-    - name: Upload Files to Server
+    - name: Prepare Staging Folder
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          cd /var/www
+          rm -rf qr-genie-staging
+          mkdir -p qr-genie-staging
+          echo "Staging folder prepared"
+
+    - name: Upload Files to Staging
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
@@ -32,20 +44,65 @@ jobs:
         port: 22
         timeout: 300s
         source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
-        target: ${{ secrets.REMOTE_PATH }}
+        target: "/var/www/qr-genie-staging"
         strip_components: 0
 
-    - name: SSH & Deploy Commands
+    - name: Build in Staging (Zero Downtime)
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
-        timeout: 600s
+        timeout: 1200s
         script: |
-          cd ${{ secrets.REMOTE_PATH }}
-          npm install
+          cd /var/www/qr-genie-staging
+          
+          # Smart dependency installation
+          echo "Checking if dependencies changed..."
+          if [ -d "/var/www/qr-genie/node_modules" ] && [ -f "/var/www/qr-genie/package.json" ]; then
+            # Compare package.json files
+            if cmp -s package.json /var/www/qr-genie/package.json; then
+              echo "Dependencies unchanged - copying node_modules from live..."
+              cp -r /var/www/qr-genie/node_modules ./
+              echo "Verifying installation..."
+              npm ci --offline || npm install
+            else
+              echo "Dependencies changed - installing fresh..."
+              npm ci
+            fi
+          else
+            echo "First deployment - installing dependencies..."
+            npm ci
+          fi
+          
+          echo "Running database migrations..."
           npm run migrate
+          echo "Building Next.js application..."
           npm run build
+          # Verify build succeeded
+          if [ ! -d ".next" ]; then
+            echo "ERROR: Build failed - .next folder not found"
+            exit 1
+          fi
+          echo "Build completed successfully!"
+
+    - name: Atomic Swap & Restart (Zero Downtime)
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          cd /var/www
+          echo "Performing atomic swap..."
+          # Backup current deployment
+          rm -rf qr-genie-backup
+          mv qr-genie qr-genie-backup || true
+          # Swap staging to live (atomic operation)
+          mv qr-genie-staging qr-genie
+          echo "Swap complete, restarting PM2..."
+          # PM2 reload uses zero-downtime restart
           pm2 reload qr-genie-next || pm2 start ecosystem.config.js
+          pm2 save
+          echo "Deployment successful!"
