@@ -21,18 +21,6 @@ jobs:
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
         timeout: 300s
-        source: |
-          package.json
-          package-lock.json
-          next.config.js
-          tailwind.config.js
-          postcss.config.js
-          ecosystem.config.js
-          pages
-          components
-          lib
-          styles
-          prisma
-          public
+        source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
         target: ${{ secrets.REMOTE_PATH }}
         strip_components: 0
