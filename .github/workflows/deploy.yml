@@ -19,6 +19,8 @@ jobs:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
+        timeout: 60s
         source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
         target: ${{ secrets.REMOTE_PATH }}
         strip_components: 0
@@ -29,6 +31,8 @@ jobs:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
+        timeout: 60s
         script: |
           cd ${{ secrets.REMOTE_PATH }}
           npm install
