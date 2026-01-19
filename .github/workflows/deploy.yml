@@ -29,17 +29,9 @@ jobs:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-        timeout: 1800 # 30 minutes
         script: |
           cd ${{ secrets.REMOTE_PATH }}
-          echo "Installing dependencies..."
-          npm ci --production=false
-          echo "Generating Prisma client..."
-          npm run prisma:generate
-          echo "Running database migrations..."
+          npm install
           npm run migrate
-          echo "Building Next.js application..."
           npm run build
-          echo "Restarting application with PM2..."
-          pm2 restart qr-genie-next || pm2 start ecosystem.config.js
-          pm2 save
+          pm2 reload qr-genie-next || pm2 start ecosystem.config.js
