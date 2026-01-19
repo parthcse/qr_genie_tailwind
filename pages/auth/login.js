@@ -92,27 +92,73 @@ export default function Login() {
         credentials: 'same-origin' // Important for cookies
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      const isJson = contentType && contentType.includes("application/json");
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
+        let errorMessage = 'Login failed. Please try again.';
         
-        switch (response.status) {
-          case 400:
-            throw new Error(data.error || 'Invalid request');
-          case 401:
-            throw new Error('Invalid email or password');
-          case 429:
-            throw new Error('Too many attempts. Please try again later.');
-          default:
-            throw new Error(data.error || 'Login failed. Please try again.');
+        if (isJson) {
+          try {
+            const data = await response.json();
+            errorMessage = data.error || errorMessage;
+            
+            switch (response.status) {
+              case 400:
+                errorMessage = data.error || 'Invalid request';
+                break;
+              case 401:
+                errorMessage = 'Invalid email or password';
+                break;
+              case 429:
+                errorMessage = 'Too many attempts. Please try again later.';
+                break;
+              default:
+                errorMessage = data.error || 'Login failed. Please try again.';
+            }
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+            errorMessage = `Server error (${response.status}). Please try again later.`;
+          }
+        } else {
+          // Response is HTML (error page) - extract text or use status
+          try {
+            const text = await response.text();
+            console.error('Non-JSON error response:', text.substring(0, 200));
+            errorMessage = `Server error (${response.status}). Please contact support if this persists.`;
+          } catch (textError) {
+            errorMessage = `Server error (${response.status}). Please try again later.`;
+          }
         }
+        
+        throw new Error(errorMessage);
       }
 
-      // On successful login, redirect to dashboard
-      router.push('/dashboard');
+      // Parse successful response
+      if (isJson) {
+        try {
+          const data = await response.json();
+          // Success - redirect to dashboard
+          router.push('/dashboard');
+        } catch (parseError) {
+          console.error('Failed to parse success response:', parseError);
+          // Even if parsing fails, redirect if status is 200
+          if (response.status === 200) {
+            router.push('/dashboard');
+          } else {
+            throw new Error('Unexpected response format');
+          }
+        }
+      } else {
+        // Non-JSON success response (shouldn't happen, but handle gracefully)
+        console.warn('Received non-JSON success response');
+        router.push('/dashboard');
+      }
       
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.message);
+      setError(err.message || 'An error occurred during login. Please try again.');
       errorRef.current?.focus();
     } finally {
       setIsSubmitting(false);

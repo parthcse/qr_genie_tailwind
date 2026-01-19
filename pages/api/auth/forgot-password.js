@@ -54,7 +54,13 @@ export default async function handler(req, res) {
     }
 
     // Send email with reset link
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      console.error("NEXT_PUBLIC_APP_URL environment variable is not set!");
+      return res.status(500).json({ 
+        error: "Server configuration error. Please contact support." 
+      });
+    }
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/auth/reset-password?token=${resetToken}`;
     
     // Send email (will log to console in development if RESEND_API_KEY not set)
     // Don't fail the request if email sending fails - token is already saved

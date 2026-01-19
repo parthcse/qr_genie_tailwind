@@ -12,7 +12,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (!baseUrl) {
+    res.status(500).send("Server configuration error: NEXT_PUBLIC_BASE_URL or NEXT_PUBLIC_APP_URL must be set");
+    return;
+  }
   const dynamicUrl = `${baseUrl.replace(/\/$/, "")}/r/${slug}`;
 
   try {

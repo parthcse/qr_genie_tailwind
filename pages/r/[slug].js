@@ -89,7 +89,7 @@ export default function RedirectPage({ expired }) {
           The free 7-day access period for this QR code is over.
         </p>
         <a
-          href="https://qr-genie.co"
+          href={process.env.NEXT_PUBLIC_APP_URL || "/"}
           className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
         >
           Create your own QR codes
