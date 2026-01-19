@@ -1,4 +1,4 @@
-name: Deploy Next.js to AWS Lightsail
+name: Upload Code Only (No Build)
 
 on:
   push:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Source Code
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Upload Files to Server
+    - name: Upload to Lightsail
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
@@ -21,22 +21,18 @@ jobs:
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
         timeout: 300s
-        source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
+        source: |
+          package.json
+          package-lock.json
+          next.config.js
+          tailwind.config.js
+          postcss.config.js
+          ecosystem.config.js
+          pages
+          components
+          lib
+          styles
+          prisma
+          public
         target: ${{ secrets.REMOTE_PATH }}
         strip_components: 0
-
-    - name: Install, Build & Restart
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.LIGHTSAIL_HOST }}
-        username: ${{ secrets.LIGHTSAIL_USER }}
-        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-        port: 22
-        timeout: 1200s
-        script: |
-          cd ${{ secrets.REMOTE_PATH }}
-          npm install
-          npm run migrate
-          npm run build
-          pm2 reload qr-genie-next || pm2 start ecosystem.config.js
-          pm2 save
