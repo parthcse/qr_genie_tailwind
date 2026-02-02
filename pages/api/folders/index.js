@@ -9,6 +9,7 @@ export default async function handler(req, res) {
     const folders = await prisma.folder.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "asc" },
+
       include: {
         _count: {
           select: { qrCodes: true },
@@ -27,6 +28,7 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     const { name } = req.body;
+
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Name is required" });
     }

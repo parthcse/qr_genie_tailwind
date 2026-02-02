@@ -10,6 +10,7 @@ module.exports = {
       fontFamily: {
         sans: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
       },
+
       colors: {
         // Brand colors matching landing page
         brand: {

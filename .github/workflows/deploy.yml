@@ -1,0 +1,26 @@
+name: Upload Code Only (No Build)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Upload to Lightsail
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
+        timeout: 300s
+        source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
+        target: ${{ secrets.REMOTE_PATH }}
+        strip_components: 0

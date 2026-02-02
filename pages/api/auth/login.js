@@ -38,8 +38,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Request body is required" });
     }
 
-  const { email, password } = req.body;
 
+  const { email, password } = req.body;
     // Validate input
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password required" });
@@ -60,6 +60,7 @@ export default async function handler(req, res) {
     } catch (dbError) {
       console.error("Database error finding user:", dbError);
       return res.status(500).json({ 
+
         error: "Login is temporarily unavailable. Please try again in a few moments." 
       });
     }
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
     if (!valid) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
 
     const now = new Date();
 
@@ -154,6 +156,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Login error:", error);
+
     // Never expose technical errors to the client
     return res.status(500).json({ 
       error: "Login is temporarily unavailable. Please try again in a few moments." 

@@ -1,4 +1,5 @@
 // pages/dashboard/create-qr.js
+
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -94,6 +95,7 @@ import {
   FaFolder,
   FaQuestionCircle,
   FaChevronDown,
+
   FaChevronUp,
   FaEye,
   FaEnvelope,
@@ -134,6 +136,7 @@ const qrTypes = [
     color: "indigo"
   },
   {
+
     id: "wifi",
     label: "WiFi",
     description: "Connect to a WiFi network",
@@ -150,6 +153,7 @@ const qrTypes = [
     color: "emerald"
   },
   {
+
     id: "instagram",
     label: "Instagram",
     description: "Share your Instagram",
@@ -158,6 +162,7 @@ const qrTypes = [
     color: "pink"
   },
   {
+
     id: "pdf",
     label: "PDF",
     description: "Show a PDF file",
@@ -218,6 +223,7 @@ const qrTypes = [
     label: "Social Media",
     description: "Share social channels",
     icon: FaShareAlt,
+
     active: false,
     color: "indigo"
   },
@@ -226,6 +232,7 @@ const qrTypes = [
     label: "MP3",
     description: "Share an audio file",
     icon: FaMusic,
+
     active: false,
     color: "yellow"
   },
@@ -234,6 +241,7 @@ const qrTypes = [
     label: "Menu",
     description: "Create a restaurant menu",
     icon: FaUtensils,
+
     active: false,
     color: "orange"
   },
@@ -242,6 +250,7 @@ const qrTypes = [
     label: "Apps",
     description: "Redirect to an app store",
     icon: FaMobileAlt,
+
     active: false,
     color: "slate"
   },
@@ -250,6 +259,7 @@ const qrTypes = [
     label: "Coupon",
     description: "Share a coupon",
     icon: FaTicketAlt,
+
     active: false,
     color: "amber"
   },
@@ -749,6 +759,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           </div>
         );
       case "pdf":
+
         // Check if directShow is enabled
         const directShow = formData.directShow || false;
         const pdfUrl = formData.pdfUrl || formData.url || "";
@@ -955,6 +966,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           </div>
         );
       case "vcard":
+
         const vcardData = formData.vcard || {};
         const fullName = vcardData.firstName && vcardData.lastName 
           ? `${vcardData.firstName} ${vcardData.lastName}`
@@ -1592,6 +1604,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
 
   return (
     <div className="relative mx-auto" style={{ width: "320px", height: "640px" }}>
+
       {/* Modern iPhone Style - Dark Purplish-Gray Frame */}
       <div className="absolute inset-0 rounded-[3rem] p-1 shadow-2xl" style={{ 
         background: 'linear-gradient(to bottom, #4a5568, #2d3748, #1a202c)'
@@ -1654,6 +1667,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
   );
 };
 
+
 // Step Indicator Component - Responsive
 const StepIndicator = ({ currentStep, onStepClick }) => {
   const steps = [
@@ -1710,6 +1724,7 @@ const StepIndicator = ({ currentStep, onStepClick }) => {
 };
 
 export default function CreateQrPage() {
+
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState(null);
@@ -1722,6 +1737,7 @@ export default function CreateQrPage() {
     url: "",
     name: "",
     password: "",
+
     passwordEnabled: false,
     folder: "",
     // PDF
@@ -1777,6 +1793,7 @@ export default function CreateQrPage() {
     },
     // WhatsApp
     whatsapp: {
+
       countryCode: "+91",
       phone: "",
       message: "",
@@ -1809,6 +1826,7 @@ export default function CreateQrPage() {
       ssid: "",
       password: "",
       security: "WPA",
+
       hidden: false,
     },
   });
@@ -1880,6 +1898,7 @@ export default function CreateQrPage() {
     useGradientBg: false,
     bgColor1: "#ffffff",
     bgColor2: "#ffffff",
+
   });
 
   // Wrapper to update design data and trigger preview refresh
@@ -1932,12 +1951,12 @@ export default function CreateQrPage() {
     // For preview purposes, we show the target URL so users can test scanning
     return previewTargetUrl;
   }, [selectedType, hoveredType, formData]);
-
   // Validation
   const canContinueFromStep1 = !!selectedType;
   const canContinueFromStep2 = () => {
     if (!selectedType) return false;
     const schema = getSchemaForType(selectedType);
+
 
     // For nested types, prefix field paths
     const nestedTypes = ["vcard", "links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
@@ -1952,6 +1971,7 @@ export default function CreateQrPage() {
     for (const section of schema.sections || []) {
       for (const field of section.fields || []) {
         if (field.required) {
+
           const fieldPath = getFieldPath(field.id);
           const value = getNestedValue(formData, fieldPath);
           if (!value || (typeof value === "string" && !value.trim())) {
@@ -1970,6 +1990,7 @@ export default function CreateQrPage() {
       case "vcard":
         return !!(formData.vcard?.firstName && formData.vcard?.phone);
       case "links":
+
         return !!(formData.links?.name && formData.links?.buttons?.some(b => b.title && b.url));
       case "wifi":
         const wifiData = formData.wifi || {};
@@ -2007,6 +2028,7 @@ export default function CreateQrPage() {
     }
     return current;
   };
+
 
   // Get required fields message for QR type
   const getRequiredFieldsMessage = (qrType) => {
@@ -2104,6 +2126,7 @@ export default function CreateQrPage() {
       const res = await fetch("/api/create-dynamic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+
         credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           qrType: selectedType,
@@ -2148,12 +2171,13 @@ export default function CreateQrPage() {
           const Icon = type.icon;
           const isSelected = selectedType === type.id;
           const isHovered = hoveredType === type.id;
-          const isActive = type.active !== false;
 
+          const isActive = type.active !== false;
           return (
             <button
               key={type.id}
               type="button"
+
               onClick={() => {
                 if (isActive) {
                   setSelectedType(type.id);
@@ -2181,6 +2205,7 @@ export default function CreateQrPage() {
               <div
                 className={`
                   mb-2 flex h-12 w-12 items-center justify-center rounded-lg transition-colors
+
                   ${!isActive
                     ? "bg-slate-100 text-slate-400"
                     : isSelected
@@ -2194,6 +2219,7 @@ export default function CreateQrPage() {
               <span
                 className={`
                   text-sm font-medium
+
                   ${!isActive
                     ? "text-slate-400"
                     : isSelected
@@ -2204,6 +2230,7 @@ export default function CreateQrPage() {
               >
                 {type.label}
               </span>
+
               <span className={`mt-1 text-xs ${!isActive ? "text-slate-400" : "text-slate-500"}`}>
                 {type.description}
               </span>
@@ -2222,6 +2249,7 @@ export default function CreateQrPage() {
 
     const updateFormData = (newData) => {
       setFormData(newData);
+
       // Force preview update
       setPreviewKey(prev => prev + 1);
     };
@@ -2231,12 +2259,14 @@ export default function CreateQrPage() {
         schema={schema}
         formData={formData}
         updateFormData={updateFormData}
+
         type={selectedType}
         folders={folders}
         onFolderCreated={handleFolderCreated}
       />
     );
   };
+
 
   // Handle logo upload
   const handleLogoUpload = (e) => {
@@ -2671,6 +2701,7 @@ export default function CreateQrPage() {
     </div>
   );
 
+
   if (subscriptionStatus !== null && !canCreate) {
     return (
       <DashboardLayout title="Create QR Code" description="">
@@ -2694,6 +2725,7 @@ export default function CreateQrPage() {
       title="Create QR Code"
       description="Create a dynamic QR code in three simple steps"
     >
+
       <div className="flex flex-col lg:grid lg:grid-cols-[1fr_400px] gap-4 sm:gap-6">
         {/* Left: Main Content */}
         <div className="space-y-4 sm:space-y-6 min-w-0">
@@ -2722,6 +2754,7 @@ export default function CreateQrPage() {
               {success && (
                 <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700">
                   <p className="font-medium mb-1">QR code created successfully!</p>
+
                   {/* Hide short link for website, wifi, instagram, whatsapp */}
                   {!["website", "wifi", "instagram", "whatsapp"].includes(selectedType) && (
                     <p className="mb-3">
@@ -2748,11 +2781,13 @@ export default function CreateQrPage() {
             </div>
 
             {/* Navigation Buttons */}
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
               <button
                 type="button"
                 onClick={goBack}
                 disabled={step === 1}
+
                 className="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Back
@@ -2766,11 +2801,13 @@ export default function CreateQrPage() {
                     (step === 1 && !canContinueFromStep1) ||
                     (step === 2 && !canContinueFromStep2())
                   }
+
                   className="w-full sm:w-auto rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next →
                 </button>
               ) : (
+
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   {qrCodeUrl && (
                     <button
@@ -2794,6 +2831,7 @@ export default function CreateQrPage() {
             </div>
           </form>
         </div>
+
 
         {/* Download Modal */}
         {showDownloadModal && (
@@ -2933,6 +2971,7 @@ export default function CreateQrPage() {
                 >
                   Destination
                 </button>
+
                 <div className="relative group">
                   <button
                     type="button"

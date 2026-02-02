@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
@@ -168,6 +169,7 @@ export default function AccountPage({ user: initialUser }) {
       title="My Account"
       description="Manage your personal details, password and billing information."
     >
+
       {/* Tabs */}
       <div className="mb-4 sm:mb-6 border-b border-gray-200 overflow-x-auto">
         <nav className="flex space-x-4 sm:space-x-8 min-w-max sm:min-w-0">

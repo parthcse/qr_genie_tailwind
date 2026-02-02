@@ -40,6 +40,7 @@ import {
   SelectField,
   ToggleField,
   ColorField,
+
   ColorPaletteField,
   FileField,
   RepeaterField,
@@ -85,6 +86,7 @@ const CollapsibleSection = ({
   section,
   formData,
   updateFormData,
+
   batchUpdateFormData,
   expandedSections,
   toggleSection,
@@ -95,6 +97,7 @@ const CollapsibleSection = ({
 }) => {
   const isExpanded = expandedSections[section.id];
   const Icon = iconMap[section.icon] || FaQrcode;
+
 
   // updateFormData prop is handleUpdateFormData from DynamicForm which takes (path, value)
   // So we can use it directly
@@ -161,6 +164,7 @@ const CollapsibleSection = ({
           />
         );
 
+
       case "folder":
         return (
           <FolderField
@@ -192,6 +196,7 @@ const CollapsibleSection = ({
             onChange={updateValue}
           />
         );
+
 
       case "colorPalette":
         // Special handling: palette selection updates both primaryColor and secondaryColor
@@ -232,6 +237,7 @@ const CollapsibleSection = ({
           <FileField
             key={field.id}
             field={field}
+
             value={fieldValue?.name || fieldValue || ""}
             onChange={updateValue}
             onFileSelect={handleFileSelect}
@@ -323,6 +329,7 @@ const CollapsibleSection = ({
         </div>
       </button>
       {isExpanded && (
+
         <div className="px-4 pb-4 border-t border-slate-100 relative overflow-visible">
           <div className="pt-4 space-y-4 relative">
             {section.id === "design" && section.fields?.length >= 3 ? (
@@ -373,6 +380,7 @@ const CollapsibleSection = ({
 
 // Helper function to get nested values
 function getNestedValue(obj, path) {
+
   if (!path || typeof path !== "string") return undefined;
   const keys = path.split(".").filter(k => k); // Filter out empty strings
   let current = obj;
@@ -384,6 +392,7 @@ function getNestedValue(obj, path) {
 }
 
 // Main Dynamic Form Component
+
 export default function DynamicForm({ schema, formData, updateFormData, type, folders = [], onFolderCreated }) {
   // For nested types like "vcard" and "links", we need to prefix field paths
   // BUT: name and folder should ALWAYS be at top level, regardless of type
@@ -418,6 +427,7 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
   };
 
   const handleUpdateFormData = (path, value) => {
+
     if (!path || typeof path !== "string") {
       console.warn("handleUpdateFormData: path must be a string", path);
       return;
@@ -444,6 +454,7 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
     current[keys[keys.length - 1]] = value;
     updateFormData(newData);
   };
+
 
   // Helper function to update multiple fields atomically
   const handleBatchUpdateFormData = (updates) => {
@@ -487,6 +498,7 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
           section={section}
           formData={formData}
           updateFormData={handleUpdateFormData}
+
           batchUpdateFormData={handleBatchUpdateFormData}
           expandedSections={expandedSections}
           toggleSection={toggleSection}

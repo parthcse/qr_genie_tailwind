@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Head from "next/head";
 import { useRouter } from "next/router";
+
 import { 
   FaCheck, 
   FaQrcode, 
@@ -24,7 +25,6 @@ import {
   FaEye,
   FaDownload
 } from "react-icons/fa";
-
 // Reusable auth hook for checking authentication state
 function useAuth() {
   const [user, setUser] = useState(null);
@@ -70,6 +70,7 @@ export async function getServerSideProps(context) {
 
 const features = [
   {
+
     icon: <FaQrcode className="h-6 w-6" />,
     title: "Dynamic QR Codes",
     description: "Update your QR code destinations anytime without reprinting. Perfect for menus, flyers, and marketing materials.",
@@ -136,6 +137,7 @@ const howItWorks = [
 
 const testimonials = [
   {
+
     name: "Sarah Chen",
     role: "Marketing Director at TechCorp",
     content: "QR-Genie has completely transformed our marketing campaigns. We can update our QR codes instantly without reprinting materials. The analytics are incredibly detailed and help us understand our audience better.",
@@ -302,6 +304,7 @@ export default function Landing({ initialUser }) {
   // Dynamic CTA component to avoid layout shift
   const CallToAction = () => {
     if (loading) {
+
       return (
         <div className="mt-8 max-w-2xl mx-auto sm:flex sm:justify-center gap-4">
           <div className="w-full sm:w-48 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -311,6 +314,7 @@ export default function Landing({ initialUser }) {
     }
 
     if (isAuthenticated) {
+
       return (
         <div className="mt-8 max-w-2xl mx-auto sm:flex sm:justify-center">
           <Link
@@ -323,6 +327,7 @@ export default function Landing({ initialUser }) {
         </div>
       );
     }
+
 
     return (
       <div className="mt-8 max-w-2xl mx-auto sm:flex sm:justify-center gap-4">
@@ -348,6 +353,7 @@ export default function Landing({ initialUser }) {
     if (loading) {
       return (
         <div className="flex items-center space-x-4">
+
           <div className="w-20 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
           <div className="w-24 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
         </div>
@@ -359,12 +365,14 @@ export default function Landing({ initialUser }) {
         <div className="flex items-center space-x-4">
           <Link
             href="/dashboard"
+
             className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
           >
             Dashboard
           </Link>
           <button
             onClick={handleLogout}
+
             className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
           >
             Logout
@@ -377,12 +385,14 @@ export default function Landing({ initialUser }) {
       <div className="flex items-center space-x-4">
         <Link
           href="/auth/login"
+
           className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
         >
           Log in
         </Link>
         <Link
           href="/auth/register"
+
           className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
         >
           Get Started
@@ -392,6 +402,7 @@ export default function Landing({ initialUser }) {
   };
 
   return (
+
     <div className="min-h-screen bg-white">
       <Head>
         <title>QR-Genie | Dynamic QR Code Solution for Modern Businesses</title>
@@ -425,6 +436,7 @@ export default function Landing({ initialUser }) {
       </header>
 
       {/* Hero Section */}
+
       <section className="relative bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
@@ -467,6 +479,7 @@ export default function Landing({ initialUser }) {
             </div>
           </div>
         </div>
+
       </section>
 
       {/* Trust Indicators */}
@@ -752,6 +765,7 @@ export default function Landing({ initialUser }) {
             ))}
           </div>
         </div>
+
       </section>
 
       {/* CTA Section - Only show if not authenticated */}

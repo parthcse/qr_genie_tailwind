@@ -1,4 +1,5 @@
 // components/qrFields/FieldComponents.js
+
 import { useState, useEffect, useRef } from "react";
 import {
   FaPlus,
@@ -6,6 +7,7 @@ import {
   FaUpload,
   FaImage,
   FaFile,
+
   FaFilePdf,
   FaQuestionCircle,
   FaFacebook,
@@ -20,6 +22,7 @@ import {
   FaLink,
   FaGlobe,
   FaEnvelope,
+
   FaChevronUp,
   FaChevronDown,
   FaGithub,
@@ -40,6 +43,7 @@ import {
 
 // Base Input Component
 export function InputField({ field, value, onChange, error }) {
+
   const handleChange = (e) => {
     let newValue = e.target.value;
     // Remove @ if user types it (we'll add it visually)
@@ -55,6 +59,7 @@ export function InputField({ field, value, onChange, error }) {
         {field.label}
         {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
+
       {field.prefix ? (
         <div className="relative">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm font-medium pointer-events-none">
@@ -90,6 +95,7 @@ export function InputField({ field, value, onChange, error }) {
 
 // Textarea Component
 export function TextareaField({ field, value, onChange, error }) {
+
   const currentLength = (value || "").length;
   const maxLength = field.maxLength;
   const showCounter = maxLength !== undefined;
@@ -105,12 +111,14 @@ export function TextareaField({ field, value, onChange, error }) {
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder}
         rows={field.rows || 3}
+
         maxLength={maxLength}
         required={field.required}
         className={`w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none ${
           error ? "border-red-300" : "border-slate-300"
         }`}
       />
+
       <div className="mt-1 flex items-center justify-between">
         {error && <p className="text-xs text-red-600">{error}</p>}
         {showCounter && (
@@ -166,6 +174,7 @@ export function ToggleField({ field, value, onChange }) {
     </label>
   );
 }
+
 
 // Color Palette Component
 export function ColorPaletteField({ field, value, onChange, onPaletteSelect, formData }) {
@@ -262,6 +271,7 @@ export function ColorField({ field, value, onChange }) {
 }
 
 // File Upload Component
+
 export function FileField({ field, value, onChange, onFileSelect, compact = false }) {
   const [preview, setPreview] = useState(() => {
     // Initialize preview from value if it's a data URL
@@ -315,7 +325,6 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
         size: formatFileSize(file.size),
       });
     }
-
     if (field.accept?.includes("image")) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -329,6 +338,7 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
 
     if (onChange) onChange(file.name);
   };
+
 
   const isPdfField = field.accept?.includes(".pdf") || field.accept === ".pdf";
   const isImageField = field.accept?.includes("image") || field.accept === "image/*";
@@ -420,6 +430,7 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
         {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <div className="space-y-2">
+
         {isPdfField ? (
           // Enhanced PDF Upload UI
           <label className={`
@@ -495,6 +506,7 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
               type="button"
               onClick={() => {
                 setPreview(null);
+
                 setFileInfo(null);
                 setError("");
                 if (onChange) onChange("");
@@ -506,6 +518,7 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
             </button>
           </div>
         )}
+
         
         {/* File name display for non-image files */}
         {value && !preview && !fileInfo && (
@@ -526,6 +539,7 @@ export function RepeaterField({ field, value, onChange }) {
   const addItem = () => {
     const newItem = {};
     field.fields.forEach((f) => {
+
       if (f.type === "socialIcon") {
         // For social icons, don't set a default - user must select
         newItem[f.id] = "";
@@ -539,6 +553,7 @@ export function RepeaterField({ field, value, onChange }) {
   const removeItem = (index) => {
     onChange(items.filter((_, i) => i !== index));
   };
+
 
   const moveItem = (index, direction) => {
     if (direction === "up" && index === 0) return;
@@ -555,6 +570,7 @@ export function RepeaterField({ field, value, onChange }) {
     updated[index] = { ...updated[index], [fieldId]: fieldValue };
     onChange(updated);
   };
+
 
   // Check if this is a "List of Links" type repeater (has icon/image, title, url fields)
   const isLinkRepeater = field.fields?.some(f => f.id === "icon" || f.id === "image") && 
@@ -946,6 +962,7 @@ const iconComponentMap = {
   FaLink,
   FaGlobe,
   FaEnvelope,
+
   FaGithub,
   FaGoogle,
   FaReddit,
@@ -1067,6 +1084,7 @@ export function IconSelectorField({ field, value, onChange }) {
     </div>
   );
 }
+
 
 // Folder Field Component with Create Modal
 export function FolderField({ field, value, onChange, error, folders = [], onFolderCreated }) {

@@ -8,6 +8,7 @@ export default async function handler(req, res) {
 
   const codes = await prisma.qRCode.findMany({
     where: { userId: user.id },
+
     include: {
       folder: {
         select: {

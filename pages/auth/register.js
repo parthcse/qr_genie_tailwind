@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+
 import Link from 'next/link';
 import { FaEye, FaEyeSlash, FaCheck, FaTimes, FaQrcode } from 'react-icons/fa';
-
 // Custom hook for form state management
 const useFormState = (initialState) => {
   const [state, setState] = useState(initialState);
@@ -190,21 +190,25 @@ export default function Register() {
         }
       };
       
+
       // If response is not OK, handle error (set state and return — do not throw, to avoid error overlay)
       if (!res.ok) {
         let errorMessage = 'Registration failed. Please try again.';
         
         try {
+
           errorMessage = await getErrorMessage(responseClone, isJson);
           if (res.status === 400 && (errorMessage.includes('already exists') || errorMessage.includes('User already exists'))) {
             setErrors(prev => ({ ...prev, email: 'Email already in use' }));
             return;
           }
         } catch (error) {
+
           console.error('Error handling failed:', error);
           errorMessage = `Server error (${res.status}). Please try again later.`;
         }
         
+
         setSubmitError(errorMessage);
         return;
       }
@@ -231,6 +235,7 @@ export default function Register() {
         
         // Check if registration was successful
         if (responseData && responseData.success !== false) {
+
           router.push('/dashboard');
           return;
         }
@@ -283,6 +288,7 @@ export default function Register() {
     !isSubmitting;
 
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -344,6 +350,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.name ? 'border-red-300' : 'border-gray-300'
+
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "name-error" : undefined}
@@ -372,6 +379,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
+
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
@@ -400,6 +408,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
+
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? "password-error" : undefined}
@@ -476,6 +485,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
@@ -524,6 +534,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
+
                 className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
                   isFormValid && !isSubmitting
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
@@ -546,6 +557,7 @@ export default function Register() {
           </form>
         </div>
       </div>
+
 
       <style jsx>{`
         @keyframes blob {

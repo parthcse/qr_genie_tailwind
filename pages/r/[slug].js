@@ -21,6 +21,7 @@ export async function getServerSideProps({ params, req }) {
 
   if (!qr) return { notFound: true };
 
+
   if (qr.isActive === false) {
     return { props: { inactive: true } };
   }
@@ -72,6 +73,7 @@ export async function getServerSideProps({ params, req }) {
     data: { scanCount: qr.scanCount + 1 },
   });
 
+
   // For WiFi QR codes, targetUrl contains the raw WiFi string
   // We'll show a page with WiFi connection info instead of redirecting
   if (qr.type === "wifi") {
@@ -113,6 +115,7 @@ export async function getServerSideProps({ params, req }) {
     },
   };
 }
+
 
 export default function RedirectPage({ expired, inactive, wifiInfo }) {
   if (inactive) {

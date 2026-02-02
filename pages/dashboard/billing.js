@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
 import { FaCheck, FaCrown, FaChevronDown } from "react-icons/fa";
@@ -89,6 +89,22 @@ export default function BillingPage() {
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState(null);
   const [buyingPlan, setBuyingPlan] = useState(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
+        }
+      } catch (e) {
+        setSubscriptionStatus({ status: "NONE", daysLeft: null });
+      }
+    };
+    fetchMe();
+  }, []);
 
   const toggleFaq = (id) => {
     setOpenFaq(openFaq === id ? null : id);
@@ -121,6 +137,21 @@ export default function BillingPage() {
   return (
     <DashboardLayout title="" description="">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        {/* Trial countdown banner */}
+        {subscriptionStatus?.status === "TRIAL_ACTIVE" && subscriptionStatus.daysLeft != null && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-center">
+            <p className="text-sm font-semibold text-gray-900">
+              Free trial: <span className="text-indigo-600">{subscriptionStatus.daysLeft} {subscriptionStatus.daysLeft === 1 ? "day" : "days"} remaining</span>
+            </p>
+            <p className="text-xs text-gray-600 mt-1">Choose a plan below to continue after your trial ends.</p>
+          </div>
+        )}
+        {subscriptionStatus?.status === "TRIAL_EXPIRED" && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
+            <p className="text-sm font-semibold text-amber-800">Your free trial has ended.</p>
+            <p className="text-xs text-amber-700 mt-1">Subscribe to a plan to keep creating and using your QR codes.</p>
+          </div>
+        )}
         {/* Main Heading */}
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-2 sm:mb-4">

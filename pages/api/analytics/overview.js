@@ -49,6 +49,7 @@ export default async function handler(req, res) {
   });
   const daily = Object.entries(dailyMap)
     .map(([date, count]) => ({
+
     date,
     count,
     }))
@@ -74,6 +75,7 @@ export default async function handler(req, res) {
   });
   const osStats = Object.entries(osMap)
     .map(([os, count]) => ({
+
     os,
     count,
     }))

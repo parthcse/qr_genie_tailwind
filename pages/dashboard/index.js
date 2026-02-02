@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
+
 import QrOverviewModal from "../../components/QrOverviewModal";
 import QrDownloadModal from "../../components/QrDownloadModal";
 import DesignedQRCode from "../../components/DesignedQRCode";
@@ -43,7 +44,6 @@ import {
   FaEye,
   FaExternalLinkAlt,
 } from "react-icons/fa";
-
 // This function runs on the server side
 export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import('../../lib/auth');
@@ -69,6 +69,7 @@ export async function getServerSideProps(context) {
 
 export default function Dashboard() {
   const router = useRouter();
+
   const { folder: folderIdParam } = router.query;
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,6 +139,7 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
   
   const loadFolders = async () => {
     try {
@@ -972,6 +974,7 @@ export default function Dashboard() {
               <div className="mt-6">
                 <Link
                   href="/dashboard/create-qr"
+
                   className="inline-flex items-center px-6 py-3 border border-transparent shadow-lg text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200"
                 >
                   <FaQrcode className="-ml-1 mr-2 h-5 w-5" />
@@ -981,6 +984,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
 
         {/* Pagination */}
         {filteredCodes.length > 0 && (

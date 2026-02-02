@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     });
 
     res.setHeader("Content-Type", "image/png");
+
     // Use inline for preview, attachment for download
     const disposition = req.query.download === "true" ? "attachment" : "inline";
     res.setHeader(

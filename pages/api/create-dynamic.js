@@ -3,8 +3,8 @@ import prisma from "../../lib/prisma";
 import { nanoid } from "nanoid";
 import QRCode from "qrcode";
 import { getUserFromRequest } from "../../lib/auth";
-import { canCreateQR } from "../../lib/subscription";
 
+import { canCreateQR } from "../../lib/subscription";
 function normalizeUrl(u) {
   if (!u) return "";
   const trimmed = u.trim();
@@ -23,6 +23,7 @@ export default async function handler(req, res) {
   }
 
   try {
+
   const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -33,12 +34,12 @@ export default async function handler(req, res) {
       error: "Trial expired. Please upgrade your plan.",
     });
   }
-
   const {
     qrType = "website",
     url,
     pdfUrl,
     name,
+
     folder, // Folder ID
     vcard,
     wifi,
@@ -99,6 +100,7 @@ export default async function handler(req, res) {
     if (!link) {
       return res.status(400).json({ error: "PDF URL is required." });
     }
+
     
     // If directShow is true, point QR code directly to PDF URL
     if (directShow === true || directShow === "true") {
@@ -156,6 +158,7 @@ export default async function handler(req, res) {
       jobTitle: v.jobTitle || "",
       website: v.website ? normalizeUrl(v.website) : "",
     };
+
   } else if (type === "wifi") {
     const w = wifi || {};
     const ssid = w.ssid || "";
@@ -237,6 +240,7 @@ export default async function handler(req, res) {
     targetUrl = finalUrl;
   }
 
+
   // Add design config to metaObj if provided
   if (design && typeof design === "object") {
     if (!metaObj) {
@@ -300,6 +304,7 @@ export default async function handler(req, res) {
       });
     }
 
+
   const dynamicUrl = `${baseNoSlash}/r/${slug}`;
 
   // Generate a PNG data URL (optional preview)
@@ -324,6 +329,7 @@ export default async function handler(req, res) {
       pngDataUrl = null;
     }
 
+
   return res.status(200).json({
     slug: code.slug,
     dynamicUrl,
@@ -331,7 +337,6 @@ export default async function handler(req, res) {
     name: code.name || name || null, // Return saved name from database
     type,
   });
-
   } catch (error) {
     console.error("Create QR code error:", error);
     

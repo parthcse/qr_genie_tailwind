@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { FaEye, FaEyeSlash, FaLock, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 
+import { FaEye, FaEyeSlash, FaLock, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 // Custom hook for form state management
 const useResetPasswordForm = () => {
   const [password, setPassword] = useState('');
@@ -175,6 +175,7 @@ export default function ResetPassword() {
 
   if (!router.isReady) {
     return (
+
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 text-center border border-indigo-100">
@@ -186,6 +187,7 @@ export default function ResetPassword() {
   }
 
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -252,6 +254,7 @@ export default function ResetPassword() {
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+
                     <FaLock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
@@ -265,6 +268,7 @@ export default function ResetPassword() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
+
                       errors.password ? 'border-red-300' : 'border-gray-300'
                     } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                     aria-invalid={!!errors.password}
@@ -277,6 +281,7 @@ export default function ResetPassword() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
+
                       <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     ) : (
                       <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
@@ -298,11 +303,13 @@ export default function ResetPassword() {
                                 : strength < 4
                                 ? 'bg-yellow-500'
                                 : 'bg-green-500'
+
                               : 'bg-gray-200'
                           }`}
                         ></div>
                       ))}
                     </div>
+
                     <div className="text-xs text-gray-500">
                       {strength < 2 && 'Weak - '}
                       {strength === 2 && 'Fair - '}
@@ -332,6 +339,7 @@ export default function ResetPassword() {
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+
                     <FaLock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
@@ -344,6 +352,7 @@ export default function ResetPassword() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
+
                       errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                     } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                     aria-invalid={!!errors.confirmPassword}
@@ -356,6 +365,7 @@ export default function ResetPassword() {
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? (
+
                       <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     ) : (
                       <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
@@ -373,6 +383,7 @@ export default function ResetPassword() {
                 <button
                   type="submit"
                   disabled={!isFormValid || isSubmitting}
+
                   className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
                     isFormValid && !isSubmitting
                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
@@ -395,6 +406,7 @@ export default function ResetPassword() {
             </form>
           ) : (
             <div className="text-center">
+
               <p className="text-sm text-gray-600">Redirecting to login page...</p>
             </div>
           )}
@@ -402,6 +414,7 @@ export default function ResetPassword() {
           <div className="mt-6 text-center">
             <Link
               href="/auth/login"
+
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               ← Back to login
@@ -409,6 +422,7 @@ export default function ResetPassword() {
           </div>
         </div>
       </div>
+
 
       <style jsx>{`
         @keyframes blob {

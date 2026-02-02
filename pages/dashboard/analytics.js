@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 
+
 // Server-side authentication check
 export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import('../../lib/auth');
@@ -110,6 +111,7 @@ export default function AnalyticsPage() {
       description="Track and analyze your QR code performance in real-time."
     >
       {/* Filters */}
+
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
           <span className="text-xs font-medium text-slate-600 whitespace-nowrap">Time Period</span>
@@ -120,6 +122,7 @@ export default function AnalyticsPage() {
                 type="button"
                 onClick={() => handleDaysChange(d)}
                 className={[
+
                   "flex-1 sm:flex-none px-3 sm:px-4 py-1.5 text-xs font-medium transition-all duration-200",
                   days === d
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
@@ -133,6 +136,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
         </div>
+
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
           <span className="text-xs font-medium text-slate-600 whitespace-nowrap">QR Code</span>
@@ -152,6 +156,7 @@ export default function AnalyticsPage() {
       </div>
 
       {error && (
+
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 shadow-md">
           <p className="text-xs font-medium text-red-800">{error}</p>
         </div>
@@ -159,6 +164,7 @@ export default function AnalyticsPage() {
 
       {loading && !data && (
         <div className="flex items-center justify-center py-12">
+
           <p className="text-sm text-gray-600">Loading analytics data...</p>
         </div>
       )}
@@ -166,6 +172,7 @@ export default function AnalyticsPage() {
       {data && (
         <div className="space-y-6">
           {/* Key Metrics Cards */}
+
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
@@ -175,6 +182,7 @@ export default function AnalyticsPage() {
                     {data.totalScans.toLocaleString()}
                   </p>
                 </div>
+
                 <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 p-3 shadow-md">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -183,6 +191,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             </div>
+
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
@@ -200,6 +209,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -215,6 +225,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             </div>
+
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
@@ -235,6 +246,7 @@ export default function AnalyticsPage() {
 
           {/* Charts Row 1: Daily Activity & Hourly Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-slate-900">Scan Activity Over Time</h3>
               {dailyData.length === 0 ? (
@@ -278,6 +290,7 @@ export default function AnalyticsPage() {
               )}
             </div>
 
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Hour of Day</h3>
               {hourlyData.length === 0 ? (
@@ -317,6 +330,7 @@ export default function AnalyticsPage() {
 
           {/* Charts Row 2: OS & Device Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Operating System</h3>
               {osData.length === 0 ? (
@@ -360,6 +374,7 @@ export default function AnalyticsPage() {
               )}
             </div>
 
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Device Type</h3>
               {deviceData.length === 0 ? (
@@ -396,6 +411,7 @@ export default function AnalyticsPage() {
 
           {/* Geographic Data */}
           <div className="grid gap-6 lg:grid-cols-2">
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Countries</h3>
               {countryData.length === 0 ? (
@@ -407,6 +423,7 @@ export default function AnalyticsPage() {
                     return (
                       <div key={item.country} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
+
                           <span className="font-medium text-gray-700">
                             {index + 1}. {item.country}
                           </span>
@@ -427,6 +444,7 @@ export default function AnalyticsPage() {
               )}
             </div>
 
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Cities</h3>
               {cityData.length === 0 ? (
@@ -438,6 +456,7 @@ export default function AnalyticsPage() {
                     return (
                       <div key={item.city} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
+
                           <span className="font-medium text-gray-700">
                             {index + 1}. {item.city}
                           </span>
@@ -461,6 +480,7 @@ export default function AnalyticsPage() {
 
           {/* QR Code Performance Table */}
           {qrPerformance.length > 0 && (
+
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-gray-900">QR Code Performance</h3>
               <div className="overflow-x-auto">
@@ -477,6 +497,7 @@ export default function AnalyticsPage() {
                     {qrPerformance.map((item, index) => {
                       const percentage = ((item.scans / data.totalScans) * 100).toFixed(1);
                       return (
+
                         <tr key={item.id} className="border-b border-indigo-50 last:border-0 hover:bg-indigo-50/50 transition-colors">
                           <td className="py-3 text-gray-600">#{index + 1}</td>
                           <td className="py-3 font-medium text-gray-900">{item.name}</td>
