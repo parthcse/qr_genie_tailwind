@@ -10,6 +10,13 @@ bun.lockb
 .next/
 out/
 build/
+standalone/
+
+# Production database (keep migrations, but not the actual database file)
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
 
 # VSCode
 .vscode/

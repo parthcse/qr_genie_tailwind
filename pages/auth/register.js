@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
+import Link from 'next/link';
+import { FaEye, FaEyeSlash, FaCheck, FaTimes, FaQrcode } from 'react-icons/fa';
 
 // Custom hook for form state management
 const useFormState = (initialState) => {
@@ -159,22 +160,114 @@ export default function Register() {
         }),
       });
       
-      if (!res.ok) {
-        const data = await res.json();
-        if (res.status === 409) {
-          setErrors(prev => ({ ...prev, email: 'Email already in use' }));
-        } else {
-          throw new Error(data.error || 'Registration failed');
+      // CRITICAL: Clone response to read it multiple times if needed
+      // This prevents "body already consumed" errors
+      const responseClone = res.clone();
+      
+      // CRITICAL: Check Content-Type BEFORE attempting to parse JSON
+      // This prevents "Unexpected token 'I'" error when server returns HTML
+      const contentType = res.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      
+      // Helper function to safely extract error message
+      const getErrorMessage = async (response, isJsonResponse) => {
+        try {
+          if (isJsonResponse) {
+            // Try to parse as JSON first
+            const data = await response.json();
+            return data.error || data.message || 'Registration failed. Please try again.';
+          } else {
+            // Not JSON - read as text (but don't show HTML to user)
+            const text = await response.text();
+            console.error('Non-JSON error response:', text.substring(0, 200));
+            // Return user-friendly message instead of HTML
+            return `Server error (${response.status}). Please try again later.`;
+          }
+        } catch (error) {
+          // If parsing fails completely, return generic error
+          console.error('Failed to parse error response:', error);
+          return `Server error (${response.status}). Please try again later.`;
         }
+      };
+      
+      // If response is not OK, handle error (set state and return — do not throw, to avoid error overlay)
+      if (!res.ok) {
+        let errorMessage = 'Registration failed. Please try again.';
+        
+        try {
+          errorMessage = await getErrorMessage(responseClone, isJson);
+          if (res.status === 400 && (errorMessage.includes('already exists') || errorMessage.includes('User already exists'))) {
+            setErrors(prev => ({ ...prev, email: 'Email already in use' }));
+            return;
+          }
+        } catch (error) {
+          console.error('Error handling failed:', error);
+          errorMessage = `Server error (${res.status}). Please try again later.`;
+        }
+        
+        setSubmitError(errorMessage);
         return;
       }
       
-      // Redirect on success
-      router.push('/dashboard');
+      // Response is OK - parse success response
+      let responseData = null;
+      
+      try {
+        if (isJson) {
+          // Try to parse as JSON
+          responseData = await res.json();
+        } else {
+          // Not JSON - try to read as text (shouldn't happen, but handle gracefully)
+          const text = await res.text();
+          console.warn('Received non-JSON success response:', text.substring(0, 100));
+          // If status is 201, assume success
+          if (res.status === 201) {
+            router.push('/dashboard');
+            return;
+          } else {
+            throw new Error('Unexpected response format');
+          }
+        }
+        
+        // Check if registration was successful
+        if (responseData && responseData.success !== false) {
+          router.push('/dashboard');
+          return;
+        }
+        setSubmitError(responseData?.error || responseData?.message || 'Registration failed');
+        return;
+      } catch (parseError) {
+        if (parseError instanceof SyntaxError || parseError.message.includes('JSON')) {
+          console.error('JSON parsing error - server may have returned HTML:', parseError);
+          setSubmitError('Server returned invalid response. Please try again later.');
+          return;
+        }
+        if (res.status === 201) {
+          router.push('/dashboard');
+          return;
+        }
+        setSubmitError(parseError?.message || 'Registration failed. Please try again.');
+        return;
+      }
       
     } catch (err) {
       console.error('Registration error:', err);
-      setSubmitError(err.message || 'An error occurred during registration');
+      
+      // Extract user-friendly error message
+      let userMessage = 'An error occurred during registration. Please try again.';
+      
+      if (err.message) {
+        // Check if it's a JSON parsing error
+        if (err.message.includes('Unexpected token') || err.message.includes('JSON')) {
+          userMessage = 'Server returned an invalid response. Please try again later.';
+        } else {
+          // Use the error message if it's user-friendly
+          userMessage = err.message;
+        }
+      }
+      
+      // Show user-friendly error message
+      setSubmitError(userMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -190,21 +283,35 @@ export default function Register() {
     !isSubmitting;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <a href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-            sign in to your account
-          </a>
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+              <FaQrcode className="h-7 w-7 text-white" />
+            </div>
+            <span className="ml-3 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              QR-Genie
+            </span>
+          </Link>
+          <h2 className="text-4xl font-extrabold text-gray-900">
+            Create your account
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Or{' '}
+            <a href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-700">
+              sign in to your account
+            </a>
+          </p>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-indigo-100">
           {submitError && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
               <div className="flex">
@@ -237,7 +344,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.name ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "name-error" : undefined}
                 />
@@ -265,7 +372,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                 />
@@ -293,7 +400,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? "password-error" : undefined}
                 />
@@ -369,7 +476,7 @@ export default function Register() {
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
                 />
@@ -417,9 +524,9 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
                   isFormValid && !isSubmitting
-                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
                     : 'bg-indigo-400 cursor-not-allowed'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
               >
@@ -439,6 +546,29 @@ export default function Register() {
           </form>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </div>
   );
 }

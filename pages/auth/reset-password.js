@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { FaEye, FaEyeSlash, FaLock, FaCheckCircle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaLock, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 
 // Custom hook for form state management
 const useResetPasswordForm = () => {
@@ -175,10 +175,10 @@ export default function ResetPassword() {
 
   if (!router.isReady) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow-md sm:rounded-2xl sm:px-10 text-center">
-            <p className="text-sm text-slate-600">Loading...</p>
+          <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 text-center border border-indigo-100">
+            <p className="text-sm text-gray-600">Loading...</p>
           </div>
         </div>
       </div>
@@ -186,18 +186,32 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
-          Reset your password
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
-          Enter your new password below.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-md sm:rounded-2xl sm:px-10">
+      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+              <FaQrcode className="h-7 w-7 text-white" />
+            </div>
+            <span className="ml-3 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              QR-Genie
+            </span>
+          </Link>
+          <h2 className="text-4xl font-extrabold text-gray-900">
+            Reset your password
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Enter your new password below.
+          </p>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-indigo-100">
           {/* Success Message */}
           {success && (
             <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
@@ -238,7 +252,7 @@ export default function ResetPassword() {
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaLock className="h-5 w-5 text-slate-400" />
+                    <FaLock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     ref={passwordRef}
@@ -251,8 +265,8 @@ export default function ResetPassword() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
-                      errors.password ? 'border-red-300' : 'border-slate-300'
-                    } rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                      errors.password ? 'border-red-300' : 'border-gray-300'
+                    } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                     aria-invalid={!!errors.password}
                     aria-describedby={errors.password ? "password-error" : undefined}
                   />
@@ -263,9 +277,9 @@ export default function ResetPassword() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
-                      <FaEyeSlash className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                      <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     ) : (
-                      <FaEye className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                      <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     )}
                   </button>
                 </div>
@@ -284,12 +298,12 @@ export default function ResetPassword() {
                                 : strength < 4
                                 ? 'bg-yellow-500'
                                 : 'bg-green-500'
-                              : 'bg-slate-200'
+                              : 'bg-gray-200'
                           }`}
                         ></div>
                       ))}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-gray-500">
                       {strength < 2 && 'Weak - '}
                       {strength === 2 && 'Fair - '}
                       {strength === 3 && 'Good - '}
@@ -318,7 +332,7 @@ export default function ResetPassword() {
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaLock className="h-5 w-5 text-slate-400" />
+                    <FaLock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     id="confirmPassword"
@@ -330,8 +344,8 @@ export default function ResetPassword() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-slate-300'
-                    } rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                     aria-invalid={!!errors.confirmPassword}
                     aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
                   />
@@ -342,9 +356,9 @@ export default function ResetPassword() {
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? (
-                      <FaEyeSlash className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                      <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     ) : (
-                      <FaEye className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                      <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                     )}
                   </button>
                 </div>
@@ -359,9 +373,9 @@ export default function ResetPassword() {
                 <button
                   type="submit"
                   disabled={!isFormValid || isSubmitting}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
                     isFormValid && !isSubmitting
-                      ? 'bg-indigo-600 hover:bg-indigo-700'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
                       : 'bg-indigo-400 cursor-not-allowed'
                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
                 >
@@ -381,20 +395,43 @@ export default function ResetPassword() {
             </form>
           ) : (
             <div className="text-center">
-              <p className="text-sm text-slate-600">Redirecting to login page...</p>
+              <p className="text-sm text-gray-600">Redirecting to login page...</p>
             </div>
           )}
 
           <div className="mt-6 text-center">
             <Link
               href="/auth/login"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               ← Back to login
             </Link>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </div>
   );
 }

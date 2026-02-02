@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
+import Link from 'next/link';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaQrcode } from 'react-icons/fa';
 
 // Custom hook for form state management
 const useLoginForm = () => {
@@ -92,27 +93,73 @@ export default function Login() {
         credentials: 'same-origin' // Important for cookies
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      const isJson = contentType && contentType.includes("application/json");
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
+        let errorMessage = 'Login failed. Please try again.';
         
-        switch (response.status) {
-          case 400:
-            throw new Error(data.error || 'Invalid request');
-          case 401:
-            throw new Error('Invalid email or password');
-          case 429:
-            throw new Error('Too many attempts. Please try again later.');
-          default:
-            throw new Error(data.error || 'Login failed. Please try again.');
+        if (isJson) {
+          try {
+            const data = await response.json();
+            errorMessage = data.error || errorMessage;
+            
+            switch (response.status) {
+              case 400:
+                errorMessage = data.error || 'Invalid request';
+                break;
+              case 401:
+                errorMessage = 'Invalid email or password';
+                break;
+              case 429:
+                errorMessage = 'Too many attempts. Please try again later.';
+                break;
+              default:
+                errorMessage = data.error || 'Login failed. Please try again.';
+            }
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+            errorMessage = `Server error (${response.status}). Please try again later.`;
+          }
+        } else {
+          // Response is HTML (error page) - extract text or use status
+          try {
+            const text = await response.text();
+            console.error('Non-JSON error response:', text.substring(0, 200));
+            errorMessage = `Server error (${response.status}). Please contact support if this persists.`;
+          } catch (textError) {
+            errorMessage = `Server error (${response.status}). Please try again later.`;
+          }
         }
+        
+        throw new Error(errorMessage);
       }
 
-      // On successful login, redirect to dashboard
-      router.push('/dashboard');
+      // Parse successful response
+      if (isJson) {
+        try {
+          const data = await response.json();
+          // Success - redirect to dashboard
+          router.push('/dashboard');
+        } catch (parseError) {
+          console.error('Failed to parse success response:', parseError);
+          // Even if parsing fails, redirect if status is 200
+          if (response.status === 200) {
+            router.push('/dashboard');
+          } else {
+            throw new Error('Unexpected response format');
+          }
+        }
+      } else {
+        // Non-JSON success response (shouldn't happen, but handle gracefully)
+        console.warn('Received non-JSON success response');
+        router.push('/dashboard');
+      }
       
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.message);
+      setError(err.message || 'An error occurred during login. Please try again.');
       errorRef.current?.focus();
     } finally {
       setIsSubmitting(false);
@@ -136,21 +183,35 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
-          Sign in to your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
-          Or{' '}
-          <a href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-            create a new account
-          </a>
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-md sm:rounded-2xl sm:px-10">
+      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+              <FaQrcode className="h-7 w-7 text-white" />
+            </div>
+            <span className="ml-3 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              QR-Genie
+            </span>
+          </Link>
+          <h2 className="text-4xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Or{' '}
+            <a href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-700">
+              create a new account
+            </a>
+          </p>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-indigo-100">
           {/* Error Message */}
           {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
@@ -184,8 +245,8 @@ export default function Login() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-slate-300'
-                  } rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                 />
@@ -219,8 +280,8 @@ export default function Login() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password ? 'border-red-300' : 'border-slate-300'
-                  } rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
+                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? "password-error" : undefined}
                 />
@@ -231,9 +292,9 @@ export default function Login() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <FaEyeSlash className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                    <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                   ) : (
-                    <FaEye className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+                    <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
                   )}
                 </button>
               </div>
@@ -248,9 +309,9 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
                   isFormValid && !isSubmitting
-                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
                     : 'bg-indigo-400 cursor-not-allowed'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
               >
@@ -270,6 +331,29 @@ export default function Login() {
           </form>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </div>
   );
 }

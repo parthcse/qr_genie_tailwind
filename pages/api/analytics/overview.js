@@ -49,8 +49,8 @@ export default async function handler(req, res) {
   });
   const daily = Object.entries(dailyMap)
     .map(([date, count]) => ({
-      date,
-      count,
+    date,
+    count,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -74,8 +74,8 @@ export default async function handler(req, res) {
   });
   const osStats = Object.entries(osMap)
     .map(([os, count]) => ({
-      os,
-      count,
+    os,
+    count,
     }))
     .sort((a, b) => b.count - a.count);
 

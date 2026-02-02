@@ -1,6 +1,23 @@
 // pages/dashboard/analytics.js
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
+
+// Server-side authentication check
+export async function getServerSideProps(context) {
+  const { getUserFromRequest } = await import('../../lib/auth');
+  const user = await getUserFromRequest(context.req);
+  if (!user) {
+    return {
+      redirect: {
+        destination: '/auth/login',
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {},
+  };
+}
 import {
   LineChart,
   Line,
@@ -93,20 +110,22 @@ export default function AnalyticsPage() {
       description="Track and analyze your QR code performance in real-time."
     >
       {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-600">Time Period</span>
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-medium text-slate-600 whitespace-nowrap">Time Period</span>
+          <div className="inline-flex rounded-lg sm:rounded-xl border border-indigo-100 bg-white shadow-md w-full sm:w-auto">
             {[7, 30, 90].map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => handleDaysChange(d)}
                 className={[
-                  "px-4 py-1.5 text-xs font-medium transition-colors",
+                  "flex-1 sm:flex-none px-3 sm:px-4 py-1.5 text-xs font-medium transition-all duration-200",
                   days === d
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-700 hover:bg-slate-50",
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                    : "text-gray-700 hover:bg-indigo-50",
+                  d === 7 ? "rounded-l-lg sm:rounded-l-xl" : "",
+                  d === 90 ? "rounded-r-lg sm:rounded-r-xl" : "",
                 ].join(" ")}
               >
                 {d} days
@@ -115,12 +134,12 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-600">QR Code</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-medium text-slate-600 whitespace-nowrap">QR Code</span>
           <select
             value={selectedQrId}
             onChange={handleQrChange}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 shadow-sm outline-none transition-colors hover:border-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900 focus:ring-offset-1"
+            className="w-full sm:w-auto rounded-lg sm:rounded-xl border border-indigo-100 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-md outline-none transition-all duration-200 hover:border-indigo-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
           >
             <option value="">All QR Codes</option>
             {(data?.qrCodes || []).map((q) => (
@@ -133,22 +152,22 @@ export default function AnalyticsPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 shadow-md">
           <p className="text-xs font-medium text-red-800">{error}</p>
         </div>
       )}
 
       {loading && !data && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-slate-600">Loading analytics data...</p>
+          <p className="text-sm text-gray-600">Loading analytics data...</p>
         </div>
       )}
 
       {data && (
         <div className="space-y-6">
           {/* Key Metrics Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-500">Total Scans</p>
@@ -156,8 +175,8 @@ export default function AnalyticsPage() {
                     {data.totalScans.toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <svg className="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 p-3 shadow-md">
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
@@ -165,48 +184,48 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Unique Scans</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                  <p className="text-xs font-medium text-gray-500">Unique Scans</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900">
                     {data.uniqueScans?.toLocaleString() || 0}
                   </p>
                 </div>
-                <div className="rounded-lg bg-blue-100 p-3">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 p-3 shadow-md">
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Avg. Scans/Day</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                  <p className="text-xs font-medium text-gray-500">Avg. Scans/Day</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900">
                     {averageScansPerDay}
                   </p>
                 </div>
-                <div className="rounded-lg bg-green-100 p-3">
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 p-3 shadow-md">
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Total QR Codes</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                  <p className="text-xs font-medium text-gray-500">Total QR Codes</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900">
                     {data.totalQrCodes}
                   </p>
                 </div>
-                <div className="rounded-lg bg-purple-100 p-3">
-                  <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-3 shadow-md">
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                   </svg>
                 </div>
@@ -216,11 +235,11 @@ export default function AnalyticsPage() {
 
           {/* Charts Row 1: Daily Activity & Hourly Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
               <h3 className="mb-4 text-sm font-semibold text-slate-900">Scan Activity Over Time</h3>
               {dailyData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-slate-500">No scans recorded in this period.</p>
+                  <p className="text-xs text-gray-500">No scans recorded in this period.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -259,11 +278,11 @@ export default function AnalyticsPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Hour of Day</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Hour of Day</h3>
               {hourlyData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-slate-500">No hourly data available.</p>
+                  <p className="text-xs text-gray-500">No hourly data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -298,11 +317,11 @@ export default function AnalyticsPage() {
 
           {/* Charts Row 2: OS & Device Distribution */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Operating System</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Operating System</h3>
               {osData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-slate-500">No OS data available.</p>
+                  <p className="text-xs text-gray-500">No OS data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -341,11 +360,11 @@ export default function AnalyticsPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Device Type</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Device Type</h3>
               {deviceData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-slate-500">No device data available.</p>
+                  <p className="text-xs text-gray-500">No device data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -377,10 +396,10 @@ export default function AnalyticsPage() {
 
           {/* Geographic Data */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Top Countries</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Countries</h3>
               {countryData.length === 0 ? (
-                <p className="text-xs text-slate-500">No country data available.</p>
+                <p className="text-xs text-gray-500">No country data available.</p>
               ) : (
                 <div className="space-y-3">
                   {countryData.map((item, index) => {
@@ -388,16 +407,16 @@ export default function AnalyticsPage() {
                     return (
                       <div key={item.country} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-gray-700">
                             {index + 1}. {item.country}
                           </span>
-                          <span className="text-slate-600">
+                          <span className="text-gray-600">
                             {item.count} ({percentage}%)
                           </span>
                         </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                           <div
-                            className="h-full rounded-full bg-slate-900 transition-all"
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -408,10 +427,10 @@ export default function AnalyticsPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">Top Cities</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Cities</h3>
               {cityData.length === 0 ? (
-                <p className="text-xs text-slate-500">No city data available.</p>
+                <p className="text-xs text-gray-500">No city data available.</p>
               ) : (
                 <div className="space-y-3">
                   {cityData.map((item, index) => {
@@ -419,16 +438,16 @@ export default function AnalyticsPage() {
                     return (
                       <div key={item.city} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-gray-700">
                             {index + 1}. {item.city}
                           </span>
-                          <span className="text-slate-600">
+                          <span className="text-gray-600">
                             {item.count} ({percentage}%)
                           </span>
                         </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                           <div
-                            className="h-full rounded-full bg-slate-900 transition-all"
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -442,27 +461,27 @@ export default function AnalyticsPage() {
 
           {/* QR Code Performance Table */}
           {qrPerformance.length > 0 && (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold text-slate-900">QR Code Performance</h3>
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-gray-900">QR Code Performance</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="pb-3 text-left font-semibold text-slate-700">Rank</th>
-                      <th className="pb-3 text-left font-semibold text-slate-700">QR Code Name</th>
-                      <th className="pb-3 text-right font-semibold text-slate-700">Total Scans</th>
-                      <th className="pb-3 text-right font-semibold text-slate-700">Percentage</th>
+                    <tr className="border-b border-indigo-100">
+                      <th className="pb-3 text-left font-semibold text-gray-700">Rank</th>
+                      <th className="pb-3 text-left font-semibold text-gray-700">QR Code Name</th>
+                      <th className="pb-3 text-right font-semibold text-gray-700">Total Scans</th>
+                      <th className="pb-3 text-right font-semibold text-gray-700">Percentage</th>
                     </tr>
                   </thead>
                   <tbody>
                     {qrPerformance.map((item, index) => {
                       const percentage = ((item.scans / data.totalScans) * 100).toFixed(1);
                       return (
-                        <tr key={item.id} className="border-b border-slate-100 last:border-0">
-                          <td className="py-3 text-slate-600">#{index + 1}</td>
-                          <td className="py-3 font-medium text-slate-900">{item.name}</td>
-                          <td className="py-3 text-right text-slate-600">{item.scans.toLocaleString()}</td>
-                          <td className="py-3 text-right text-slate-600">{percentage}%</td>
+                        <tr key={item.id} className="border-b border-indigo-50 last:border-0 hover:bg-indigo-50/50 transition-colors">
+                          <td className="py-3 text-gray-600">#{index + 1}</td>
+                          <td className="py-3 font-medium text-gray-900">{item.name}</td>
+                          <td className="py-3 text-right text-gray-600">{item.scans.toLocaleString()}</td>
+                          <td className="py-3 text-right text-gray-600">{percentage}%</td>
                         </tr>
                       );
                     })}

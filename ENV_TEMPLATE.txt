@@ -1,0 +1,44 @@
+# ============================================
+# PRODUCTION ENVIRONMENT VARIABLES TEMPLATE
+# ============================================
+# Copy this content to your .env file on the server
+# Replace all placeholder values with your actual production values
+# ============================================
+
+# Database Configuration
+# Use absolute path for production SQLite database
+# Example: DATABASE_URL="file:/var/www/qr-genie/prisma/production.db"
+DATABASE_URL="file:/absolute/path/to/your/production/database.db"
+
+# JWT Secret (REQUIRED)
+# Generate a strong random string using: openssl rand -base64 32
+# NEVER use the example value below in production!
+JWT_SECRET="CHANGE_THIS_TO_A_STRONG_RANDOM_STRING_GENERATED_WITH_OPENSSL"
+
+# Application URLs (REQUIRED)
+# Replace with your actual production domain (must include https://)
+# Both should typically be the same unless you have a CDN
+NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+NEXT_PUBLIC_BASE_URL="https://yourdomain.com"
+
+# Email Configuration (Optional but recommended for password resets)
+# Get API key from https://resend.com (free tier available)
+RESEND_API_KEY="re_xxxxxxxxxxxxx"
+RESEND_FROM_EMAIL="QR-Genie <noreply@yourdomain.com>"
+
+# Node Environment
+NODE_ENV="production"
+
+# ============================================
+# QUICK SETUP COMMANDS
+# ============================================
+# 1. Generate JWT Secret:
+#    openssl rand -base64 32
+#
+# 2. Create .env file:
+#    nano .env
+#    (paste the above content and update values)
+#
+# 3. Set secure permissions:
+#    chmod 600 .env
+# ============================================
