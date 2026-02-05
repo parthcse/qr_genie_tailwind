@@ -106,7 +106,7 @@ export default async function handler(req, res) {
           });
           user.subscriptionPlan = "EXPIRED";
         } else {
-          const trialEndsAt = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000);
+          const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
           await prisma.user.update({
             where: { id: user.id },
             data: {

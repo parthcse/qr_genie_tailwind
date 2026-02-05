@@ -102,7 +102,7 @@ export default async function handler(req, res) {
     }
 
     const now = new Date();
-    const trialEndsAt = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000);
+    const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
     let user;
     try {

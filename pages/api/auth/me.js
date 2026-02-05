@@ -3,7 +3,7 @@ import prisma from "../../../lib/prisma";
 import { getUserFromRequest } from "../../../lib/auth";
 import { getUserSubscriptionStatus } from "../../../lib/subscription";
 
-const TRIAL_DAYS = 120;
+const TRIAL_DAYS = 14;
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
