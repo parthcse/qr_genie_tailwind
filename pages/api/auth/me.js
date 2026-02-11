@@ -54,17 +54,82 @@ export default async function handler(req, res) {
         }
       }
 
-      const subscriptionStatus = getUserSubscriptionStatus(user);
+      // Check if trial expired and pause QR codes if needed
+      const now = new Date();
+      if (user.subscriptionPlan === "TRIAL" && user.trialEndsAt && new Date(user.trialEndsAt) < now) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { subscriptionPlan: "EXPIRED" },
+          });
+          await prisma.qRCode.updateMany({
+            where: { userId: user.id, isActive: true },
+            data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
+          });
+          user = { ...user, subscriptionPlan: "EXPIRED" };
+        } catch (err) {
+          console.error("Auth me: trial expiry check failed", err);
+        }
+      }
+
+      // Fetch full user from DB so account/billing fields are included (getUserFromRequest returns subset)
+      const fullUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          subscriptionPlan: true,
+          trialStartedAt: true,
+          trialEndsAt: true,
+          subscriptionStartedAt: true,
+          subscriptionEndsAt: true,
+          telephone: true,
+          company: true,
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          language: true,
+          billingName: true,
+          billingCompany: true,
+          billingAddress: true,
+          billingCity: true,
+          billingState: true,
+          billingZipCode: true,
+          billingCountry: true,
+          taxId: true,
+        },
+      });
+      const u = fullUser || user;
+      const subscriptionStatus = getUserSubscriptionStatus(u);
       res.status(200).json({
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name || null,
-          subscriptionPlan: user.subscriptionPlan ?? "EXPIRED",
-          trialStartedAt: user.trialStartedAt,
-          trialEndsAt: user.trialEndsAt,
-          subscriptionStartedAt: user.subscriptionStartedAt,
-          subscriptionEndsAt: user.subscriptionEndsAt,
+          id: u.id,
+          email: u.email,
+          name: u.name || null,
+          subscriptionPlan: u.subscriptionPlan ?? "EXPIRED",
+          trialStartedAt: u.trialStartedAt,
+          trialEndsAt: u.trialEndsAt,
+          subscriptionStartedAt: u.subscriptionStartedAt,
+          subscriptionEndsAt: u.subscriptionEndsAt,
+          telephone: u.telephone || null,
+          company: u.company || null,
+          address: u.address || null,
+          city: u.city || null,
+          state: u.state || null,
+          zipCode: u.zipCode || null,
+          country: u.country || null,
+          language: u.language || "English",
+          billingName: u.billingName || null,
+          billingCompany: u.billingCompany || null,
+          billingAddress: u.billingAddress || null,
+          billingCity: u.billingCity || null,
+          billingState: u.billingState || null,
+          billingZipCode: u.billingZipCode || null,
+          billingCountry: u.billingCountry || null,
+          taxId: u.taxId || null,
         },
         subscriptionStatus,
       });

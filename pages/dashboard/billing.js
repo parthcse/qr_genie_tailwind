@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import DashboardLayout from "../../components/DashboardLayout";
-import { FaCheck, FaCrown, FaChevronDown } from "react-icons/fa";
+import { FaCheck, FaCrown, FaChevronDown, FaBuilding, FaMapMarkerAlt, FaFileInvoice } from "react-icons/fa";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
@@ -20,50 +21,46 @@ export async function getServerSideProps(context) {
   };
 }
 
-// Pricing plans data - ids match API: MONTHLY | QUARTERLY | ANNUAL
+// Pricing plans data - Free Trial and Basic Package
 const pricingPlans = [
   {
-    id: "MONTHLY",
-    name: "Monthly",
-    price: "1,799",
-    currency: "₹",
+    id: "TRIAL",
+    name: "Free Trial",
+    price: "0",
+    currency: "$",
+    period: "/14 days",
+    billingNote: "No credit card required",
+    popular: false,
+    discount: null,
+    apiEndpoint: null, // No API endpoint - handled via registration
+    features: [
+      "14-day full access",
+      "Create up to 2 QR codes",
+      "All QR code types",
+      "Dynamic link updates",
+      "Basic analytics",
+      "Email support"
+    ],
+  },
+  {
+    id: "BASIC",
+    name: "Basic Package",
+    price: "5",
+    currency: "$",
     period: "/mo",
     billingNote: "Billed monthly",
-    popular: false,
-    discount: null,
-  },
-  {
-    id: "QUARTERLY",
-    name: "Quarterly",
-    price: "999",
-    currency: "₹",
-    period: "/mo",
-    billingNote: "Billed every 3 months",
-    popular: false,
-    discount: null,
-  },
-  {
-    id: "ANNUAL",
-    name: "Annual",
-    price: "699",
-    currency: "₹",
-    period: "/mo",
-    billingNote: "Billed yearly",
     popular: true,
-    discount: "60%",
+    discount: null,
+    apiEndpoint: "/api/checkout/basic",
+    features: [
+      "Unlimited QR codes",
+      "All QR code types",
+      "Dynamic link updates",
+      "Basic analytics",
+      "Email support",
+      "Cancel anytime"
+    ],
   },
-];
-
-// Features list - shared across all plans
-const planFeatures = [
-  "Create unlimited dynamic QR codes",
-  "Access a variety of QR types",
-  "Unlimited modifications of QR codes",
-  "Unlimited scans",
-  "Multiple QR code download formats",
-  "Unlimited users",
-  "Premium customer support",
-  "Cancel at anytime",
 ];
 
 // FAQ data
@@ -90,6 +87,16 @@ export default function BillingPage() {
   const [openFaq, setOpenFaq] = useState(null);
   const [buyingPlan, setBuyingPlan] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [billingInfo, setBillingInfo] = useState({
+    billingName: "",
+    billingCompany: "",
+    billingAddress: "",
+    billingCity: "",
+    billingState: "",
+    billingZipCode: "",
+    billingCountry: "",
+    taxId: "",
+  });
 
   useEffect(() => {
     const fetchMe = async () => {
@@ -98,6 +105,18 @@ export default function BillingPage() {
         if (res.ok) {
           const data = await res.json();
           setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
+          if (data.user) {
+            setBillingInfo({
+              billingName: data.user.billingName || "",
+              billingCompany: data.user.billingCompany || "",
+              billingAddress: data.user.billingAddress || "",
+              billingCity: data.user.billingCity || "",
+              billingState: data.user.billingState || "",
+              billingZipCode: data.user.billingZipCode || "",
+              billingCountry: data.user.billingCountry || "",
+              taxId: data.user.taxId || "",
+            });
+          }
         }
       } catch (e) {
         setSubscriptionStatus({ status: "NONE", daysLeft: null });
@@ -111,10 +130,16 @@ export default function BillingPage() {
   };
 
   const handleBuyNow = async (plan) => {
-    if (!plan || !["MONTHLY", "QUARTERLY", "ANNUAL"].includes(plan)) return;
+    if (plan === "TRIAL") {
+      // Free Trial is handled via registration - redirect to register page
+      router.push("/auth/register");
+      return;
+    }
+    
+    if (plan !== "BASIC") return;
     setBuyingPlan(plan);
     try {
-      const res = await fetch("/api/checkout/razorpay", {
+      const res = await fetch("/api/checkout/basic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -125,6 +150,17 @@ export default function BillingPage() {
         alert(data.error || "Checkout failed. Please try again.");
         return;
       }
+      
+      // Show success message
+      alert("Basic Package activated successfully! Your QR codes have been reactivated.");
+      
+      // Refresh subscription status
+      const meRes = await fetch("/api/auth/me", { credentials: "include" });
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setSubscriptionStatus(meData.subscriptionStatus || { status: "NONE", daysLeft: null });
+      }
+      
       router.push("/dashboard");
     } catch (e) {
       console.error(e);
@@ -136,7 +172,7 @@ export default function BillingPage() {
 
   return (
     <DashboardLayout title="" description="">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 w-full">
         {/* Trial countdown banner */}
         {subscriptionStatus?.status === "TRIAL_ACTIVE" && subscriptionStatus.daysLeft != null && (
           <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-center">
@@ -164,7 +200,7 @@ export default function BillingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16 max-w-4xl mx-auto">
           {pricingPlans.map((plan) => (
             <div
               key={plan.id}
@@ -224,23 +260,31 @@ export default function BillingPage() {
                   </p>
                 </div>
 
-                {/* Buy Now Button */}
+                {/* Buy Now / Start Trial Button */}
                 <button
                   type="button"
                   onClick={() => handleBuyNow(plan.id)}
-                  disabled={buyingPlan !== null}
-                  className={`w-full py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base text-white transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed ${
+                  disabled={buyingPlan !== null || (plan.id === "TRIAL" && subscriptionStatus?.status === "TRIAL_ACTIVE")}
+                  className={`w-full py-4 px-6 rounded-xl font-semibold text-base text-white transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed ${
                     plan.popular
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
-                      : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg"
+                      : plan.id === "TRIAL"
+                      ? "bg-gray-600 hover:bg-gray-700 shadow-lg hover:shadow-xl"
+                      : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
                   }`}
                 >
-                  {buyingPlan === plan.id ? "Processing..." : "Buy Now"}
+                  {buyingPlan === plan.id 
+                    ? "Processing..." 
+                    : plan.id === "TRIAL"
+                    ? subscriptionStatus?.status === "TRIAL_ACTIVE" 
+                      ? "Trial Active" 
+                      : "Start Free Trial"
+                    : "Buy Now"}
                 </button>
 
                 {/* Features List */}
                 <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
-                  {planFeatures.map((feature, index) => (
+                  {plan.features.map((feature, index) => (
                     <div key={index} className="flex items-start gap-2 sm:gap-3">
                       <div className="flex-shrink-0 mt-0.5">
                         <FaCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
@@ -252,6 +296,107 @@ export default function BillingPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Billing information from database (same as Account page) */}
+        <div className="max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
+            Your{" "}
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Billing Information</span>
+          </h2>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm text-gray-600">Saved billing details for invoices and receipts.</p>
+              <Link
+                href="/dashboard/account?tab=billing"
+                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                Edit in Account →
+              </Link>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {billingInfo.billingName && (
+                <div className="flex items-start gap-2">
+                  <FaBuilding className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</p>
+                    <p className="text-gray-900">{billingInfo.billingName}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingCompany && (
+                <div className="flex items-start gap-2">
+                  <FaBuilding className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Company</p>
+                    <p className="text-gray-900">{billingInfo.billingCompany}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingAddress && (
+                <div className="sm:col-span-2 flex items-start gap-2">
+                  <FaMapMarkerAlt className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Address</p>
+                    <p className="text-gray-900">{billingInfo.billingAddress}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingCity && (
+                <div className="flex items-start gap-2">
+                  <FaMapMarkerAlt className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">City</p>
+                    <p className="text-gray-900">{billingInfo.billingCity}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingState && (
+                <div className="flex items-start gap-2">
+                  <FaMapMarkerAlt className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">State</p>
+                    <p className="text-gray-900">{billingInfo.billingState}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingZipCode && (
+                <div className="flex items-start gap-2">
+                  <FaMapMarkerAlt className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">ZIP / Postal code</p>
+                    <p className="text-gray-900">{billingInfo.billingZipCode}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.billingCountry && (
+                <div className="flex items-start gap-2">
+                  <FaMapMarkerAlt className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Country</p>
+                    <p className="text-gray-900">{billingInfo.billingCountry}</p>
+                  </div>
+                </div>
+              )}
+              {billingInfo.taxId && (
+                <div className="flex items-start gap-2">
+                  <FaFileInvoice className="mt-0.5 text-indigo-600 w-4 h-4 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tax ID</p>
+                    <p className="text-gray-900">{billingInfo.taxId}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {!billingInfo.billingName && !billingInfo.billingCompany && !billingInfo.billingAddress && !billingInfo.billingCity && !billingInfo.billingState && !billingInfo.billingZipCode && !billingInfo.billingCountry && !billingInfo.taxId && (
+              <div className="px-6 pb-6">
+                <p className="text-sm text-gray-500">No billing information saved yet.</p>
+                <Link href="/dashboard/account?tab=billing" className="inline-block mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+                  Add billing details in Account →
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* FAQ Section */}

@@ -1,6 +1,6 @@
 // pages/dashboard/create-qr.js
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -8,6 +8,8 @@ import DynamicForm from "../../components/qrFields/DynamicForm";
 import { getSchemaForType } from "../../lib/qrSchemas";
 import { createQRConfig } from "../../components/DesignedQRCode";
 import { downloadDesignedQR } from "../../lib/qrDownload";
+import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
+import { jsPDF } from "jspdf";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
@@ -412,8 +414,11 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
       ? designData.patternColor1 || designData.patternColor || "#000000"
       : designData?.patternColor || designData?.qrColor || "#000000";
     
-    const bgColor = designData?.patternBgTransparent || designData?.bgTransparent
-      ? "transparent"
+    // For transparent background, use null or undefined instead of "transparent" string
+    // QRCodeSVG should handle null/undefined for transparent backgrounds
+    const isTransparentBg = designData?.patternBgTransparent || designData?.bgTransparent;
+    const bgColor = isTransparentBg
+      ? null
       : designData?.patternBgUseGradient || designData?.useGradientBg
         ? designData.patternBgColor1 || designData.bgColor1 || designData.bgColor || "#ffffff"
         : designData?.patternBgColor || designData?.bgColor || "#ffffff";
@@ -439,7 +444,7 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 };
 
 // Mobile Preview Component
-const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl }) => {
+const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef }) => {
   // State to store image previews for uploaded files
   const [imagePreviews, setImagePreviews] = useState({});
   const [profileImagePreview, setProfileImagePreview] = useState(null);
@@ -496,24 +501,28 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           ? designData.patternColor1 || designData.patternColor || "#000000"
           : designData?.patternColor || designData?.qrColor || "#000000";
         
+        // Base background color
+        const baseBgColor = designData?.patternBgColor || designData?.bgColor || "#ffffff";
+        
         const bgColor = designData?.patternBgTransparent || designData?.bgTransparent
           ? "transparent"
           : designData?.patternBgUseGradient || designData?.useGradientBg
-            ? designData.patternBgColor1 || designData.bgColor1 || designData.bgColor || "#ffffff"
-            : designData?.patternBgColor || designData?.bgColor || "#ffffff";
+            ? (designData.patternBgColor1 || designData.bgColor1 || baseBgColor)
+            : baseBgColor;
         
+        // When gradient is enabled, ensure both colors are set (use base color as fallback)
         const bgGradient = (designData?.patternBgUseGradient || designData?.useGradientBg) && !(designData?.patternBgTransparent || designData?.bgTransparent)
-          ? `linear-gradient(135deg, ${designData.patternBgColor1 || designData.bgColor1 || "#ffffff"}, ${designData.patternBgColor2 || designData.bgColor2 || "#ffffff"})`
+          ? `linear-gradient(135deg, ${designData.patternBgColor1 || designData.bgColor1 || baseBgColor}, ${designData.patternBgColor2 || designData.bgColor2 || baseBgColor})`
           : null;
 
         // Frame wrapper styles
         const getFrameStyles = () => {
           if (designData?.frameStyle === "none") return {};
           
-          const frameColor = designData?.frameUseGradient
-            ? `linear-gradient(135deg, ${designData.frameColor1 || "#000000"}, ${designData.frameColor2 || "#000000"})`
-            : designData?.frameColor || "#000000";
+          // Frame Color always controls border color only (no gradient support)
+          const frameBorderColor = designData?.frameColor || "#000000";
           
+          // Frame Background controls the background inside the frame
           const frameBg = designData?.frameBgTransparent
             ? "transparent"
             : designData?.frameBgUseGradient
@@ -521,9 +530,9 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
               : designData?.frameBgColor || "#ffffff";
           
           return {
-            border: `4px solid ${designData?.frameUseGradient ? "transparent" : frameColor}`,
-            background: designData?.frameUseGradient ? frameColor : frameBg,
-            backgroundImage: designData?.frameUseGradient ? frameColor : undefined,
+            border: `4px solid ${frameBorderColor}`,
+            background: frameBg,
+            backgroundImage: designData?.frameBgUseGradient ? frameBg : undefined,
             padding: designData?.frameStyle !== "none" ? "16px" : "0",
             borderRadius: designData?.frameStyle === "bubble" ? "24px" : 
                          designData?.frameStyle === "badge" ? "12px" :
@@ -536,6 +545,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             {/* QR Code Display with Frame */}
             <div className="relative">
               <div
+                ref={qrPreviewRef}
                 className="flex flex-col items-center justify-center shadow-xl relative"
                 style={getFrameStyles()}
               >
@@ -545,8 +555,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
                     <span 
                       className="text-sm font-semibold px-3 py-1 rounded block"
                       style={{
-                        color: designData?.frameUseGradient ? "#ffffff" : 
-                               designData?.frameColor || "#000000",
+                        color: designData?.frameTextColor || designData?.frameColor || "#000000",
                         background: designData?.frameBgTransparent ? "transparent" : 
                                     designData?.frameBgUseGradient ? 
                                       `linear-gradient(135deg, ${designData.frameBgColor1 || "#ffffff"}, ${designData.frameBgColor2 || "#ffffff"})` :
@@ -581,8 +590,68 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           </div>
         );
       } else {
-        // Show preloader when QR code is being generated
-        return <QRScanningPreloader />;
+        // Show branded placeholder when no QR code is available
+        return (
+          <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
+            <div className="text-center max-w-xs">
+              {/* QR Genie Logo/Brand */}
+              <div className="mb-6 flex justify-center">
+                <div className="relative">
+                  {/* QR Code Icon Style Logo */}
+                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="grid grid-cols-3 gap-1 p-2">
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-indigo-700 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                    </div>
+                  </div>
+                  {/* Sparkle effect */}
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                </div>
+              </div>
+              
+              {/* Brand Name */}
+              <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                QR Genie
+              </h3>
+              
+              {/* Tagline */}
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                Create beautiful, dynamic QR codes in seconds
+              </p>
+              
+              {/* Feature Highlights */}
+              <div className="space-y-2 text-xs text-slate-500">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                  <span>Customize colors & styles</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                  <span>Add logos & frames</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
+                  <span>Track scans & analytics</span>
+                </div>
+              </div>
+              
+              {/* CTA Hint */}
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-400 italic">
+                  Complete the form to see your QR code preview
+                </p>
+              </div>
+            </div>
+          </div>
+        );
       }
     }
 
@@ -1592,10 +1661,63 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
         );
       default:
         return (
-          <div className="h-full bg-white p-4 flex items-center justify-center">
-            <div className="text-center text-slate-400">
-              <FaQrcode className="text-4xl mx-auto mb-2" />
-              <p className="text-sm">Preview</p>
+          <div className="h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+            <div className="text-center max-w-xs">
+              {/* QR Genie Logo/Brand */}
+              <div className="mb-6 flex justify-center">
+                <div className="relative">
+                  {/* QR Code Icon Style Logo */}
+                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="grid grid-cols-3 gap-1 p-2">
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-indigo-700 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      <div className="w-3 h-3 bg-white rounded-sm"></div>
+                    </div>
+                  </div>
+                  {/* Sparkle effect */}
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                </div>
+              </div>
+              
+              {/* Brand Name */}
+              <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                QR Genie
+              </h3>
+              
+              {/* Tagline */}
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                Create beautiful, dynamic QR codes in seconds
+              </p>
+              
+              {/* Feature Highlights */}
+              <div className="space-y-2 text-xs text-slate-500">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                  <span>Customize colors & styles</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                  <span>Add logos & frames</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
+                  <span>Track scans & analytics</span>
+                </div>
+              </div>
+              
+              {/* CTA Hint */}
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-400 italic">
+                  Select a QR type to get started
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -1856,10 +1978,8 @@ export default function CreateQrPage() {
     // Frame options
     frameStyle: "none", // none, label, tag, bubble, badge
     frameText: "Scan me!",
-    frameColor: "#000000",
-    frameUseGradient: false,
-    frameColor1: "#000000",
-    frameColor2: "#000000",
+    frameTextColor: "#000000", // Color for frame text (single color, no gradient)
+    frameColor: "#000000", // Border color only (no gradient support)
     frameBgColor: "#ffffff",
     frameBgTransparent: false,
     frameBgUseGradient: false,
@@ -1909,11 +2029,13 @@ export default function CreateQrPage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [errorJSX, setErrorJSX] = useState(null);
   const [success, setSuccess] = useState(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState("png");
   const [downloadSize, setDownloadSize] = useState("default");
+  const qrPreviewRef = useRef(null);
 
   // Fetch folders on mount
   useEffect(() => {
@@ -2120,6 +2242,7 @@ export default function CreateQrPage() {
 
     setSaving(true);
     setError("");
+    setErrorJSX(null);
     setSuccess(null);
 
     try {
@@ -2144,7 +2267,26 @@ export default function CreateQrPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Could not create QR code.");
+        // Check if it's a QR limit error
+        if (res.status === 403 && data.limit !== undefined) {
+          setErrorJSX(
+            <div className="space-y-3 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+              <p className="font-semibold text-red-800">{data.error}</p>
+              {data.current >= data.limit && (
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
+                >
+                  Upgrade to Basic Package
+                </Link>
+              )}
+            </div>
+          );
+          setError(""); // Clear string error
+        } else {
+          setError(data.error || "Could not create QR code.");
+          setErrorJSX(null); // Clear JSX error
+        }
       } else {
         setSuccess({
           slug: data.slug,
@@ -2298,30 +2440,160 @@ export default function CreateQrPage() {
     updateDesignData({ ...designData, logo: null });
   };
 
-  // Download QR code handler - uses shared download utility for consistency
+  // Download QR code handler - captures preview DOM node directly for pixel-perfect output
   const handleDownloadQR = async () => {
-    if (!qrCodeUrl) return;
+    if (!qrCodeUrl || !qrPreviewRef.current) {
+      setError("QR code preview not available. Please wait for the preview to load.");
+      return;
+    }
 
-    // Map downloadSize to shared utility format
     const sizeMap = {
-      default: "default",
+      default: 1024,
       "512x512": 512,
-      "1024x1024": "default",
-      "2048x2048": "large",
-      "4096x4096": "xl",
+      "1024x1024": 1024,
+      "2048x2048": 2048,
+      "4096x4096": 4096,
     };
 
-    const size = sizeMap[downloadSize] || "default";
-    
-    // Map "eps" format to "svg" (closest format)
+    const targetSize = sizeMap[downloadSize] || 1024;
     const format = downloadFormat === "eps" ? "svg" : downloadFormat;
+    const filename = "qr-code";
 
     try {
-      await downloadDesignedQR(qrCodeUrl, designData, format, size, "qr-code");
+      setSaving(true);
+      setError("");
+
+      // Get the preview container element
+      const element = qrPreviewRef.current;
+      if (!element) {
+        throw new Error("QR preview element not found");
+      }
+
+      // Wait a bit to ensure all styles and images are fully loaded
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Ensure element is visible and in viewport
+      const rect = element.getBoundingClientRect();
+      const naturalWidth = rect.width;
+      const naturalHeight = rect.height;
+
+      if (naturalWidth === 0 || naturalHeight === 0) {
+        throw new Error("QR preview element has zero dimensions. Please ensure the preview is visible.");
+      }
+
+      // Scroll element into view if needed
+      if (rect.top < 0 || rect.left < 0 || rect.bottom > window.innerHeight || rect.right > window.innerWidth) {
+        element.scrollIntoView({ behavior: "instant", block: "center", inline: "center" });
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      // Calculate scale factor to reach target size while maintaining aspect ratio
+      // We'll capture at natural size with high pixelRatio, then scale if needed
+      const aspectRatio = naturalWidth / naturalHeight;
+      const scaleFactor = targetSize / Math.max(naturalWidth, naturalHeight);
+      
+      // Use high pixel ratio for retina quality (minimum 2x, up to 3x)
+      const pixelRatio = Math.min(Math.max(window.devicePixelRatio || 2, 2), 3);
+      
+      // Check if pattern background should be transparent
+      const isTransparentBg = designData?.patternBgTransparent || designData?.bgTransparent;
+      
+      // Base options for html-to-image
+      // Capture at natural size with high pixelRatio for quality
+      const baseOptions = {
+        quality: 1.0,
+        pixelRatio: pixelRatio * scaleFactor, // Scale up to target size
+        filter: (node) => {
+          // Exclude the "Scan to test" text if present
+          const text = node.textContent || "";
+          if (text.includes("Scan to test") || text.includes("Scan to test your QR code")) {
+            return false;
+          }
+          return true;
+        },
+        // Use canvas to ensure gradients and transparency are preserved
+        useCORS: true,
+        allowTaint: false,
+      };
+
+      let dataUrl;
+
+      // Handle different formats
+      if (format === "svg") {
+        // SVG format - preserves vector graphics and transparency
+        const svgOptions = {
+          ...baseOptions,
+          backgroundColor: isTransparentBg ? null : (designData?.patternBgColor || designData?.bgColor || "#ffffff"),
+        };
+        dataUrl = await toSvg(element, svgOptions);
+      } else if (format === "pdf") {
+        // PDF format - capture as high-quality PNG first, then convert to PDF
+        const pngOptions = {
+          ...baseOptions,
+          backgroundColor: null, // Always use transparent for PDF to preserve gradients
+        };
+        dataUrl = await toPng(element, pngOptions);
+        
+        // Get actual image dimensions from the captured data
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = dataUrl;
+        });
+        
+        const actualWidth = img.width;
+        const actualHeight = img.height;
+        
+        // Convert to mm for jsPDF (96 DPI standard)
+        const pdfWidth = (actualWidth / 96) * 25.4;
+        const pdfHeight = (actualHeight / 96) * 25.4;
+        
+        const pdf = new jsPDF({
+          orientation: actualWidth > actualHeight ? "landscape" : "portrait",
+          unit: "mm",
+          format: [pdfWidth, pdfHeight],
+          compress: true,
+        });
+
+        // Add image to PDF - use full dimensions with high quality
+        pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "SLOW");
+        
+        // Download PDF
+        pdf.save(`${filename}.pdf`);
+        setShowDownloadModal(false);
+        setSaving(false);
+        return;
+      } else if (format === "jpg" || format === "jpeg") {
+        // JPEG format - requires solid background (white if transparent)
+        const jpegOptions = {
+          ...baseOptions,
+          backgroundColor: isTransparentBg ? "#ffffff" : (designData?.patternBgColor || designData?.bgColor || "#ffffff"),
+        };
+        dataUrl = await toJpeg(element, jpegOptions);
+      } else {
+        // PNG format - supports transparency
+        const pngOptions = {
+          ...baseOptions,
+          backgroundColor: isTransparentBg ? null : (designData?.patternBgColor || designData?.bgColor || null),
+        };
+        dataUrl = await toPng(element, pngOptions);
+      }
+
+      // Download the file
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `${filename}.${format === "jpeg" ? "jpg" : format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
       setShowDownloadModal(false);
     } catch (error) {
       console.error("Download error:", error);
       setError("Failed to download QR code. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -2473,15 +2745,9 @@ export default function CreateQrPage() {
         {designData.frameStyle !== "none" && (
           <div className="space-y-4">
             <ColorPicker
-              label="Frame Color"
+              label="Frame Color (Border)"
               color={designData.frameColor}
-              color1={designData.frameColor1}
-              color2={designData.frameColor2}
-              useGradient={designData.frameUseGradient}
               onColorChange={(val) => updateDesignData({ ...designData, frameColor: val })}
-              onGradientToggle={(val) => updateDesignData({ ...designData, frameUseGradient: val })}
-              onColor1Change={(val) => updateDesignData({ ...designData, frameColor1: val })}
-              onColor2Change={(val) => updateDesignData({ ...designData, frameColor2: val })}
             />
             <ColorPicker
               label="Frame Background"
@@ -2496,6 +2762,11 @@ export default function CreateQrPage() {
               onColor1Change={(val) => updateDesignData({ ...designData, frameBgColor1: val })}
               onColor2Change={(val) => updateDesignData({ ...designData, frameBgColor2: val })}
               onTransparentToggle={(val) => updateDesignData({ ...designData, frameBgTransparent: val })}
+            />
+            <ColorPicker
+              label="Frame Text Color"
+              color={designData.frameTextColor || designData.frameColor}
+              onColorChange={(val) => updateDesignData({ ...designData, frameTextColor: val })}
             />
           </div>
         )}
@@ -2551,7 +2822,16 @@ export default function CreateQrPage() {
             transparent={designData.patternBgTransparent}
             showTransparent={true}
             onColorChange={(val) => updateDesignData({ ...designData, patternBgColor: val, bgColor: val })}
-            onGradientToggle={(val) => updateDesignData({ ...designData, patternBgUseGradient: val })}
+            onGradientToggle={(val) => {
+              const baseColor = designData.patternBgColor || designData.bgColor || "#ffffff";
+              updateDesignData({ 
+                ...designData, 
+                patternBgUseGradient: val,
+                // Initialize gradient colors from base color if not already set
+                patternBgColor1: designData.patternBgColor1 || baseColor,
+                patternBgColor2: designData.patternBgColor2 || baseColor,
+              });
+            }}
             onColor1Change={(val) => updateDesignData({ ...designData, patternBgColor1: val })}
             onColor2Change={(val) => updateDesignData({ ...designData, patternBgColor2: val })}
             onTransparentToggle={(val) => updateDesignData({ ...designData, patternBgTransparent: val, bgTransparent: val })}
@@ -2706,15 +2986,22 @@ export default function CreateQrPage() {
     return (
       <DashboardLayout title="Create QR Code" description="">
         <div className="max-w-xl mx-auto py-8 px-4 text-center">
-          <p className="text-gray-700 mb-6">
-            Your free trial has ended. Please choose a plan to continue creating QR codes.
-          </p>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-purple-700"
-          >
-            View Plans
-          </Link>
+          <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-bold text-red-900 mb-2">
+              {subscriptionStatus.status === "TRIAL_EXPIRED" ? "Free Trial Expired" : "Subscription Expired"}
+            </h3>
+            <p className="text-red-800 mb-4">
+              {subscriptionStatus.status === "TRIAL_EXPIRED" 
+                ? "Your 14-day free trial has expired. To reactivate your QR codes and continue creating new ones, subscribe to one of our plans."
+                : "Your subscription has expired. Please renew to continue creating QR codes."}
+            </p>
+            <Link
+              href="/dashboard/billing"
+              className="inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-6 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all"
+            >
+              Activate Account
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -2746,7 +3033,12 @@ export default function CreateQrPage() {
               {step === 3 && renderStep3()}
 
               {/* Error/Success Messages */}
-              {error && (
+              {errorJSX && (
+                <div className="mt-4">
+                  {errorJSX}
+                </div>
+              )}
+              {error && !errorJSX && (
                 <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
                   {error}
                 </div>
@@ -2771,7 +3063,7 @@ export default function CreateQrPage() {
                   <button
                     type="button"
                     onClick={() => setShowDownloadModal(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <FaDownload className="w-3 h-3" />
                     Download QR Code
@@ -2788,7 +3080,7 @@ export default function CreateQrPage() {
                 onClick={goBack}
                 disabled={step === 1}
 
-                className="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full sm:w-auto rounded-xl border-2 border-indigo-300 bg-white px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 Back
               </button>
@@ -2802,7 +3094,7 @@ export default function CreateQrPage() {
                     (step === 2 && !canContinueFromStep2())
                   }
 
-                  className="w-full sm:w-auto rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   Next →
                 </button>
@@ -2813,7 +3105,7 @@ export default function CreateQrPage() {
                     <button
                       type="button"
                       onClick={() => setShowDownloadModal(true)}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                     >
                       <FaDownload className="w-4 h-4" />
                       Download
@@ -2822,7 +3114,7 @@ export default function CreateQrPage() {
                   <button
                     type="submit"
                     disabled={saving || !canContinueFromStep2()}
-                    className="w-full sm:w-auto rounded-lg bg-indigo-600 px-4 sm:px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     {saving ? "Creating..." : "Create QR Code"}
                   </button>
@@ -2935,14 +3227,14 @@ export default function CreateQrPage() {
                 <button
                   type="button"
                   onClick={() => setShowDownloadModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-indigo-700 bg-white border-2 border-indigo-300 rounded-xl hover:bg-indigo-50 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadQR}
-                  className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <FaDownload className="w-4 h-4" />
                   Download
@@ -3031,6 +3323,7 @@ export default function CreateQrPage() {
                   designData={designData}
                   previewMode={previewMode}
                   qrCodeUrl={qrCodeUrl}
+                  qrPreviewRef={qrPreviewRef}
                 />
               </div>
             </div>

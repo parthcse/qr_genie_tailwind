@@ -173,56 +173,38 @@ const testimonials = [
 
 const pricingPlans = [
   {
-    name: "Free",
+    name: "Free Trial",
     price: "$0",
-    period: "forever",
+    period: "14 days",
     description: "Perfect for getting started",
     features: [
-      "Up to 10 QR codes",
-      "Basic analytics",
+      "14-day full access",
+      "Create up to 2 QR codes",
+      "All QR code types",
       "Dynamic link updates",
-      "Email support",
-      "Standard templates"
-    ],
-    cta: "Get Started Free",
-    popular: false,
-    color: "border-gray-200"
-  },
-  {
-    name: "Pro",
-    price: "$10",
-    period: "per month",
-    description: "For growing businesses",
-    features: [
-      "Unlimited QR codes",
-      "Advanced analytics",
-      "Custom branding",
-      "Priority support",
-      "Password protection",
-      "Custom domains",
-      "API access"
+      "Basic analytics",
+      "Email support"
     ],
     cta: "Start Free Trial",
-    popular: true,
-    color: "border-indigo-500"
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "pricing",
-    description: "For large organizations",
-    features: [
-      "Everything in Pro",
-      "Dedicated account manager",
-      "Custom integrations",
-      "SLA guarantee",
-      "Team collaboration",
-      "White-label options",
-      "24/7 phone support"
-    ],
-    cta: "Contact Sales",
     popular: false,
     color: "border-gray-200"
+  },
+  {
+    name: "Basic Package",
+    price: "$5",
+    period: "per month",
+    description: "For individuals and small businesses",
+    features: [
+      "Unlimited QR codes",
+      "All QR code types",
+      "Dynamic link updates",
+      "Basic analytics",
+      "Email support",
+      "Cancel anytime"
+    ],
+    cta: "Subscribe Now",
+    popular: true,
+    color: "border-indigo-500"
   }
 ];
 
@@ -272,9 +254,9 @@ const companies = [
   {
     name: "CloudSync",
     logo: "CS",
-    gradient: "from-teal-500 to-blue-500",
-    bgColor: "bg-teal-50",
-    textColor: "text-teal-700"
+    gradient: "from-indigo-500 to-purple-500",
+    bgColor: "bg-indigo-50",
+    textColor: "text-indigo-700"
   }
 ];
 
@@ -282,10 +264,30 @@ export default function Landing({ initialUser }) {
   // Use auth hook with initial server state
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   
   // Use server-provided user initially, then update with client state
   const currentUser = user || initialUser;
   const isAuthenticated = !!currentUser;
+
+  // Fetch subscription status for logged-in users
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      const fetchSubscriptionStatus = async () => {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' });
+          if (res.ok) {
+            const data = await res.json();
+            setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
+          }
+        } catch (error) {
+          console.error('Failed to fetch subscription status:', error);
+          setSubscriptionStatus({ status: "NONE", daysLeft: null });
+        }
+      };
+      fetchSubscriptionStatus();
+    }
+  }, [isAuthenticated, currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -319,7 +321,7 @@ export default function Landing({ initialUser }) {
         <div className="mt-8 max-w-2xl mx-auto sm:flex sm:justify-center">
           <Link
             href="/dashboard"
-            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
           >
             Go to Dashboard
             <FaArrowRight className="ml-2 h-4 w-4" />
@@ -332,15 +334,15 @@ export default function Landing({ initialUser }) {
     return (
       <div className="mt-8 max-w-2xl mx-auto sm:flex sm:justify-center gap-4">
         <Link
-          href="/auth/register"
-          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+          href={isAuthenticated ? "/dashboard" : "/auth/register"}
+          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          Get Started Free
+          {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
           <FaArrowRight className="ml-2 h-4 w-4" />
         </Link>
         <Link
           href="#how-it-works"
-          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-gray-300 text-base font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-indigo-300 text-base font-semibold rounded-xl text-indigo-700 bg-white hover:bg-indigo-50 hover:border-indigo-200 shadow-md hover:shadow-lg transition-all duration-200"
         >
           Learn More
         </Link>
@@ -392,8 +394,7 @@ export default function Landing({ initialUser }) {
         </Link>
         <Link
           href="/auth/register"
-
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
+          className="px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
         >
           Get Started
         </Link>
@@ -672,7 +673,7 @@ export default function Landing({ initialUser }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {pricingPlans.map((plan, index) => (
               <div
                 key={index}
@@ -706,16 +707,72 @@ export default function Landing({ initialUser }) {
                   ))}
                 </ul>
 
-                <Link
-                  href={plan.name === "Enterprise" ? "#contact" : "/auth/register"}
-                  className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
-                    plan.popular
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
-                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
+                {(() => {
+                  // Determine button behavior based on authentication and subscription status
+                  const isFreeTrialPlan = plan.name === "Free Trial";
+                  const isBasicPlan = plan.name === "Basic Package";
+                  
+                  let buttonHref = "/auth/register";
+                  let buttonText = plan.cta;
+                  let isDisabled = false;
+                  
+                  if (isAuthenticated) {
+                    if (isFreeTrialPlan) {
+                      // Free Trial plan for logged-in users
+                      if (subscriptionStatus?.status === "TRIAL_ACTIVE") {
+                        buttonHref = "/dashboard";
+                        buttonText = "Trial Active - Go to Dashboard";
+                        isDisabled = false;
+                      } else {
+                        // User is logged in but not on trial (expired or has Basic Package)
+                        buttonHref = "/dashboard";
+                        buttonText = "Go to Dashboard";
+                        isDisabled = false;
+                      }
+                    } else if (isBasicPlan) {
+                      // Basic Package plan for logged-in users
+                      if (subscriptionStatus?.status === "SUBSCRIPTION_ACTIVE" && currentUser?.subscriptionPlan === "BASIC") {
+                        buttonHref = "/dashboard/billing";
+                        buttonText = "Manage Plan";
+                        isDisabled = false;
+                      } else {
+                        // User needs to subscribe or upgrade
+                        buttonHref = "/dashboard/billing";
+                        buttonText = subscriptionStatus?.status === "TRIAL_EXPIRED" ? "Upgrade Now" : "Subscribe Now";
+                        isDisabled = false;
+                      }
+                    }
+                  }
+                  
+                  // For logged-out users, keep default behavior
+                  if (isDisabled) {
+                    return (
+                      <button
+                        disabled
+                        className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all duration-200 opacity-60 cursor-not-allowed ${
+                          plan.popular
+                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        {buttonText}
+                      </button>
+                    );
+                  }
+                  
+                  return (
+                    <Link
+                      href={buttonHref}
+                      className={`block w-full text-center py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                        plan.popular
+                          ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
+                          : "bg-gray-100 text-gray-900 hover:bg-indigo-50 hover:text-indigo-900"
+                      }`}
+                    >
+                      {buttonText}
+                    </Link>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -768,112 +825,124 @@ export default function Landing({ initialUser }) {
 
       </section>
 
-      {/* CTA Section - Only show if not authenticated */}
-      {!isAuthenticated && !loading && (
-        <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600">
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-6">
+      {/* ----- Single CTA strip in footer (no duplicate above) ----- */}
+      <footer className="relative overflow-hidden" role="contentinfo">
+        {/* 1. CTA Section — centered, clear hierarchy, single conversion focus */}
+        <section
+          className="relative bg-gradient-to-r from-indigo-600 to-purple-700 overflow-hidden"
+          aria-labelledby="footer-cta-heading"
+        >
+          {/* Subtle radial glow behind content for depth (no layout impact) */}
+          <div className="footer-cta-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
+            <h2 id="footer-cta-heading" className="text-white text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               Ready to get started?
             </h2>
-            <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of businesses using QR-Genie to create and manage dynamic QR codes. 
-              Start your free trial today - no credit card required.
+            <p className="text-indigo-100 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
+              Join thousands of businesses using QR-Genie to create and manage dynamic QR codes.
+              Start your 14-day free trial today – no credit card required.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Link
-                href="/auth/register"
-                className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl text-indigo-600 bg-white hover:bg-gray-50 shadow-lg hover:shadow-xl transition-all duration-200"
+                href={isAuthenticated ? "/dashboard" : "/auth/register"}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl border-2 border-white bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                Start Free Trial
-                <FaArrowRight className="ml-2 h-5 w-5" />
+                {isAuthenticated ? "Go to Dashboard" : "Start Free Trial"}
+                <FaArrowRight className="ml-2 h-4 w-4" />
               </Link>
-              <Link
+              <a
                 href="#pricing"
-                className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-base font-semibold rounded-xl text-white hover:bg-white/10 transition-all duration-200"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl border-2 border-indigo-300 text-gray-900 bg-white hover:bg-indigo-50 hover:border-indigo-200 shadow-md hover:shadow-lg transition-all duration-200"
               >
                 View Pricing
-              </Link>
+              </a>
             </div>
+            {/* Trust microcopy — reassurance below CTAs */}
+            <p className="mt-6 text-sm text-indigo-200/90">
+              No credit card required for trial · Secure & reliable
+            </p>
           </div>
         </section>
-      )}
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                  <FaQrcode className="h-5 w-5 text-white" />
-                </div>
-                <span className="ml-2 text-xl font-bold text-white">QR-Genie</span>
+        {/* 2. Main footer — 4 columns desktop, stacked mobile; strong contrast & hierarchy */}
+        <div className="bg-gray-950 text-gray-300 border-t border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 lg:gap-12">
+              {/* Brand column — logo, tagline, social (hover scale) */}
+              <div className="sm:col-span-2 md:col-span-1">
+                <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-indigo-500/30">
+                    <FaQrcode className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-white">QR-Genie</span>
+                </Link>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
+                  Empowering businesses with dynamic QR code solutions.
+                </p>
+                <nav className="mt-5 flex items-center gap-2" aria-label="Social links">
+                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="Twitter">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" /></svg>
+                  </a>
+                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="GitHub">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" /></svg>
+                  </a>
+                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="LinkedIn">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                  </a>
+                </nav>
               </div>
-              <p className="text-sm text-gray-400">
-                The modern way to create and manage dynamic QR codes.
+
+              {/* Product — heading hierarchy: text-gray-200 */}
+              <nav aria-labelledby="footer-product">
+                <h3 id="footer-product" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Product</h3>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Features</a></li>
+                  <li><a href="#pricing" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Pricing</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Integrations</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Changelog</a></li>
+                </ul>
+              </nav>
+
+              {/* Company */}
+              <nav aria-labelledby="footer-company">
+                <h3 id="footer-company" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Company</h3>
+                <ul className="space-y-2">
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">About</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Blog</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Careers</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Contact</a></li>
+                </ul>
+              </nav>
+
+              {/* Resources (was Legal & support) — Documentation, Help, Privacy, Terms */}
+              <nav aria-labelledby="footer-resources">
+                <h3 id="footer-resources" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Resources</h3>
+                <ul className="space-y-2">
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Documentation</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Help Center</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Privacy Policy</a></li>
+                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Terms of Service</a></li>
+                </ul>
+              </nav>
+            </div>
+
+            {/* 3. Bottom bar — divider, copyright, micro-copy */}
+            <div className="mt-12 sm:mt-14 pt-8 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-500 order-2 sm:order-1">
+                &copy; {new Date().getFullYear()} QR-Genie. All rights reserved.
               </p>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-400">
-              &copy; {new Date().getFullYear()} QR-Genie. All rights reserved.
-            </p>
-            <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">Twitter</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">GitHub</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <span className="sr-only">LinkedIn</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                </svg>
-              </a>
+              <p className="text-sm text-gray-400 order-1 sm:order-2">
+                Trusted by businesses worldwide.
+              </p>
             </div>
           </div>
         </div>
       </footer>
 
       <style jsx>{`
+        .footer-cta-glow {
+          background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.25) 0%, transparent 65%);
+        }
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

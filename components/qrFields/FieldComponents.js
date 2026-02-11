@@ -939,7 +939,7 @@ export function RepeaterField({ field, value, onChange }) {
       <button
         type="button"
         onClick={addItem}
-        className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg transition-all duration-200"
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
       >
         <FaPlus className="text-sm" />
         {isSocialRepeater ? "Add Social Network" : "Add Link"}

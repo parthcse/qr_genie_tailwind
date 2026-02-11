@@ -45,20 +45,30 @@ export const createQRConfig = (size, value, designData) => {
   }
 
   // Determine background color (with gradient and transparent support)
-  let backgroundColor = designData?.patternBgColor || designData?.bgColor || "#ffffff";
-  if (designData?.patternBgTransparent || designData?.bgTransparent) {
-    backgroundColor = "transparent";
-  } else if (designData?.patternBgUseGradient && designData.patternBgColor1 && designData.patternBgColor2) {
-    backgroundColor = {
-      type: designData.patternBgGradientType === "radial" ? "radial-gradient" : "linear-gradient",
-      rotation: designData.patternBgGradientType === "radial" ? 0 :
-               designData.patternBgGradientType === "vertical" ? 0 :
-               designData.patternBgGradientType === "horizontal" ? 90 : 0,
-      colorStops: [
-        { offset: 0, color: designData.patternBgColor1 },
-        { offset: 1, color: designData.patternBgColor2 },
-      ],
-    };
+  const isTransparentBg = designData?.patternBgTransparent || designData?.bgTransparent;
+  let backgroundColor = null;
+  
+  if (!isTransparentBg) {
+    const baseColor = designData?.patternBgColor || designData?.bgColor || "#ffffff";
+    
+    if (designData?.patternBgUseGradient) {
+      // When gradient is enabled, ensure both colors are set (use base color as fallback)
+      const color1 = designData.patternBgColor1 || designData.bgColor1 || baseColor;
+      const color2 = designData.patternBgColor2 || designData.bgColor2 || baseColor;
+      
+      backgroundColor = {
+        type: designData.patternBgGradientType === "radial" ? "radial-gradient" : "linear-gradient",
+        rotation: designData.patternBgGradientType === "radial" ? 0 :
+                 designData.patternBgGradientType === "vertical" ? 0 :
+                 designData.patternBgGradientType === "horizontal" ? 90 : 0,
+        colorStops: [
+          { offset: 0, color: color1 },
+          { offset: 1, color: color2 },
+        ],
+      };
+    } else {
+      backgroundColor = baseColor;
+    }
   }
 
   // Determine corner frame color
@@ -81,9 +91,6 @@ export const createQRConfig = (size, value, designData) => {
       type: patternTypeMap[designData?.patternStyle] || "square",
       color: patternColor,
     },
-    backgroundOptions: {
-      color: backgroundColor,
-    },
     cornersSquareOptions: {
       type: cornerTypeMap[designData?.cornerFrameStyle] || "square",
       color: cornerFrameColor,
@@ -93,6 +100,14 @@ export const createQRConfig = (size, value, designData) => {
       color: cornerDotColor,
     },
   };
+
+  // Only include backgroundOptions if background is not transparent
+  // When transparent, omit backgroundOptions entirely to let SVG handle transparency correctly
+  if (!isTransparentBg && backgroundColor !== null) {
+    qrConfig.backgroundOptions = {
+      color: backgroundColor,
+    };
+  }
 
   // Only add imageOptions and image if logo exists
   if (designData?.logo) {
@@ -206,10 +221,10 @@ export default function DesignedQRCode({
         return {};
       }
       
-      const frameColor = parsedDesignData?.frameUseGradient
-        ? `linear-gradient(135deg, ${parsedDesignData.frameColor1 || "#000000"}, ${parsedDesignData.frameColor2 || "#000000"})`
-        : parsedDesignData?.frameColor || "#000000";
+      // Frame Color always controls border color only (no gradient support)
+      const frameBorderColor = parsedDesignData?.frameColor || "#000000";
       
+      // Frame Background controls the background inside the frame
       const frameBg = parsedDesignData?.frameBgTransparent
         ? "transparent"
         : parsedDesignData?.frameBgUseGradient
@@ -217,9 +232,9 @@ export default function DesignedQRCode({
           : parsedDesignData?.frameBgColor || "#ffffff";
       
       return {
-        border: `4px solid ${parsedDesignData?.frameUseGradient ? "transparent" : frameColor}`,
-        background: parsedDesignData?.frameUseGradient ? frameColor : frameBg,
-        backgroundImage: parsedDesignData?.frameUseGradient ? frameColor : undefined,
+        border: `4px solid ${frameBorderColor}`,
+        background: frameBg,
+        backgroundImage: parsedDesignData?.frameBgUseGradient ? frameBg : undefined,
         padding: "16px",
         borderRadius: parsedDesignData?.frameStyle === "bubble" ? "24px" : 
                      parsedDesignData?.frameStyle === "badge" ? "12px" :
@@ -243,14 +258,7 @@ export default function DesignedQRCode({
                 <span 
                   className="text-sm font-semibold px-3 py-1 rounded block text-center"
                   style={{
-                    color: parsedDesignData?.frameUseGradient ? "#ffffff" : 
-                           (parsedDesignData.frameStyle === "label" && 
-                            (parsedDesignData?.frameBgColor === "#000000" || 
-                             parsedDesignData?.frameBgColor?.toLowerCase() === "black" ||
-                             (parsedDesignData?.frameBgColor?.startsWith("#") && 
-                              parseInt(parsedDesignData.frameBgColor.slice(1, 3), 16) < 80)))
-                           ? "#ffffff"
-                           : parsedDesignData?.frameColor || "#000000",
+                    color: parsedDesignData?.frameTextColor || parsedDesignData?.frameColor || "#000000",
                     background: parsedDesignData?.frameBgTransparent ? "transparent" : 
                                 parsedDesignData?.frameBgUseGradient ? 
                                   `linear-gradient(135deg, ${parsedDesignData.frameBgColor1 || "#ffffff"}, ${parsedDesignData.frameBgColor2 || "#ffffff"})` :
@@ -327,10 +335,10 @@ export default function DesignedQRCode({
       return {};
     }
     
-    const frameColor = parsedDesignData?.frameUseGradient
-      ? `linear-gradient(135deg, ${parsedDesignData.frameColor1 || "#000000"}, ${parsedDesignData.frameColor2 || "#000000"})`
-      : parsedDesignData?.frameColor || "#000000";
+    // Frame Color always controls border color only (no gradient support)
+    const frameBorderColor = parsedDesignData?.frameColor || "#000000";
     
+    // Frame Background controls the background inside the frame
     const frameBg = parsedDesignData?.frameBgTransparent
       ? "transparent"
       : parsedDesignData?.frameBgUseGradient
@@ -338,9 +346,9 @@ export default function DesignedQRCode({
         : parsedDesignData?.frameBgColor || "#ffffff";
     
     return {
-      border: `4px solid ${parsedDesignData?.frameUseGradient ? "transparent" : frameColor}`,
-      background: parsedDesignData?.frameUseGradient ? frameColor : frameBg,
-      backgroundImage: parsedDesignData?.frameUseGradient ? frameColor : undefined,
+      border: `4px solid ${frameBorderColor}`,
+      background: frameBg,
+      backgroundImage: parsedDesignData?.frameBgUseGradient ? frameBg : undefined,
       padding: "16px",
       borderRadius: parsedDesignData?.frameStyle === "bubble" ? "24px" : 
                    parsedDesignData?.frameStyle === "badge" ? "12px" :
@@ -364,14 +372,7 @@ export default function DesignedQRCode({
               <span 
                 className="text-sm font-semibold px-3 py-1 rounded block text-center"
                 style={{
-                  color: parsedDesignData?.frameUseGradient ? "#ffffff" : 
-                         (parsedDesignData.frameStyle === "label" && 
-                          (parsedDesignData?.frameBgColor === "#000000" || 
-                           parsedDesignData?.frameBgColor?.toLowerCase() === "black" ||
-                           (parsedDesignData?.frameBgColor?.startsWith("#") && 
-                            parseInt(parsedDesignData.frameBgColor.slice(1, 3), 16) < 80)))
-                         ? "#ffffff"
-                         : parsedDesignData?.frameColor || "#000000",
+                  color: parsedDesignData?.frameTextColor || parsedDesignData?.frameColor || "#000000",
                   background: parsedDesignData?.frameBgTransparent ? "transparent" : 
                               parsedDesignData?.frameBgUseGradient ? 
                                 `linear-gradient(135deg, ${parsedDesignData.frameBgColor1 || "#ffffff"}, ${parsedDesignData.frameBgColor2 || "#ffffff"})` :

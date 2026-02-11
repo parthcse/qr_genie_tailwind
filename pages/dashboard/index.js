@@ -96,6 +96,11 @@ export default function Dashboard() {
   const [savingName, setSavingName] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
+  // Helper: is user subscription or trial expired (no active access)?
+  const hasExpiredAccess =
+    subscriptionStatus &&
+    !["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"].includes(subscriptionStatus.status);
+
   // QR Type icon mapping
   const getTypeIcon = (type) => {
     const iconMap = {
@@ -175,6 +180,13 @@ export default function Dashboard() {
     };
     fetchMe();
   }, []);
+
+  // When access is expired, always show all QR codes (do not hide them as "Inactive" only)
+  useEffect(() => {
+    if (hasExpiredAccess && statusFilter === "Active") {
+      setStatusFilter("All");
+    }
+  }, [hasExpiredAccess, statusFilter]);
 
   // Sync selectedFolderId with URL query and update selectedFolder
   useEffect(() => {
@@ -280,12 +292,32 @@ export default function Dashboard() {
     const firstSelectedId = Array.from(selectedCodes)[0];
     const code = codes.find(c => c.id === firstSelectedId);
     if (code) {
+      const isExpiredCode =
+        code.isActive === false &&
+        (code.deactivatedReason === "TRIAL_EXPIRED" ||
+          code.deactivatedReason === "SUBSCRIPTION_EXPIRED");
+      if (isExpiredCode || hasExpiredAccess) {
+        alert(
+          "Your trial or subscription has expired. Renew your plan to download QR codes again."
+        );
+        return;
+      }
       setDownloadQrCode(code);
     }
   };
 
   const handleDownloadClick = (code, e) => {
     e.stopPropagation();
+    const isExpiredCode =
+      code.isActive === false &&
+      (code.deactivatedReason === "TRIAL_EXPIRED" ||
+        code.deactivatedReason === "SUBSCRIPTION_EXPIRED");
+    if (isExpiredCode || hasExpiredAccess) {
+      alert(
+        "Your trial or subscription has expired. Renew your plan to download QR codes again."
+      );
+      return;
+    }
     setDownloadQrCode(code);
   };
 
@@ -499,6 +531,17 @@ export default function Dashboard() {
       title="" 
       description=""
     >
+      {/* Subscription expired notice */}
+      {hasExpiredAccess && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-800 shadow-sm">
+          <p className="font-semibold mb-0.5">Subscription expired</p>
+          <p>
+            All your existing QR codes remain visible for reference, but scanning and downloads are
+            paused until you renew your plan.
+          </p>
+        </div>
+      )}
+
       {/* Folder Header - Show when folder is selected */}
       {selectedFolder && (
         <FolderHeader
@@ -551,18 +594,25 @@ export default function Dashboard() {
       <div className="w-full max-w-full overflow-hidden">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">My QR Codes</h2>
 
-        {/* Trial expired banner */}
-        {subscriptionStatus?.status === "TRIAL_EXPIRED" && codes.some((c) => c.isActive === false) && (
-          <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="text-sm text-amber-800">
-              Your free trial has ended. Your QR codes have been deactivated.
-            </p>
-            <Link
-              href="/dashboard/billing"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-purple-700 whitespace-nowrap"
-            >
-              Reactivate with a plan
-            </Link>
+        {/* Trial expired banner - Prominent red banner similar to QR-Code.io */}
+        {subscriptionStatus?.status === "TRIAL_EXPIRED" && (
+          <div className="mb-6 p-5 rounded-xl bg-red-50 border-2 border-red-300 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-900 mb-1">
+                  Free Trial Expired
+                </h3>
+                <p className="text-sm text-red-800">
+                  Your 14-day free trial has expired. To reactivate your QR codes you must subscribe to one of our plans.
+                </p>
+              </div>
+              <Link
+                href="/dashboard/billing"
+                className="inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-6 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+              >
+                Activate Account
+              </Link>
+            </div>
           </div>
         )}
         
@@ -710,11 +760,17 @@ export default function Dashboard() {
                   const scanCount = code.scanCount || 0;
                   
                   const isInactive = code.isActive === false;
+                  const isExpiredBySubscription =
+                    isInactive &&
+                    (code.deactivatedReason === "TRIAL_EXPIRED" ||
+                      code.deactivatedReason === "SUBSCRIPTION_EXPIRED");
                   return (
                     <div
                       key={code.id}
                       className={`px-4 sm:px-6 py-4 transition-colors border-b border-gray-100 last:border-b-0 ${
-                        isInactive ? "bg-gray-100 opacity-90" : "hover:bg-gray-50"
+                        isInactive
+                          ? "bg-gray-100 opacity-80"
+                          : "hover:bg-gray-50"
                       } ${isSelected ? "bg-indigo-50 border-l-4 border-l-indigo-600" : ""}`}
                     >
                       <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
@@ -755,14 +811,23 @@ export default function Dashboard() {
                             <TypeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
                             <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase">{code.type || "Website"}</span>
                             {isInactive && (
-                              <span className="text-[10px] sm:text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Inactive</span>
+                              <span
+                                className="text-[10px] sm:text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded"
+                                title={
+                                  isExpiredBySubscription
+                                    ? "Subscription or trial expired. Renew to reactivate this QR code."
+                                    : "This QR code has been manually paused."
+                                }
+                              >
+                                {isExpiredBySubscription ? "Expired" : "Inactive"}
+                              </span>
                             )}
                           </div>
                           
                           {/* QR Name with Edit */}
-                          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                          <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
                             {editingQrId === code.id ? (
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
                                 <input
                                   type="text"
                                   value={editingQrName}
@@ -775,7 +840,7 @@ export default function Dashboard() {
                                       setEditingQrName("");
                                     }
                                   }}
-                                  className="flex-1 min-w-0 px-2 py-1 text-sm sm:text-base font-semibold text-gray-900 border border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                  className="px-2 py-1 text-sm sm:text-base font-semibold text-gray-900 border border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                   autoFocus
                                   disabled={savingName}
                                   onClick={(e) => e.stopPropagation()}
@@ -808,7 +873,7 @@ export default function Dashboard() {
                     </div>
                             ) : (
                               <>
-                                <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                                   {code.name || `QR Code #${code.id.slice(0, 8)}`}
                                 </h3>
                                 <button
@@ -825,7 +890,7 @@ export default function Dashboard() {
                                 </button>
                               </>
                             )}
-                      </div>
+                          </div>
                           
                           {/* Creation Date */}
                           <div className="flex items-center gap-1 sm:gap-1.5 mb-2 sm:mb-3 text-[10px] sm:text-xs text-gray-500">
@@ -845,25 +910,16 @@ export default function Dashboard() {
                             {code.type !== "wifi" && (
                               <div className="flex items-start sm:items-center gap-1 sm:gap-1.5 min-w-0">
                                 <FaGlobe className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0 mt-0.5 sm:mt-0" />
-                                <div className="flex-1 min-w-0 flex items-center gap-1">
-                                  <a
-                                    href={destinationUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:text-indigo-700 truncate flex-1 min-w-0"
-                                    onClick={(e) => e.stopPropagation()}
-                                    title={destinationUrl}
-                                  >
-                                    <span className="truncate block">{destinationUrl.length > 25 ? `${destinationUrl.substring(0, 25)}...` : destinationUrl}</span>
-                      </a>
-                      <button
-                        type="button"
-                                    className="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                                    title="Edit destination"
-                                  >
-                                    <FaEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                  </button>
-                                </div>
+                                <a
+                                  href={destinationUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-600 hover:text-indigo-700 truncate flex-1 min-w-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={destinationUrl}
+                                >
+                                  <span className="truncate block">{destinationUrl.length > 25 ? `${destinationUrl.substring(0, 25)}...` : destinationUrl}</span>
+                                </a>
                               </div>
                             )}
                             
@@ -880,15 +936,25 @@ export default function Dashboard() {
                           <button
                             type="button"
                             onClick={(e) => handleDownloadClick(code, e)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-indigo-600 text-indigo-600 text-xs font-medium rounded-lg hover:bg-indigo-50 hover:border-indigo-700 transition-colors whitespace-nowrap"
+                            disabled={isExpiredBySubscription || hasExpiredAccess}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                              isExpiredBySubscription || hasExpiredAccess
+                                ? "border-gray-300 text-gray-400 cursor-not-allowed opacity-60"
+                                : "border-indigo-600 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-700"
+                            }`}
+                            title={
+                              isExpiredBySubscription || hasExpiredAccess
+                                ? "Subscription expired. Renew to download this QR code."
+                                : "Download"
+                            }
                           >
                             <FaDownload className="w-3 h-3" />
                             Download
                           </button>
                           {!isStaticQR && (
                             <Link
-                              href={`/dashboard/analytics?qr=${code.slug}`}
-                              className="inline-flex items-center px-3 py-1.5 bg-white border-2 border-indigo-600 text-indigo-600 text-xs font-medium rounded-lg hover:bg-indigo-50 hover:border-indigo-700 transition-colors whitespace-nowrap"
+                              href={`/dashboard/analytics?qrId=${code.id}`}
+                              className="inline-flex items-center px-3 py-1.5 bg-white border-2 border-indigo-600 text-indigo-600 text-xs font-medium rounded-xl hover:bg-indigo-50 hover:border-indigo-700 transition-colors whitespace-nowrap"
                               onClick={(e) => e.stopPropagation()}
                             >
                               Detail
@@ -901,7 +967,7 @@ export default function Dashboard() {
                                 e.stopPropagation();
                                 setOpenDropdown(openDropdown === code.id ? null : code.id);
                               }}
-                              className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                              className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                               title="More options"
                             >
                               <FaEllipsisH className="w-4 h-4" />
@@ -1034,7 +1100,7 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <FaPause className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Pause</span>
@@ -1042,7 +1108,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={handleBulkDownload}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <FaDownload className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Download</span>
@@ -1057,7 +1123,7 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <FaPaperPlane className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Send to</span>
@@ -1191,7 +1257,7 @@ export default function Dashboard() {
                 <button
                   type="submit"
                   disabled={creatingFolder || !newFolderName.trim()}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   {creatingFolder ? "Creating..." : "Create Folder"}
                 </button>

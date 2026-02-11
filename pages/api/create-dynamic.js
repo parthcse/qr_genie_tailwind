@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 import QRCode from "qrcode";
 import { getUserFromRequest } from "../../lib/auth";
 
-import { canCreateQR } from "../../lib/subscription";
+import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "../../lib/subscription";
 function normalizeUrl(u) {
   if (!u) return "";
   const trimmed = u.trim();
@@ -29,9 +29,25 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
+  // Check if user can create QR codes
   if (!canCreateQR(user)) {
+    const { status } = getUserSubscriptionStatus(user);
     return res.status(403).json({
-      error: "Trial expired. Please upgrade your plan.",
+      error: status === "TRIAL_EXPIRED" 
+        ? "Your 14-day free trial has expired. Please subscribe to a plan to continue creating QR codes."
+        : "Your subscription has expired. Please renew to continue creating QR codes.",
+    });
+  }
+
+  // Check QR code limit (2 during trial, unlimited for paid plans)
+  const qrCount = await prisma.qRCode.count({ where: { userId: user.id } });
+  const limitCheck = await checkQRCodeLimit(user, qrCount);
+  
+  if (!limitCheck.canCreate) {
+    return res.status(403).json({
+      error: limitCheck.reason,
+      limit: limitCheck.limit,
+      current: limitCheck.current,
     });
   }
   const {

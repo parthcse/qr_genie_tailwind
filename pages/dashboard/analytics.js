@@ -15,8 +15,9 @@ export async function getServerSideProps(context) {
       },
     };
   }
+  const initialQrId = (context.query.qrId && String(context.query.qrId).trim()) || null;
   return {
-    props: {},
+    props: { initialQrId },
   };
 }
 import {
@@ -37,9 +38,9 @@ import {
 
 const COLORS = ["#0f172a", "#38bdf8", "#22c55e", "#f97316", "#e11d48", "#8b5cf6", "#ec4899", "#14b8a6"];
 
-export default function AnalyticsPage() {
+export default function AnalyticsPage({ initialQrId }) {
   const [days, setDays] = useState(7);
-  const [selectedQrId, setSelectedQrId] = useState("");
+  const [selectedQrId, setSelectedQrId] = useState(initialQrId || "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);

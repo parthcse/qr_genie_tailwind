@@ -12,8 +12,9 @@ const useFormState = (initialState) => {
   const [submitError, setSubmitError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setState(prev => ({ ...prev, [name]: value.trim() }));
+    const { name, value, type, checked } = e.target;
+    const valueToSet = type === 'checkbox' ? checked : value.trim();
+    setState(prev => ({ ...prev, [name]: valueToSet }));
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -87,7 +88,8 @@ export default function Register() {
     email: '', 
     name: '', 
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    terms: false
   });
 
   // Validate form fields
@@ -285,6 +287,7 @@ export default function Register() {
     state.password && 
     state.password === state.confirmPassword && 
     strength >= 3 &&
+    state.terms === true &&
     !isSubmitting;
 
   return (
@@ -336,7 +339,7 @@ export default function Register() {
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
+                Full Name <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <div className="mt-1 relative">
                 <input
@@ -352,6 +355,7 @@ export default function Register() {
                     errors.name ? 'border-red-300' : 'border-gray-300'
 
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  aria-required="true"
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "name-error" : undefined}
                 />
@@ -365,7 +369,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Email address <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <div className="mt-1 relative">
                 <input
@@ -381,6 +385,7 @@ export default function Register() {
                     errors.email ? 'border-red-300' : 'border-gray-300'
 
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  aria-required="true"
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                 />
@@ -394,7 +399,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Password <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <div className="mt-1 relative">
                 <input
@@ -410,6 +415,7 @@ export default function Register() {
                     errors.password ? 'border-red-300' : 'border-gray-300'
 
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
+                  aria-required="true"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? "password-error" : undefined}
                 />
@@ -471,7 +477,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
+                Confirm Password <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <div className="mt-1 relative">
                 <input
@@ -487,6 +493,7 @@ export default function Register() {
                     errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
 
                   } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
+                  aria-required="true"
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
                 />
@@ -516,7 +523,11 @@ export default function Register() {
                 name="terms"
                 type="checkbox"
                 required
+                checked={state.terms === true}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                aria-required="true"
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
                 I agree to the{' '}

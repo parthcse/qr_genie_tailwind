@@ -17,13 +17,35 @@ model User {
   trialEndsAt           DateTime?
   resetToken            String?
   resetTokenExpires     DateTime?
-  subscriptionPlan      String    @default("EXPIRED") // TRIAL | MONTHLY | QUARTERLY | ANNUAL | EXPIRED
+  subscriptionPlan      String    @default("EXPIRED") // TRIAL | BASIC | EXPIRED
   trialStartedAt        DateTime?
   subscriptionStartedAt DateTime?
   subscriptionEndsAt    DateTime?
+  
+  // General Information (Account)
+  telephone             String?
+  company               String?
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
+  country               String?
+  language              String?  @default("English")
+  
+  // Billing Information
+  billingName           String?
+  billingCompany        String?
+  billingAddress        String?
+  billingCity           String?
+  billingState          String?
+  billingZipCode        String?
+  billingCountry        String?
+  taxId                 String?
+  
   qrCodes               QRCode[]
   folders               Folder[]
   createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model QRCode {

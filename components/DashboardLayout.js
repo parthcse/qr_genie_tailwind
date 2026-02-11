@@ -18,7 +18,7 @@ const mobileNavItems = [
   { href: "/faqs", label: "FAQs" },
 ];
 
-const PLAN_LABELS = { MONTHLY: "Monthly", QUARTERLY: "Quarterly", ANNUAL: "Annual" };
+// Only Basic Package plan available
 
 export default function DashboardLayout({ children, title, description }) {
   const router = useRouter();
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children, title, description }) {
       <header className="sm:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex-shrink-0 flex items-center group">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-md">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
               <FaQrcode className="h-5 w-5 text-white" />
             </div>
             <span className="ml-2 text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -143,10 +143,10 @@ export default function DashboardLayout({ children, title, description }) {
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={[
-                      "flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "flex items-center rounded-xl px-3 py-2.5 text-sm font-medium",
                       active
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                        : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700",
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white shadow-md cursor-default hover:from-indigo-600 hover:to-purple-600"
+                        : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200",
                     ].join(" ")}
                   >
                     <span className={active ? "font-semibold" : ""}>
@@ -163,7 +163,7 @@ export default function DashboardLayout({ children, title, description }) {
                 {subscriptionStatus.status === "TRIAL_ACTIVE" && (
                   <>
                     <p className="text-sm font-medium text-gray-900">Free trial – {subscriptionStatus.daysLeft} {subscriptionStatus.daysLeft === 1 ? "day" : "days"} left</p>
-                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold">Upgrade</Link>
+                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl">Upgrade</Link>
                   </>
                 )}
                 {(subscriptionStatus.status === "TRIAL_EXPIRED" || subscriptionStatus.status === "SUBSCRIPTION_EXPIRED" || subscriptionStatus.status === "NONE") && (
@@ -171,13 +171,13 @@ export default function DashboardLayout({ children, title, description }) {
                     <p className="text-sm font-medium text-gray-900">
                       {subscriptionStatus.status === "TRIAL_EXPIRED" ? "Trial expired – upgrade to reactivate" : subscriptionStatus.status === "SUBSCRIPTION_EXPIRED" ? "Subscription expired" : "No active plan"}
                     </p>
-                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold">Upgrade</Link>
+                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl">Upgrade</Link>
                   </>
                 )}
-                {subscriptionStatus.status === "SUBSCRIPTION_ACTIVE" && ["MONTHLY", "QUARTERLY", "ANNUAL"].includes(user.subscriptionPlan) && (
+                {subscriptionStatus.status === "SUBSCRIPTION_ACTIVE" && user.subscriptionPlan === "BASIC" && (
                   <>
-                    <p className="text-sm font-medium text-gray-900">Plan: {PLAN_LABELS[user.subscriptionPlan] || user.subscriptionPlan}</p>
-                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 rounded-lg border-2 border-indigo-600 text-indigo-600 text-sm font-semibold">Upgrade</Link>
+                    <p className="text-sm font-medium text-gray-900">Plan: Basic Package</p>
+                    <Link href="/dashboard/billing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 text-sm font-semibold hover:bg-indigo-50 transition-all duration-200">Manage Plan</Link>
                   </>
                 )}
               </div>
@@ -229,10 +229,10 @@ export default function DashboardLayout({ children, title, description }) {
                   key={item.href}
                   href={item.href}
                   className={[
-                    "flex items-center rounded-xl px-2 md:px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all duration-200",
+                    "flex items-center rounded-xl px-2 md:px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium",
                     active
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700",
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white shadow-md cursor-default hover:from-indigo-600 hover:to-purple-600"
+                      : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200",
                   ].join(" ")}
                 >
                   <span className={active ? "font-semibold" : ""}>
@@ -249,7 +249,7 @@ export default function DashboardLayout({ children, title, description }) {
                 {subscriptionStatus.status === "TRIAL_ACTIVE" && (
                   <>
                     <p className="text-xs md:text-sm font-medium text-gray-900">Free trial – {subscriptionStatus.daysLeft} {subscriptionStatus.daysLeft === 1 ? "day" : "days"} left</p>
-                    <Link href="/dashboard/billing" className="block w-full text-center py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs md:text-sm font-semibold">Upgrade</Link>
+                    <Link href="/dashboard/billing" className="block w-full text-center py-2.5 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl text-xs md:text-sm">Upgrade</Link>
                   </>
                 )}
                 {(subscriptionStatus.status === "TRIAL_EXPIRED" || subscriptionStatus.status === "SUBSCRIPTION_EXPIRED" || subscriptionStatus.status === "NONE") && (
@@ -257,13 +257,13 @@ export default function DashboardLayout({ children, title, description }) {
                     <p className="text-xs md:text-sm font-medium text-gray-900">
                       {subscriptionStatus.status === "TRIAL_EXPIRED" ? "Trial expired – upgrade to reactivate" : subscriptionStatus.status === "SUBSCRIPTION_EXPIRED" ? "Subscription expired" : "No active plan"}
                     </p>
-                    <Link href="/dashboard/billing" className="block w-full text-center py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs md:text-sm font-semibold">Upgrade</Link>
+                    <Link href="/dashboard/billing" className="block w-full text-center py-2.5 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl text-xs md:text-sm">Upgrade</Link>
                   </>
                 )}
-                {subscriptionStatus.status === "SUBSCRIPTION_ACTIVE" && ["MONTHLY", "QUARTERLY", "ANNUAL"].includes(user.subscriptionPlan) && (
+                {subscriptionStatus.status === "SUBSCRIPTION_ACTIVE" && user.subscriptionPlan === "BASIC" && (
                   <>
-                    <p className="text-xs md:text-sm font-medium text-gray-900">Plan: {PLAN_LABELS[user.subscriptionPlan] || user.subscriptionPlan}</p>
-                    <Link href="/dashboard/billing" className="block w-full text-center py-1.5 rounded-lg border-2 border-indigo-600 text-indigo-600 text-xs md:text-sm font-semibold">Upgrade</Link>
+                    <p className="text-xs md:text-sm font-medium text-gray-900">Plan: Basic Package</p>
+                    <Link href="/dashboard/billing" className="block w-full text-center py-2.5 rounded-xl border-2 border-indigo-600 text-indigo-600 text-xs md:text-sm font-semibold hover:bg-indigo-50 transition-all duration-200">Manage Plan</Link>
                   </>
                 )}
               </div>

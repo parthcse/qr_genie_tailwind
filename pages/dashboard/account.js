@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
-import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle, FaBuilding } from "react-icons/fa";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
@@ -27,8 +27,13 @@ export async function getServerSideProps(context) {
 }
 
 export default function AccountPage({ user: initialUser }) {
-  const [activeTab, setActiveTab] = useState('general');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState(router.query.tab === "billing" ? "billing" : "general");
   const [user, setUser] = useState(initialUser);
+
+  useEffect(() => {
+    if (router.query.tab === "billing") setActiveTab("billing");
+  }, [router.query.tab]);
   const [loading, setLoading] = useState(false);
   
   // Personal Information Form
@@ -36,7 +41,13 @@ export default function AccountPage({ user: initialUser }) {
     firstName: (user?.name || '').split(' ')[0] || '',
     lastName: (user?.name || '').split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
-    telephone: '',
+    telephone: user?.telephone || '',
+    company: user?.company || '',
+    address: user?.address || '',
+    city: user?.city || '',
+    state: user?.state || '',
+    zipCode: user?.zipCode || '',
+    country: user?.country || '',
   });
   
   // Password Form
@@ -48,12 +59,25 @@ export default function AccountPage({ user: initialUser }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Language
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState(user?.language || 'English');
+  
+  // Billing Information Form
+  const [billingInfo, setBillingInfo] = useState({
+    billingName: user?.billingName || '',
+    billingCompany: user?.billingCompany || '',
+    billingAddress: user?.billingAddress || '',
+    billingCity: user?.billingCity || '',
+    billingState: user?.billingState || '',
+    billingZipCode: user?.billingZipCode || '',
+    billingCountry: user?.billingCountry || '',
+    taxId: user?.taxId || '',
+  });
   
   // Success/Error Messages
   const [personalInfoSuccess, setPersonalInfoSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [languageSuccess, setLanguageSuccess] = useState(false);
+  const [billingSuccess, setBillingSuccess] = useState(false);
   const [error, setError] = useState('');
 
   // Fetch user data on mount
@@ -68,12 +92,29 @@ export default function AccountPage({ user: initialUser }) {
           if (data.user) {
             setUser(data.user);
             const nameParts = (data.user.name || '').split(' ');
-            setPersonalInfo(prev => ({
-              ...prev,
+            setPersonalInfo({
               firstName: nameParts[0] || '',
               lastName: nameParts.slice(1).join(' ') || '',
-              email: data.user.email || prev.email,
-            }));
+              email: data.user.email || '',
+              telephone: data.user.telephone || '',
+              company: data.user.company || '',
+              address: data.user.address || '',
+              city: data.user.city || '',
+              state: data.user.state || '',
+              zipCode: data.user.zipCode || '',
+              country: data.user.country || '',
+            });
+            setLanguage(data.user.language || 'English');
+            setBillingInfo({
+              billingName: data.user.billingName || '',
+              billingCompany: data.user.billingCompany || '',
+              billingAddress: data.user.billingAddress || '',
+              billingCity: data.user.billingCity || '',
+              billingState: data.user.billingState || '',
+              billingZipCode: data.user.billingZipCode || '',
+              billingCountry: data.user.billingCountry || '',
+              taxId: data.user.taxId || '',
+            });
           }
         }
       } catch (err) {
@@ -104,12 +145,52 @@ export default function AccountPage({ user: initialUser }) {
     setPersonalInfoSuccess(false);
 
     try {
-      // TODO: Create API endpoint for updating user info
-      // For now, just show success message
+      const res = await fetch('/api/account/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          firstName: personalInfo.firstName,
+          lastName: personalInfo.lastName,
+          email: personalInfo.email,
+          telephone: personalInfo.telephone,
+          company: personalInfo.company,
+          address: personalInfo.address,
+          city: personalInfo.city,
+          state: personalInfo.state,
+          zipCode: personalInfo.zipCode,
+          country: personalInfo.country,
+          language: language,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update personal information');
+        return;
+      }
+
+      // Update local user state
+      if (data.user) {
+        setUser(prev => ({ ...prev, ...data.user }));
+      }
+
       setPersonalInfoSuccess(true);
       setTimeout(() => setPersonalInfoSuccess(false), 3000);
+
+      // If email was changed, show a message about re-authentication
+      if (personalInfo.email !== user?.email) {
+        setTimeout(() => {
+          alert('Email updated successfully. Please log in again with your new email address.');
+          window.location.href = '/auth/login';
+        }, 3000);
+      }
     } catch (err) {
-      setError('Failed to update personal information');
+      console.error('Error updating personal information:', err);
+      setError('Failed to update personal information. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -134,13 +215,76 @@ export default function AccountPage({ user: initialUser }) {
     }
 
     try {
-      // TODO: Create API endpoint for updating password
-      // For now, just show success message
+      const res = await fetch('/api/account/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          password: passwordInfo.password,
+          confirmPassword: passwordInfo.confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update password');
+        return;
+      }
+
       setPasswordSuccess(true);
       setPasswordInfo({ password: '', confirmPassword: '' });
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (err) {
-      setError('Failed to update password');
+      console.error('Error updating password:', err);
+      setError('Failed to update password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBillingInfoChange = (e) => {
+    const { name, value } = e.target;
+    setBillingInfo(prev => ({ ...prev, [name]: value }));
+    setBillingSuccess(false);
+    setError('');
+  };
+
+  const handleBillingInfoSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setBillingSuccess(false);
+
+    try {
+      const res = await fetch('/api/account/billing', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(billingInfo),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update billing information');
+        return;
+      }
+
+      // Update local user state
+      if (data.user) {
+        setUser(prev => ({ ...prev, ...data.user }));
+      }
+
+      setBillingSuccess(true);
+      setTimeout(() => setBillingSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error updating billing information:', err);
+      setError('Failed to update billing information. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -153,12 +297,29 @@ export default function AccountPage({ user: initialUser }) {
     setLanguageSuccess(false);
 
     try {
-      // TODO: Create API endpoint for updating language preference
-      // For now, just show success message
+      const res = await fetch('/api/account/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          language: language,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update language');
+        return;
+      }
+
       setLanguageSuccess(true);
       setTimeout(() => setLanguageSuccess(false), 3000);
     } catch (err) {
-      setError('Failed to update language');
+      console.error('Error updating language:', err);
+      setError('Failed to update language. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -300,13 +461,114 @@ export default function AccountPage({ user: initialUser }) {
                     />
                   </div>
                 </div>
+
+                {/* Company */}
+                <div>
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBuilding className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      id="company"
+                      name="company"
+                      value={personalInfo.company}
+                      onChange={handlePersonalInfoChange}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="Company Name"
+                    />
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={personalInfo.address}
+                    onChange={handlePersonalInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Street Address"
+                  />
+                </div>
+
+                {/* City */}
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={personalInfo.city}
+                    onChange={handlePersonalInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="City"
+                  />
+                </div>
+
+                {/* State */}
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    id="state"
+                    name="state"
+                    value={personalInfo.state}
+                    onChange={handlePersonalInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="State/Province"
+                  />
+                </div>
+
+                {/* Zip Code */}
+                <div>
+                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    Zip/Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    id="zipCode"
+                    name="zipCode"
+                    value={personalInfo.zipCode}
+                    onChange={handlePersonalInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Zip/Postal Code"
+                  />
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    id="country"
+                    name="country"
+                    value={personalInfo.country}
+                    onChange={handlePersonalInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Country"
+                  />
+                </div>
               </div>
 
               <div className="mt-6 flex justify-center">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Updating...' : 'Update'}
                 </button>
@@ -390,7 +652,7 @@ export default function AccountPage({ user: initialUser }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Updating...' : 'Update'}
                 </button>
@@ -442,7 +704,7 @@ export default function AccountPage({ user: initialUser }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Updating...' : 'Update'}
                 </button>
@@ -453,11 +715,176 @@ export default function AccountPage({ user: initialUser }) {
       )}
 
       {activeTab === 'billing' && (
-        <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing information</h3>
-          <p className="text-sm text-gray-600">
-            Billing information will be available here. This section will include payment methods, invoices, and subscription details.
-          </p>
+        <div className="space-y-4 sm:space-y-6">
+          {/* Billing Information Section */}
+          <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 md:p-6 shadow-lg">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Billing information</h3>
+            
+            {error && (
+              <div className="mb-3 sm:mb-4 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4 rounded">
+                <p className="text-xs sm:text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            {billingSuccess && (
+              <div className="mb-3 sm:mb-4 bg-green-50 border-l-4 border-green-400 p-3 sm:p-4 rounded flex items-center">
+                <FaCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 mr-2 sm:mr-3 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-green-700">Billing information updated successfully!</p>
+              </div>
+            )}
+
+            <form onSubmit={handleBillingInfoSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* Billing Name */}
+                <div>
+                  <label htmlFor="billingName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Billing Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaUser className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      id="billingName"
+                      name="billingName"
+                      value={billingInfo.billingName}
+                      onChange={handleBillingInfoChange}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="Billing Name"
+                    />
+                  </div>
+                </div>
+
+                {/* Billing Company */}
+                <div>
+                  <label htmlFor="billingCompany" className="block text-sm font-medium text-gray-700 mb-2">
+                    Billing Company
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBuilding className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      id="billingCompany"
+                      name="billingCompany"
+                      value={billingInfo.billingCompany}
+                      onChange={handleBillingInfoChange}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="Billing Company"
+                    />
+                  </div>
+                </div>
+
+                {/* Billing Address */}
+                <div className="md:col-span-2">
+                  <label htmlFor="billingAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                    Billing Address
+                  </label>
+                  <input
+                    type="text"
+                    id="billingAddress"
+                    name="billingAddress"
+                    value={billingInfo.billingAddress}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Street Address"
+                  />
+                </div>
+
+                {/* Billing City */}
+                <div>
+                  <label htmlFor="billingCity" className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    id="billingCity"
+                    name="billingCity"
+                    value={billingInfo.billingCity}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="City"
+                  />
+                </div>
+
+                {/* Billing State */}
+                <div>
+                  <label htmlFor="billingState" className="block text-sm font-medium text-gray-700 mb-2">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    id="billingState"
+                    name="billingState"
+                    value={billingInfo.billingState}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="State/Province"
+                  />
+                </div>
+
+                {/* Billing Zip Code */}
+                <div>
+                  <label htmlFor="billingZipCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    Zip/Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    id="billingZipCode"
+                    name="billingZipCode"
+                    value={billingInfo.billingZipCode}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Zip/Postal Code"
+                  />
+                </div>
+
+                {/* Billing Country */}
+                <div>
+                  <label htmlFor="billingCountry" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    id="billingCountry"
+                    name="billingCountry"
+                    value={billingInfo.billingCountry}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Country"
+                  />
+                </div>
+
+                {/* Tax ID */}
+                <div className="md:col-span-2">
+                  <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tax ID / VAT Number
+                  </label>
+                  <input
+                    type="text"
+                    id="taxId"
+                    name="taxId"
+                    value={billingInfo.taxId}
+                    onChange={handleBillingInfoChange}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Tax ID / VAT Number (Optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Updating...' : 'Update Billing Information'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </DashboardLayout>

@@ -21,26 +21,36 @@ export async function getServerSideProps({ params, req }) {
 
   if (!qr) return { notFound: true };
 
-
+  // Check if QR code is inactive (paused due to trial expiry or subscription expiry)
   if (qr.isActive === false) {
-    return { props: { inactive: true } };
+    return { props: { inactive: true, reason: qr.deactivatedReason || "MANUAL" } };
   }
 
   const user = qr.user;
   const now = new Date();
 
+  // Check if user's trial has expired (legacy check - kept for backward compatibility)
   let expired = false;
   if (
     user &&
-    user.plan === "free" &&
+    user.subscriptionPlan === "TRIAL" &&
     user.trialEndsAt &&
-    user.trialEndsAt < now
+    new Date(user.trialEndsAt) < now
   ) {
     expired = true;
   }
 
-  if (expired) {
-    return { props: { expired: true } };
+  // If expired and QR is still marked active, pause it
+  if (expired && qr.isActive) {
+    try {
+      await prisma.qRCode.update({
+        where: { slug },
+        data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
+      });
+    } catch (e) {
+      console.error("Failed to pause expired QR code:", e);
+    }
+    return { props: { inactive: true, reason: "TRIAL_EXPIRED" } };
   }
 
   // --- Log scan event ---
@@ -117,16 +127,22 @@ export async function getServerSideProps({ params, req }) {
 }
 
 
-export default function RedirectPage({ expired, inactive, wifiInfo }) {
+export default function RedirectPage({ expired, inactive, wifiInfo, reason }) {
   if (inactive) {
+    const reasonMessage = reason === "TRIAL_EXPIRED" 
+      ? "Your 14-day free trial has expired. Subscribe to a plan to reactivate your QR codes."
+      : reason === "SUBSCRIPTION_EXPIRED"
+      ? "Your subscription has expired. Please renew to reactivate your QR codes."
+      : "This QR code is inactive or expired. It is no longer redirecting.";
+    
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center">
           <h1 className="mb-2 text-lg font-semibold text-slate-900">
-            This QR code is inactive or expired.
+            This QR code is inactive
           </h1>
           <p className="mb-4 text-sm text-slate-600">
-            It is no longer redirecting. Please contact the owner or upgrade to reactivate.
+            {reasonMessage}
           </p>
           <a
             href={process.env.NEXT_PUBLIC_APP_URL || "/"}
@@ -147,7 +163,7 @@ export default function RedirectPage({ expired, inactive, wifiInfo }) {
             This QR code has expired
           </h1>
           <p className="mb-4 text-sm text-slate-600">
-            The free 7-day access period for this QR code is over.
+            The 14-day free trial period for this QR code has ended. Subscribe to a plan to reactivate your QR codes.
           </p>
           <a
             href={process.env.NEXT_PUBLIC_APP_URL || "/"}
