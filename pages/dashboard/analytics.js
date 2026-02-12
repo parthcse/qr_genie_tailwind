@@ -36,7 +36,7 @@ import {
   Legend,
 } from "recharts";
 
-const COLORS = ["#0f172a", "#38bdf8", "#22c55e", "#f97316", "#e11d48", "#8b5cf6", "#ec4899", "#14b8a6"];
+const COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#c084fc", "#d8b4fe", "#e9d5ff", "#f3e8ff", "#ede9fe"];
 
 export default function AnalyticsPage({ initialQrId }) {
   const [days, setDays] = useState(7);
@@ -174,8 +174,8 @@ export default function AnalyticsPage({ initialQrId }) {
         <div className="space-y-6">
           {/* Key Metrics Cards */}
 
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-500">Total Scans</p>
@@ -183,7 +183,6 @@ export default function AnalyticsPage({ initialQrId }) {
                     {data.totalScans.toLocaleString()}
                   </p>
                 </div>
-
                 <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 p-3 shadow-md">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -193,12 +192,11 @@ export default function AnalyticsPage({ initialQrId }) {
               </div>
             </div>
 
-
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Unique Scans</p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="text-xs font-medium text-slate-500">Unique Scans</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
                     {data.uniqueScans?.toLocaleString() || 0}
                   </p>
                 </div>
@@ -210,12 +208,11 @@ export default function AnalyticsPage({ initialQrId }) {
               </div>
             </div>
 
-
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Avg. Scans/Day</p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="text-xs font-medium text-slate-500">Avg. Scans/Day</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
                     {averageScansPerDay}
                   </p>
                 </div>
@@ -227,16 +224,15 @@ export default function AnalyticsPage({ initialQrId }) {
               </div>
             </div>
 
-
             <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Total QR Codes</p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="text-xs font-medium text-slate-500">Total QR Codes</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
                     {data.totalQrCodes}
                   </p>
                 </div>
-                <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-3 shadow-md">
+                <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 p-3 shadow-md">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                   </svg>
@@ -252,7 +248,7 @@ export default function AnalyticsPage({ initialQrId }) {
               <h3 className="mb-4 text-sm font-semibold text-slate-900">Scan Activity Over Time</h3>
               {dailyData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-gray-500">No scans recorded in this period.</p>
+                  <p className="text-xs text-slate-500">No scans recorded in this period.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -280,10 +276,10 @@ export default function AnalyticsPage({ initialQrId }) {
                       <Line
                         type="monotone"
                         dataKey="count"
-                        stroke="#0f172a"
+                        stroke="#6366f1"
                         strokeWidth={2}
-                        dot={{ r: 4, fill: "#0f172a" }}
-                        activeDot={{ r: 6 }}
+                        dot={{ r: 4, fill: "#6366f1" }}
+                        activeDot={{ r: 6, fill: "#6366f1" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -293,10 +289,10 @@ export default function AnalyticsPage({ initialQrId }) {
 
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Hour of Day</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Hour of Day</h3>
               {hourlyData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-gray-500">No hourly data available.</p>
+                  <p className="text-xs text-slate-500">No hourly data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -321,7 +317,7 @@ export default function AnalyticsPage({ initialQrId }) {
                         }}
                         labelFormatter={(label) => formatHour(label)}
                       />
-                      <Bar dataKey="count" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -333,10 +329,10 @@ export default function AnalyticsPage({ initialQrId }) {
           <div className="grid gap-6 lg:grid-cols-2">
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Operating System</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Operating System</h3>
               {osData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-gray-500">No OS data available.</p>
+                  <p className="text-xs text-slate-500">No OS data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -377,10 +373,10 @@ export default function AnalyticsPage({ initialQrId }) {
 
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans by Device Type</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">Scans by Device Type</h3>
               {deviceData.length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                  <p className="text-xs text-gray-500">No device data available.</p>
+                  <p className="text-xs text-slate-500">No device data available.</p>
                 </div>
               ) : (
                 <div className="h-64">
@@ -402,7 +398,7 @@ export default function AnalyticsPage({ initialQrId }) {
                           fontSize: "12px",
                         }}
                       />
-                      <Bar dataKey="count" fill="#0f172a" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -414,9 +410,9 @@ export default function AnalyticsPage({ initialQrId }) {
           <div className="grid gap-6 lg:grid-cols-2">
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Countries</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">Top Countries</h3>
               {countryData.length === 0 ? (
-                <p className="text-xs text-gray-500">No country data available.</p>
+                <p className="text-xs text-slate-500">No country data available.</p>
               ) : (
                 <div className="space-y-3">
                   {countryData.map((item, index) => {
@@ -424,11 +420,10 @@ export default function AnalyticsPage({ initialQrId }) {
                     return (
                       <div key={item.country} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-slate-700">
                             {index + 1}. {item.country}
                           </span>
-                          <span className="text-gray-600">
+                          <span className="text-slate-600">
                             {item.count} ({percentage}%)
                           </span>
                         </div>
@@ -447,9 +442,9 @@ export default function AnalyticsPage({ initialQrId }) {
 
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">Top Cities</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">Top Cities</h3>
               {cityData.length === 0 ? (
-                <p className="text-xs text-gray-500">No city data available.</p>
+                <p className="text-xs text-slate-500">No city data available.</p>
               ) : (
                 <div className="space-y-3">
                   {cityData.map((item, index) => {
@@ -457,11 +452,10 @@ export default function AnalyticsPage({ initialQrId }) {
                     return (
                       <div key={item.city} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-slate-700">
                             {index + 1}. {item.city}
                           </span>
-                          <span className="text-gray-600">
+                          <span className="text-slate-600">
                             {item.count} ({percentage}%)
                           </span>
                         </div>
@@ -483,27 +477,26 @@ export default function AnalyticsPage({ initialQrId }) {
           {qrPerformance.length > 0 && (
 
             <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900">QR Code Performance</h3>
+              <h3 className="mb-4 text-sm font-semibold text-slate-900">QR Code Performance</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-indigo-100">
-                      <th className="pb-3 text-left font-semibold text-gray-700">Rank</th>
-                      <th className="pb-3 text-left font-semibold text-gray-700">QR Code Name</th>
-                      <th className="pb-3 text-right font-semibold text-gray-700">Total Scans</th>
-                      <th className="pb-3 text-right font-semibold text-gray-700">Percentage</th>
+                    <tr className="border-b border-indigo-100 bg-indigo-50">
+                      <th className="pb-3 pt-3 text-left font-semibold text-slate-700">Rank</th>
+                      <th className="pb-3 pt-3 text-left font-semibold text-slate-700">QR Code Name</th>
+                      <th className="pb-3 pt-3 text-right font-semibold text-slate-700">Total Scans</th>
+                      <th className="pb-3 pt-3 text-right font-semibold text-slate-700">Percentage</th>
                     </tr>
                   </thead>
                   <tbody>
                     {qrPerformance.map((item, index) => {
                       const percentage = ((item.scans / data.totalScans) * 100).toFixed(1);
                       return (
-
                         <tr key={item.id} className="border-b border-indigo-50 last:border-0 hover:bg-indigo-50/50 transition-colors">
-                          <td className="py-3 text-gray-600">#{index + 1}</td>
-                          <td className="py-3 font-medium text-gray-900">{item.name}</td>
-                          <td className="py-3 text-right text-gray-600">{item.scans.toLocaleString()}</td>
-                          <td className="py-3 text-right text-gray-600">{percentage}%</td>
+                          <td className="py-3 text-slate-600">#{index + 1}</td>
+                          <td className="py-3 font-medium text-slate-900">{item.name}</td>
+                          <td className="py-3 text-right text-slate-600">{item.scans.toLocaleString()}</td>
+                          <td className="py-3 text-right text-slate-600">{percentage}%</td>
                         </tr>
                       );
                     })}
