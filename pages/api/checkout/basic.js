@@ -33,13 +33,14 @@ export default async function handler(req, res) {
 
     // Reactivate all paused QR codes (from trial expiry)
     await prisma.qRCode.updateMany({
-      where: { 
+      where: {
         userId: user.id,
-        deactivatedReason: "TRIAL_EXPIRED"
+        deactivatedReason: "TRIAL_EXPIRED",
       },
-      data: { 
-        isActive: true, 
-        deactivatedReason: null 
+      data: {
+        isActive: true,
+        deactivatedReason: null,
+        status: "ACTIVE",
       },
     });
 

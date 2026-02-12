@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     url,
     pdfUrl,
     name,
-
+    linkType: requestedLinkType, // "STATIC" | "DYNAMIC" – Static = encode final URL only, no tracking; Dynamic = /r/slug + tracking
     folder, // Folder ID
     vcard,
     wifi,
@@ -274,6 +274,7 @@ export default async function handler(req, res) {
       const processedName = name && typeof name === "string" ? name.trim() : null;
       const finalName = processedName && processedName.length > 0 ? processedName : null;
 
+      const linkType = requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
       const createData = {
         slug,
         type,
@@ -284,6 +285,8 @@ export default async function handler(req, res) {
         meta: metaString,
         isActive: true,
         deactivatedReason: null,
+        status: "ACTIVE",
+        linkType,
         user: { connect: { id: user.id } },
       };
 
@@ -326,11 +329,10 @@ export default async function handler(req, res) {
   // Generate a PNG data URL (optional preview)
     let pngDataUrl;
     try {
-      // For Instagram, WhatsApp, Website, and WiFi: use direct targetUrl
-      // For other types: use dynamic URL (short link) for analytics tracking
-      const typesWithDirectLink = ["instagram", "whatsapp", "website", "wifi"];
-      const qrContent = typesWithDirectLink.includes(type) ? targetUrl : dynamicUrl;
-      
+      // Static: encode final URL only (no tracking). Dynamic: always encode short link so every scan goes through /r/slug and is tracked.
+      const isStatic = requestedLinkType === "STATIC";
+      const qrContent = isStatic ? targetUrl : dynamicUrl;
+
       pngDataUrl = await QRCode.toDataURL(qrContent, {
     margin: 1,
     width: 512,

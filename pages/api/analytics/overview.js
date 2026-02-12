@@ -37,9 +37,9 @@ export default async function handler(req, res) {
 
   const totalScans = events.length;
 
-  // Unique scans (by IP)
-  const uniqueIPs = new Set(events.filter(e => e.ip).map(e => e.ip));
-  const uniqueScans = uniqueIPs.size;
+  // Unique scans (by ipHash when available, else fallback to ip)
+  const uniqueKeys = new Set(events.map(e => e.ipHash || e.ip).filter(Boolean));
+  const uniqueScans = uniqueKeys.size;
 
   // Daily counts
   const dailyMap = {};
@@ -81,19 +81,19 @@ export default async function handler(req, res) {
     }))
     .sort((a, b) => b.count - a.count);
 
-  // Device type detection from user agent
+  // Device type: use stored deviceType when available, else derive from UA
   const deviceMap = {};
   events.forEach((ev) => {
-    const ua = (ev.userAgent || "").toLowerCase();
-    let device = "Unknown";
-    if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
-      device = "Mobile";
-    } else if (ua.includes("tablet") || ua.includes("ipad")) {
-      device = "Tablet";
-    } else if (ua.includes("desktop") || ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux")) {
-      device = "Desktop";
+    let device = ev.deviceType;
+    if (!device) {
+      const ua = (ev.userAgent || "").toLowerCase();
+      if (ua.includes("mobile") && !ua.includes("ipad")) device = "Mobile";
+      else if (ua.includes("tablet") || ua.includes("ipad")) device = "Tablet";
+      else if (ua.includes("desktop") || ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux")) device = "Desktop";
+      else device = "Unknown";
     }
-    deviceMap[device] = (deviceMap[device] || 0) + 1;
+    const label = device === "mobile" ? "Mobile" : device === "tablet" ? "Tablet" : device === "desktop" ? "Desktop" : device;
+    deviceMap[label] = (deviceMap[label] || 0) + 1;
   });
   const deviceStats = Object.entries(deviceMap)
     .map(([device, count]) => ({

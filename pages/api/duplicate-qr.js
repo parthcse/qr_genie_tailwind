@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "You don't have permission to duplicate this QR code" });
     }
 
-    // Create a duplicate with new slug
+    // Create a duplicate with new slug (same linkType, fresh ACTIVE status)
     const newSlug = nanoid(6);
     const duplicateQR = await prisma.qRCode.create({
       data: {
@@ -46,6 +46,10 @@ export default async function handler(req, res) {
         meta: originalQR.meta,
         userId: user.id,
         folderId: originalQR.folderId,
+        status: "ACTIVE",
+        linkType: originalQR.linkType || "DYNAMIC",
+        isActive: true,
+        deactivatedReason: null,
       },
     });
 

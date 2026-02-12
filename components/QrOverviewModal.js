@@ -61,17 +61,15 @@ export default function QrOverviewModal({ qrCode, onClose }) {
   }
   
   // Get base URL - use consistent base URL (environment variable if available)
-  const baseUrl = typeof window !== "undefined" 
-    ? (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+  // Prefer current origin in browser so dev gets localhost for short link and QR content
+  const baseUrl = typeof window !== "undefined"
+    ? (window.location.origin || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL)
     : (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "");
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
-
-  // For Instagram, WhatsApp, Website, and WiFi: use direct targetUrl
-  // For other types: use short link for analytics tracking
-  const typesWithDirectLink = ["instagram", "whatsapp", "website", "wifi"];
-  const qrValue = typesWithDirectLink.includes(qrCode.type?.toLowerCase())
-    ? qrCode.targetUrl  // Use direct link for these types
-    : `${cleanBaseUrl}/r/${qrCode.slug}`; // Use short link for other types
+  const isDynamic = (qrCode.linkType || "DYNAMIC") === "DYNAMIC";
+  const shortLink = `${cleanBaseUrl}/r/${qrCode.slug}`;
+  // Dynamic: encode short link for tracking. Static: encode final URL.
+  const qrValue = isDynamic ? shortLink : (qrCode.targetUrl || shortLink);
   
   // Download handler - uses shared download utility for consistency
   const handleDownload = async (format = "png") => {
@@ -101,9 +99,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
   // Get destination URL (for display purposes)
   const destinationUrl = qrCode.type === "wifi" 
     ? "Wi-Fi Network" 
-    : qrCode.targetUrl || `${cleanBaseUrl}/r/${qrCode.slug}`;
-  
-  const shortLink = `${cleanBaseUrl}/r/${qrCode.slug}`;
+    : qrCode.targetUrl || shortLink;
 
   // Get type icon
   const TypeIcon = getTypeIcon(qrCode.type);
@@ -194,9 +190,13 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                           {destinationUrl}
                           <FaExternalLinkAlt className="w-3 h-3 flex-shrink-0" />
                         </a>
-                        {/* Hide short link for website, wifi, instagram, whatsapp */}
-                        {!["website", "wifi", "instagram", "whatsapp"].includes(qrCode.type?.toLowerCase()) && (
-                          <p className="text-xs text-gray-500">Short link: {shortLink}</p>
+                        {isDynamic && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Short link:{" "}
+                            <a href={shortLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all">
+                              {shortLink}
+                            </a>
+                          </p>
                         )}
                       </div>
                     )}

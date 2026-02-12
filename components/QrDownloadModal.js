@@ -35,15 +35,14 @@ export default function QrDownloadModal({ qrCode, onClose }) {
     designData.bgColor = qrCode.bgColor;
   }
 
-  // Get QR value (direct link for specific types, short link for others)
-  const baseUrl = typeof window !== "undefined" 
-    ? (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
-    : "";
+  // Dynamic: always encode short link so scans go through /r/slug and are tracked. Static: encode final URL.
+  const baseUrl = typeof window !== "undefined"
+    ? (window.location.origin || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL)
+    : (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "");
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
-  const typesWithDirectLink = ["instagram", "whatsapp", "website", "wifi"];
-  const qrValue = typesWithDirectLink.includes(qrCode.type?.toLowerCase())
-    ? qrCode.targetUrl
-    : `${cleanBaseUrl}/r/${qrCode.slug}`;
+  const isDynamic = (qrCode.linkType || "DYNAMIC") === "DYNAMIC";
+  const shortLink = `${cleanBaseUrl}/r/${qrCode.slug}`;
+  const qrValue = isDynamic ? shortLink : (qrCode.targetUrl || shortLink);
 
   const handleDownload = async () => {
     if (downloading) return;

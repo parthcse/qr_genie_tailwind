@@ -1855,6 +1855,7 @@ export default function CreateQrPage() {
 
   // Form data - unified state
   const [formData, setFormData] = useState({
+    linkType: "DYNAMIC", // "STATIC" = encode URL only, no tracking; "DYNAMIC" = /r/slug + tracking + pause/resume
     // Website
     url: "",
     name: "",
@@ -2253,6 +2254,7 @@ export default function CreateQrPage() {
         credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           qrType: selectedType,
+          linkType: formData.linkType || "DYNAMIC",
           ...formData, // Send all form data
           // Use pattern colors for QR, fallback to legacy qrColor
           qrColor: designData.patternColor || designData.qrColor || "#000000",
@@ -2388,6 +2390,7 @@ export default function CreateQrPage() {
     if (!selectedType) return null;
 
     const schema = getSchemaForType(selectedType);
+    const linkType = formData.linkType || "DYNAMIC";
 
     const updateFormData = (newData) => {
       setFormData(newData);
@@ -2397,6 +2400,39 @@ export default function CreateQrPage() {
     };
 
     return (
+      <div className="space-y-6">
+        {/* Link type: Static vs Dynamic */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">How should this QR code work?</p>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="linkType"
+                checked={linkType === "DYNAMIC"}
+                onChange={() => updateFormData({ ...formData, linkType: "DYNAMIC" })}
+                className="mt-1 h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+              />
+              <span>
+                <span className="font-medium text-slate-900">Dynamic</span>
+                <span className="text-slate-600 text-sm"> – Track scans and change the destination URL anytime. QR encodes a short link.</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="linkType"
+                checked={linkType === "STATIC"}
+                onChange={() => updateFormData({ ...formData, linkType: "STATIC" })}
+                className="mt-1 h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+              />
+              <span>
+                <span className="font-medium text-slate-900">Static</span>
+                <span className="text-slate-600 text-sm"> – No tracking. QR encodes the final URL directly. You cannot change the destination later without reprinting.</span>
+              </span>
+            </label>
+          </div>
+        </div>
       <DynamicForm
         schema={schema}
         formData={formData}
@@ -2406,6 +2442,7 @@ export default function CreateQrPage() {
         folders={folders}
         onFolderCreated={handleFolderCreated}
       />
+      </div>
     );
   };
 

@@ -32,7 +32,7 @@ export default async function handler(req, res) {
             });
             await prisma.qRCode.updateMany({
               where: { userId: user.id },
-              data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
+              data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED", status: "PAUSED" },
             });
             user = { ...user, subscriptionPlan: "EXPIRED", trialEndsAt: null };
           } else {
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
           });
           await prisma.qRCode.updateMany({
             where: { userId: user.id, isActive: true },
-            data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
+            data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED", status: "PAUSED" },
           });
           user = { ...user, subscriptionPlan: "EXPIRED" };
         } catch (err) {

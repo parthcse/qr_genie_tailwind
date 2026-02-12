@@ -1,35 +1,55 @@
+/**
+ * Redirect handler: GET /r/:slug
+ * Lookup by slug. Not found or DELETED → "QR not found or removed". PAUSED → configurable paused page (no redirect, no scan).
+ * ACTIVE → validate targetUrl, log scan (ipHash, device, browser, geo), increment scanCount, 302 redirect. WiFi type shows connection page.
+ */
 // pages/r/[slug].js
 import prisma from "../../lib/prisma";
+import { validateRedirectUrl } from "../../lib/redirectValidation";
+import { hashIp, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
+import { getGeoFromIp } from "../../lib/geoIp";
+import { isRateLimited } from "../../lib/rateLimit";
 
-function detectOS(ua = "") {
-  const s = ua.toLowerCase();
-  if (s.includes("iphone") || s.includes("ipad") || s.includes("ipod")) return "iOS";
-  if (s.includes("android")) return "Android";
-  if (s.includes("windows")) return "Windows";
-  if (s.includes("mac os") || s.includes("macintosh")) return "macOS";
-  if (s.includes("linux")) return "Linux";
-  return "Other";
+function getClientIp(req) {
+  const ipHeader = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
+  const ip = (typeof ipHeader === "string" && ipHeader.split(",")[0].trim()) || req.socket?.remoteAddress || null;
+  return ip;
 }
 
 export async function getServerSideProps({ params, req }) {
   const { slug } = params;
+
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return { props: { view: "rate_limited" } };
+  }
 
   const qr = await prisma.qRCode.findUnique({
     where: { slug },
     include: { user: true },
   });
 
-  if (!qr) return { notFound: true };
-
-  // Check if QR code is inactive (paused due to trial expiry or subscription expiry)
-  if (qr.isActive === false) {
-    return { props: { inactive: true, reason: qr.deactivatedReason || "MANUAL" } };
+  // Not found or soft-deleted: show "QR not found or removed"
+  if (!qr || qr.status === "DELETED") {
+    return { props: { view: "not_found" } };
   }
 
+  // Paused: show configurable paused page; do not log scan (Option A)
+  if (qr.status === "PAUSED") {
+    const reason = qr.deactivatedReason || null;
+    const pausedMessage = qr.pausedMessage && qr.pausedMessage.trim() ? qr.pausedMessage.trim() : null;
+    return {
+      props: {
+        view: "paused",
+        pausedMessage,
+        reason,
+      },
+    };
+  }
+
+  // ACTIVE: legacy trial/subscription check
   const user = qr.user;
   const now = new Date();
-
-  // Check if user's trial has expired (legacy check - kept for backward compatibility)
   let expired = false;
   if (
     user &&
@@ -39,55 +59,62 @@ export async function getServerSideProps({ params, req }) {
   ) {
     expired = true;
   }
-
-  // If expired and QR is still marked active, pause it
-  if (expired && qr.isActive) {
+  if (expired) {
     try {
       await prisma.qRCode.update({
         where: { slug },
-        data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
+        data: {
+          status: "PAUSED",
+          isActive: false,
+          deactivatedReason: "TRIAL_EXPIRED",
+        },
       });
     } catch (e) {
       console.error("Failed to pause expired QR code:", e);
     }
-    return { props: { inactive: true, reason: "TRIAL_EXPIRED" } };
-  }
-
-  // --- Log scan event ---
-  const ua = req.headers["user-agent"] || "";
-  const ipHeader = req.headers["x-forwarded-for"] || "";
-  const ip =
-    (typeof ipHeader === "string" && ipHeader.split(",")[0].trim()) ||
-    req.socket?.remoteAddress ||
-    null;
-
-  const os = detectOS(ua);
-
-  try {
-    await prisma.scanEvent.create({
-      data: {
-        qrCodeId: qr.id,
-        userAgent: ua || null,
-        ip,
-        os,
+    return {
+      props: {
+        view: "paused",
+        pausedMessage: null,
+        reason: "TRIAL_EXPIRED",
       },
-    });
-  } catch (e) {
-    // don't block redirect on analytics errors
-    console.error("ScanEvent create error:", e);
+    };
   }
 
-  // Increment aggregate counter
-  await prisma.qRCode.update({
-    where: { slug },
-    data: { scanCount: qr.scanCount + 1 },
-  });
+  const ua = req.headers["user-agent"] || "";
+  const referer = req.headers["referer"] || req.headers["referrer"] || null;
+  const os = getOS(ua);
+  const deviceType = getDeviceType(ua);
+  const browser = getBrowser(ua);
+  const ipHashVal = hashIp(ip);
+  const geo = getGeoFromIp(ip);
 
-
-  // For WiFi QR codes, targetUrl contains the raw WiFi string
-  // We'll show a page with WiFi connection info instead of redirecting
+  // WiFi: show connection page (no redirect)
   if (qr.type === "wifi") {
     const meta = qr.meta ? JSON.parse(qr.meta) : {};
+    try {
+      await prisma.scanEvent.create({
+        data: {
+          qrCodeId: qr.id,
+          userAgent: ua || null,
+          ip: null,
+          ipHash: ipHashVal,
+          os,
+          deviceType,
+          browser,
+          referer,
+          country: geo.country,
+          region: geo.region,
+          city: geo.city,
+        },
+      });
+    } catch (e) {
+      console.error("ScanEvent create error:", e);
+    }
+    await prisma.qRCode.update({
+      where: { slug },
+      data: { scanCount: qr.scanCount + 1 },
+    });
     return {
       props: {
         wifiInfo: {
@@ -99,24 +126,50 @@ export async function getServerSideProps({ params, req }) {
     };
   }
 
-  // Ensure targetUrl exists and is valid
-  if (!qr.targetUrl || qr.targetUrl.trim() === "") {
+  // Validate targetUrl for redirect
+  if (!qr.targetUrl || !qr.targetUrl.trim()) {
     console.error(`QR code ${qr.slug} has no targetUrl`);
-    return {
-      redirect: {
-        destination: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "/",
-        permanent: false,
-      },
-    };
+    const base = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "/";
+    return { redirect: { destination: base, permanent: false } };
   }
 
-  // Validate that targetUrl is a proper URL
   let destinationUrl = qr.targetUrl.trim();
-  
-  // If targetUrl doesn't start with http:// or https://, add https://
   if (!destinationUrl.match(/^https?:\/\//i)) {
-    destinationUrl = `https://${destinationUrl}`;
+    destinationUrl = "https://" + destinationUrl;
   }
+  const validation = validateRedirectUrl(destinationUrl);
+  if (!validation.valid) {
+    console.error(`QR code ${qr.slug} invalid targetUrl:`, validation.error);
+    const base = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "/";
+    return { redirect: { destination: base, permanent: false } };
+  }
+  destinationUrl = validation.url;
+
+  // Log scan (do not block redirect on failure)
+  try {
+    await prisma.scanEvent.create({
+      data: {
+        qrCodeId: qr.id,
+        userAgent: ua || null,
+        ip: null,
+        ipHash: ipHashVal,
+        os,
+        deviceType,
+        browser,
+        referer,
+        country: geo.country,
+        region: geo.region,
+        city: geo.city,
+      },
+    });
+  } catch (e) {
+    console.error("ScanEvent create error:", e);
+  }
+
+  await prisma.qRCode.update({
+    where: { slug },
+    data: { scanCount: qr.scanCount + 1 },
+  });
 
   return {
     redirect: {
@@ -126,26 +179,19 @@ export async function getServerSideProps({ params, req }) {
   };
 }
 
+const baseUrl = () => process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "/";
 
-export default function RedirectPage({ expired, inactive, wifiInfo, reason }) {
-  if (inactive) {
-    const reasonMessage = reason === "TRIAL_EXPIRED" 
-      ? "Your 14-day free trial has expired. Subscribe to a plan to reactivate your QR codes."
-      : reason === "SUBSCRIPTION_EXPIRED"
-      ? "Your subscription has expired. Please renew to reactivate your QR codes."
-      : "This QR code is inactive or expired. It is no longer redirecting.";
-    
+export default function RedirectPage({ view, pausedMessage, reason, wifiInfo }) {
+  if (view === "not_found") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center">
-          <h1 className="mb-2 text-lg font-semibold text-slate-900">
-            This QR code is inactive
-          </h1>
+          <h1 className="mb-2 text-lg font-semibold text-slate-900">QR not found or removed</h1>
           <p className="mb-4 text-sm text-slate-600">
-            {reasonMessage}
+            This QR code does not exist or has been removed.
           </p>
           <a
-            href={process.env.NEXT_PUBLIC_APP_URL || "/"}
+            href={baseUrl()}
             className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
           >
             Go to QR-Genie
@@ -155,21 +201,41 @@ export default function RedirectPage({ expired, inactive, wifiInfo, reason }) {
     );
   }
 
-  if (expired) {
+  if (view === "rate_limited") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center">
-          <h1 className="mb-2 text-lg font-semibold text-slate-900">
-            This QR code has expired
-          </h1>
-          <p className="mb-4 text-sm text-slate-600">
-            The 14-day free trial period for this QR code has ended. Subscribe to a plan to reactivate your QR codes.
-          </p>
+          <h1 className="mb-2 text-lg font-semibold text-slate-900">Too many requests</h1>
+          <p className="mb-4 text-sm text-slate-600">Please try again in a minute.</p>
           <a
-            href={process.env.NEXT_PUBLIC_APP_URL || "/"}
+            href={baseUrl()}
             className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
           >
-            Create your own QR codes
+            Go to QR-Genie
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "paused") {
+    const reasonMessage =
+      reason === "TRIAL_EXPIRED"
+        ? "Your 14-day free trial has expired. Subscribe to a plan to reactivate your QR codes."
+        : reason === "SUBSCRIPTION_EXPIRED"
+        ? "Your subscription has expired. Please renew to reactivate your QR codes."
+        : pausedMessage || "This campaign is not active right now.";
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center">
+          <h1 className="mb-2 text-lg font-semibold text-slate-900">QR code paused</h1>
+          <p className="mb-4 text-sm text-slate-600">{reasonMessage}</p>
+          <a
+            href={baseUrl()}
+            className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
+          >
+            Go to QR-Genie
           </a>
         </div>
       </div>
@@ -180,7 +246,6 @@ export default function RedirectPage({ expired, inactive, wifiInfo, reason }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-indigo-100 bg-white p-8 shadow-xl">
-          {/* WiFi Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center">
               <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,26 +253,16 @@ export default function RedirectPage({ expired, inactive, wifiInfo, reason }) {
               </svg>
             </div>
           </div>
-          
-          {/* Question Text */}
           <div className="text-center mb-8">
-            <p className="text-lg font-medium text-gray-900">
-              Join the "{wifiInfo.ssid}" Wi-fi network?
-            </p>
-            {wifiInfo.hidden && (
-              <p className="text-xs text-gray-500 mt-2">Hidden network</p>
-            )}
+            <p className="text-lg font-medium text-gray-900">Join the &quot;{wifiInfo.ssid}&quot; Wi-fi network?</p>
+            {wifiInfo.hidden && <p className="text-xs text-gray-500 mt-2">Hidden network</p>}
             <p className="text-xs text-gray-500 mt-1">Security: {wifiInfo.security}</p>
           </div>
-          
-          {/* Info Message */}
           <div className="mb-6 p-3 bg-blue-50 rounded-lg">
             <p className="text-xs text-blue-800 text-center">
-              Scan this QR code with your phone's camera to connect automatically.
+              Scan this QR code with your phone&apos;s camera to connect automatically.
             </p>
           </div>
-          
-          {/* Action Buttons */}
           <div className="space-y-3">
             <button
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"

@@ -7,6 +7,17 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum QrStatus {
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+enum LinkType {
+  STATIC
+  DYNAMIC
+}
+
 model User {
   id                    String    @id @default(cuid())
   email                 String    @unique
@@ -49,38 +60,45 @@ model User {
 }
 
 model QRCode {
-  id                String   @id @default(cuid())
-  slug              String   @unique
-  type              String   @default("website")
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  type              String    @default("website")
   targetUrl         String
   name              String?
-  qrColor           String   @default("#000000")
-  bgColor           String   @default("#ffffff")
+  qrColor           String    @default("#000000")
+  bgColor           String    @default("#ffffff")
   meta              String?
-  createdAt         DateTime @default(now())
-  scanCount         Int      @default(0)
-  isActive          Boolean  @default(true)
-  deactivatedReason String?  // TRIAL_EXPIRED | SUBSCRIPTION_EXPIRED | MANUAL | null
-  user              User?    @relation(fields: [userId], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  scanCount         Int       @default(0)
+  isActive          Boolean   @default(true) // legacy; kept for backward compat, synced from status
+  deactivatedReason String?   // TRIAL_EXPIRED | SUBSCRIPTION_EXPIRED | MANUAL | null
+  status            QrStatus  @default(ACTIVE) // ACTIVE | PAUSED | DELETED
+  linkType          LinkType  @default(DYNAMIC) // STATIC = no tracking, DYNAMIC = /r/slug + tracking
+  pausedMessage    String?   // configurable "QR paused" landing text
+  user              User?     @relation(fields: [userId], references: [id])
   userId            String?
-  folder            Folder?  @relation(fields: [folderId], references: [id])
+  folder            Folder?   @relation(fields: [folderId], references: [id])
   folderId          String?
   scanEvents        ScanEvent[]
 }
 
 model ScanEvent {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  userAgent String?
-  ip        String?
-  os        String?
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  userAgent       String?
+  ip              String?  // optional truncated IP; prefer ipHash for privacy
+  ipHash          String?  // hashed IP for unique counts and privacy
+  os              String?
+  deviceType     String?  // mobile | desktop | tablet
+  browser         String?
+  referer         String?
+  country         String?
+  region          String?
+  city            String?
+  blockedByStatus Boolean  @default(false) // true when hit was to a paused QR (if we log it)
 
-  // NEW:
-  country   String?
-  region    String?
-  city      String?
-
-  qrCode    QRCode   @relation(fields: [qrCodeId], references: [id])
+  qrCode    QRCode @relation(fields: [qrCodeId], references: [id])
   qrCodeId  String
 }
 

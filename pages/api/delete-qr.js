@@ -33,14 +33,14 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "You don't have permission to delete this QR code" });
     }
 
-    // Delete related scan events first (if cascade delete is not configured)
-    await prisma.scanEvent.deleteMany({
-      where: { qrCodeId: qrCode.id },
-    });
-
-    // Delete the QR code
-    await prisma.qRCode.delete({
+    // Soft delete: set status to DELETED so /r/:slug shows "not found", list hides it, scan history preserved
+    await prisma.qRCode.update({
       where: { id: String(id) },
+      data: {
+        status: "DELETED",
+        isActive: false,
+        deactivatedReason: "MANUAL",
+      },
     });
 
     return res.status(200).json({ success: true, message: "QR code deleted successfully" });

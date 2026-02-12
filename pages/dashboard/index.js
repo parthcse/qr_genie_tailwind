@@ -18,6 +18,7 @@ import {
   FaCalendar,
   FaEdit,
   FaPause,
+  FaPlay,
   FaPaperPlane,
   FaChevronLeft,
   FaChevronRight,
@@ -224,10 +225,11 @@ export default function Dashboard() {
   // Filter and sort codes
   const filteredCodes = codes
     .filter(code => {
+      if (code.status === "DELETED") return false;
       const matchesSearch = !searchQuery || 
         (code.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         code.type?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "All" || (statusFilter === "Active" && code.isActive !== false) || (statusFilter === "Inactive" && code.isActive === false);
+      const matchesStatus = statusFilter === "All" || (statusFilter === "Active" && (code.status === "ACTIVE" || (code.isActive !== false && !code.status))) || (statusFilter === "Paused" && (code.status === "PAUSED" || code.isActive === false));
       const matchesType = !typeFilter || code.type === typeFilter;
       const matchesFolder = !selectedFolderId || code.folderId === selectedFolderId;
       return matchesSearch && matchesStatus && matchesType && matchesFolder;
@@ -344,10 +346,25 @@ export default function Dashboard() {
     }
   };
 
-  const handlePause = async (code) => {
-    // TODO: Implement pause functionality
-    alert("Pause functionality coming soon");
-    setOpenDropdown(null);
+  const handlePauseResume = async (code) => {
+    const isPaused = code.status === "PAUSED" || code.isActive === false;
+    const endpoint = isPaused ? `/api/qrs/${code.id}/resume` : `/api/qrs/${code.id}/pause`;
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        loadCodes();
+        setOpenDropdown(null);
+      } else {
+        alert(data.error || (isPaused ? "Failed to resume" : "Failed to pause"));
+      }
+    } catch (error) {
+      console.error("Pause/Resume error:", error);
+      alert("An error occurred");
+    }
   };
 
   const handleSendTo = async (code) => {
@@ -713,19 +730,14 @@ export default function Dashboard() {
                   const isSelected = selectedCodes.has(code.id);
                   const TypeIcon = getTypeIcon(code.type);
                   
-                  // Use consistent base URL (environment variable if available, otherwise current origin)
-                  const baseUrl = typeof window !== "undefined" 
-                    ? (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+                  // Prefer current origin in browser so dev gets localhost for short link and QR preview
+                  const baseUrl = typeof window !== "undefined"
+                    ? (window.location.origin || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL)
                     : (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "");
                   const shortLink = `${baseUrl.replace(/\/$/, "")}/r/${code.slug}`;
                   const destinationUrl = code.type === "wifi" ? "Wi-Fi Network" : (code.targetUrl || shortLink);
-                  
-                  // For Instagram, WhatsApp, Website, and WiFi: use direct targetUrl
-                  // For other types: use short link for analytics tracking
-                  const typesWithDirectLink = ["instagram", "whatsapp", "website", "wifi"];
-                  const qrValue = typesWithDirectLink.includes(code.type?.toLowerCase())
-                    ? code.targetUrl  // Use direct link for these types
-                    : shortLink; // Use short link for other types
+                  // Dynamic: QR encodes short link for tracking. Static: QR encodes final URL.
+                  const qrValueForPreview = (code.linkType || "DYNAMIC") === "DYNAMIC" ? shortLink : (code.targetUrl || shortLink);
                   
                   // Get design config (from parsed meta or direct property)
                   // Try multiple sources to ensure we get the design config
@@ -756,10 +768,10 @@ export default function Dashboard() {
                     designConfig.bgColor = code.bgColor;
                   }
                   
-                  const isStaticQR = code.type === "wifi";
+                  const linkType = code.linkType || "DYNAMIC";
+                  const isDynamic = linkType === "DYNAMIC";
                   const scanCount = code.scanCount || 0;
-                  
-                  const isInactive = code.isActive === false;
+                  const isInactive = code.status === "PAUSED" || code.isActive === false;
                   const isExpiredBySubscription =
                     isInactive &&
                     (code.deactivatedReason === "TRIAL_EXPIRED" ||
@@ -794,7 +806,7 @@ export default function Dashboard() {
                           >
                             <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 border border-gray-200 rounded-lg bg-white hover:border-indigo-500 transition-colors overflow-hidden flex items-center justify-center shadow-sm">
                               <DesignedQRCode
-                                value={qrValue}
+                                value={qrValueForPreview}
                                 designData={designConfig}
                                 size={64}
                                 showFrame={false}
@@ -806,10 +818,13 @@ export default function Dashboard() {
 
                         {/* Primary Info Section */}
                         <div className="flex-1 min-w-0 w-full sm:w-auto">
-                          {/* QR Type */}
+                          {/* QR Type + Link Type + Status */}
                           <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
                             <TypeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
                             <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase">{code.type || "Website"}</span>
+                            <span className={`text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded ${isDynamic ? "bg-indigo-100 text-indigo-700" : "bg-gray-100 text-gray-600"}`}>
+                              {isDynamic ? "Dynamic" : "Static"}
+                            </span>
                             {isInactive && (
                               <span
                                 className="text-[10px] sm:text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded"
@@ -819,8 +834,11 @@ export default function Dashboard() {
                                     : "This QR code has been manually paused."
                                 }
                               >
-                                {isExpiredBySubscription ? "Expired" : "Inactive"}
+                                {isExpiredBySubscription ? "Expired" : "Paused"}
                               </span>
+                            )}
+                            {!isInactive && (
+                              <span className="text-[10px] sm:text-xs font-medium text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Active</span>
                             )}
                           </div>
                           
@@ -951,15 +969,13 @@ export default function Dashboard() {
                             <FaDownload className="w-3 h-3" />
                             Download
                           </button>
-                          {!isStaticQR && (
-                            <Link
-                              href={`/dashboard/analytics?qrId=${code.id}`}
-                              className="inline-flex items-center px-3 py-1.5 bg-white border-2 border-indigo-600 text-indigo-600 text-xs font-medium rounded-xl hover:bg-indigo-50 hover:border-indigo-700 transition-colors whitespace-nowrap"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Detail
-                            </Link>
-                          )}
+                          <Link
+                            href={`/dashboard/qrs/${code.id}`}
+                            className="inline-flex items-center px-3 py-1.5 bg-white border-2 border-indigo-600 text-indigo-600 text-xs font-medium rounded-xl hover:bg-indigo-50 hover:border-indigo-700 transition-colors whitespace-nowrap"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View details
+                          </Link>
                           <div className="relative">
                             <button
                               type="button"
@@ -997,18 +1013,31 @@ export default function Dashboard() {
                                   <FaFileExport className="w-4 h-4 text-gray-500 flex-shrink-0" />
                                   <span>Send to</span>
                                 </button>
-                                <div className="border-t border-gray-200 my-1"></div>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePause(code);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                                >
-                                  <FaPause className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                  <span>Pause</span>
-                                </button>
+                                {isDynamic && (
+                                  <>
+                                    <div className="border-t border-gray-200 my-1"></div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePauseResume(code);
+                                      }}
+                                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                                    >
+                                      {(code.status === "PAUSED" || code.isActive === false) ? (
+                                        <>
+                                          <FaPlay className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                          <span>Resume</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <FaPause className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                          <span>Pause</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </>
+                                )}
                                 <button
                                   type="button"
                                   onClick={(e) => {
