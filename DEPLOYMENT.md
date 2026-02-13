@@ -314,6 +314,56 @@ After SSL setup, update your Nginx config to remove the HTTP redirect comment.
    - QR code creation works
    - QR code redirects work
 
+## 🗄️ Production database migration
+
+After schema changes (e.g. new columns like `status`, `linkType`, `pausedMessage`):
+
+1. **Run migrations on the server:**
+   ```bash
+   cd /path/to/project
+   npm run migrate
+   # or
+   npx prisma migrate deploy
+   ```
+
+2. **Regenerate Prisma Client and restart:**
+   ```bash
+   rm -rf node_modules/.prisma node_modules/@prisma/client
+   npx prisma generate
+   pm2 restart all
+   # or: sudo systemctl restart qr-genie
+   ```
+
+If you see "Database error" when creating QR codes, the app is likely using an old Prisma Client; repeat the regenerate + restart steps above.
+
+## 🌐 Nginx and POST / API requests
+
+If login or other POST requests return "Method not allowed" or fail behind Nginx:
+
+- Use **separate HTTP and HTTPS server blocks** (do not redirect POST from HTTP to HTTPS in a way that changes method).
+- For `location /api` add:
+  - `proxy_request_buffering off;` and `proxy_buffering off;` so the request body is forwarded correctly.
+  - `client_max_body_size 10M;` if you need larger bodies.
+- Forward headers: `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`.
+
+Example snippet for `/api`:
+
+```nginx
+location /api {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_request_buffering off;
+    proxy_buffering off;
+    proxy_cache_bypass $http_upgrade;
+}
+```
+
+Test config: `sudo nginx -t`. Reload: `sudo systemctl reload nginx`.
+
 ## 🔧 Troubleshooting
 
 ### Application won't start
@@ -374,6 +424,17 @@ find /path/to/project -type d -exec chmod 755 {} \;
 find /path/to/project -type f -exec chmod 644 {} \;
 chmod 600 /path/to/project/.env
 ```
+
+### SSH / GitHub Actions: `dial tcp ***:22: i/o timeout`
+
+This means port 22 (SSH) is not reachable from the client (e.g. GitHub Actions).
+
+1. **Cloud firewall (e.g. AWS Lightsail):** In the instance Networking/Firewall, add a rule for TCP port 22 from `0.0.0.0/0` (or restrict to known IPs).
+2. **Server firewall:** If UFW is active: `sudo ufw allow 22/tcp` then `sudo ufw reload`.
+3. **SSH service:** `sudo systemctl status ssh` (or `sshd`); start/enable if needed.
+4. **Secrets:** Ensure `LIGHTSAIL_HOST` (or equivalent) is the server’s public IP and the SSH private key is correct.
+
+Test from your machine: `ssh -i your-key.pem user@server-ip`. If that works but CI fails, the runner’s IP is likely blocked.
 
 ## 📝 Post-Deployment Maintenance
 
