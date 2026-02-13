@@ -6,14 +6,48 @@
 // pages/r/[slug].js
 import prisma from "../../lib/prisma";
 import { validateRedirectUrl } from "../../lib/redirectValidation";
-import { hashIp, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
+import { hashIp, getDeviceFingerprint, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
 import { getGeoFromIp } from "../../lib/geoIp";
 import { isRateLimited } from "../../lib/rateLimit";
 
+/**
+ * Extract client IP from request headers (handles Nginx/proxy forwarding).
+ * Checks multiple headers in order: cf-connecting-ip, x-forwarded-for, x-real-ip, true-client-ip, cf-connecting-ipv6
+ */
 function getClientIp(req) {
-  const ipHeader = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
-  const ip = (typeof ipHeader === "string" && ipHeader.split(",")[0].trim()) || req.socket?.remoteAddress || null;
-  return ip;
+  // Cloudflare
+  if (req.headers["cf-connecting-ip"]) {
+    const ip = req.headers["cf-connecting-ip"];
+    if (typeof ip === "string") return ip.split(",")[0].trim();
+  }
+  
+  // Standard proxy headers
+  const forwardedFor = req.headers["x-forwarded-for"];
+  if (forwardedFor && typeof forwardedFor === "string") {
+    // x-forwarded-for can contain multiple IPs: "client, proxy1, proxy2"
+    return forwardedFor.split(",")[0].trim();
+  }
+  
+  // Nginx real IP
+  if (req.headers["x-real-ip"]) {
+    const ip = req.headers["x-real-ip"];
+    if (typeof ip === "string") return ip.split(",")[0].trim();
+  }
+  
+  // Other common headers
+  if (req.headers["true-client-ip"]) {
+    const ip = req.headers["true-client-ip"];
+    if (typeof ip === "string") return ip.split(",")[0].trim();
+  }
+  
+  // IPv6 Cloudflare
+  if (req.headers["cf-connecting-ipv6"]) {
+    const ip = req.headers["cf-connecting-ipv6"];
+    if (typeof ip === "string") return ip.split(",")[0].trim();
+  }
+  
+  // Fallback to socket address (direct connection)
+  return req.socket?.remoteAddress || null;
 }
 
 export async function getServerSideProps({ params, req }) {
@@ -88,6 +122,21 @@ export async function getServerSideProps({ params, req }) {
   const browser = getBrowser(ua);
   const ipHashVal = hashIp(ip);
   const geo = getGeoFromIp(ip);
+
+  // Debug logging (development only)
+  if (process.env.NODE_ENV !== "production" && !ip) {
+    console.warn(`[QR Redirect] No IP extracted for slug: ${slug}. Headers:`, {
+      "x-forwarded-for": req.headers["x-forwarded-for"],
+      "x-real-ip": req.headers["x-real-ip"],
+      "cf-connecting-ip": req.headers["cf-connecting-ip"],
+      "true-client-ip": req.headers["true-client-ip"],
+      socket: req.socket?.remoteAddress,
+    });
+  }
+  
+  if (process.env.NODE_ENV !== "production" && ip && !geo.country) {
+    console.warn(`[QR Redirect] IP ${ip} has no geo data for slug: ${slug}`);
+  }
 
   // WiFi: show connection page (no redirect)
   if (qr.type === "wifi") {

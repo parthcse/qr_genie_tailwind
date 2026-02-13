@@ -1,5 +1,6 @@
 import prisma from "../../../../lib/prisma";
 import { getUserFromRequest } from "../../../../lib/auth";
+import { getDeviceFingerprint } from "../../../../lib/scanUtils";
 
 /**
  * GET /api/qrs/[id]/analytics?days=7|30
@@ -39,8 +40,20 @@ export default async function handler(req, res) {
   });
 
   const totalScans = events.length;
-  const uniqueHashes = new Set(events.filter((e) => e.ipHash).map((e) => e.ipHash));
-  const uniqueScans = uniqueHashes.size;
+  
+  // Unique scans: Use device fingerprint (IP hash + User Agent hash) for better unique device tracking
+  // This distinguishes multiple devices behind the same NAT/proxy
+  const uniqueKeys = new Set();
+  events.forEach((e) => {
+    const fingerprint = getDeviceFingerprint(e.ipHash, e.userAgent || "");
+    if (fingerprint) {
+      uniqueKeys.add(fingerprint);
+    } else if (e.ipHash) {
+      // Fallback to IP hash only if no user agent
+      uniqueKeys.add(e.ipHash);
+    }
+  });
+  const uniqueScans = uniqueKeys.size;
   const lastScanAt = events.length > 0 ? events[events.length - 1].createdAt : null;
 
   const dailyMap = {};
