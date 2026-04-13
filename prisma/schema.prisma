@@ -32,6 +32,11 @@ model User {
   trialStartedAt        DateTime?
   subscriptionStartedAt DateTime?
   subscriptionEndsAt    DateTime?
+
+  // Razorpay subscription linkage (optional)
+  razorpayCustomerId     String?
+  razorpaySubscriptionId String?
+  razorpayLastPaymentId  String?
   
   // General Information (Account)
   telephone             String?

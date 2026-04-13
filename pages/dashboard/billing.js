@@ -51,7 +51,7 @@ const pricingPlans = [
     billingNote: "Billed monthly",
     popular: true,
     discount: null,
-    apiEndpoint: "/api/checkout/basic",
+    apiEndpoint: "/api/checkout/razorpay/create-subscription",
     features: [
       "Unlimited QR codes",
       "All QR code types",
@@ -129,6 +129,20 @@ export default function BillingPage() {
     setOpenFaq(openFaq === id ? null : id);
   };
 
+  function loadRazorpayScript() {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load Razorpay Checkout"));
+      document.body.appendChild(s);
+    });
+  }
+
   const handleBuyNow = async (plan) => {
     if (plan === "TRIAL") {
       // Free Trial is handled via registration - redirect to register page
@@ -139,33 +153,69 @@ export default function BillingPage() {
     if (plan !== "BASIC") return;
     setBuyingPlan(plan);
     try {
-      const res = await fetch("/api/checkout/basic", {
+      const createRes = await fetch("/api/checkout/razorpay/create-subscription", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ plan }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data.error || "Checkout failed. Please try again.");
+      const checkout = await createRes.json().catch(() => ({}));
+      if (!createRes.ok) {
+        alert(checkout.error || "Checkout failed. Please try again.");
         return;
       }
-      
-      // Show success message
-      alert("Basic Package activated successfully! Your QR codes have been reactivated.");
-      
-      // Refresh subscription status
-      const meRes = await fetch("/api/auth/me", { credentials: "include" });
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        setSubscriptionStatus(meData.subscriptionStatus || { status: "NONE", daysLeft: null });
-      }
-      
-      router.push("/dashboard");
+
+      await loadRazorpayScript();
+
+      const options = {
+        key: checkout.keyId,
+        subscription_id: checkout.subscriptionId,
+        name: checkout.name || "QR Genie",
+        description: checkout.description || "Basic Package",
+        prefill: checkout.prefill || {},
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch("/api/checkout/razorpay/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json().catch(() => ({}));
+            if (!verifyRes.ok) {
+              alert(verifyData.error || "Payment verification failed.");
+              return;
+            }
+            alert("Basic Package activated successfully! Your QR codes have been reactivated.");
+            const meRes = await fetch("/api/auth/me", { credentials: "include" });
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              setSubscriptionStatus(meData.subscriptionStatus || { status: "NONE", daysLeft: null });
+            }
+            router.push("/dashboard");
+          } finally {
+            setBuyingPlan(null);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setBuyingPlan(null);
+          },
+        },
+        theme: { color: "#6366f1" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (resp) {
+        alert(resp.error?.description || "Payment failed.");
+        setBuyingPlan(null);
+      });
+      rzp.open();
     } catch (e) {
       console.error(e);
-      alert("Checkout failed. Please try again.");
-    } finally {
+      alert(e?.message || "Checkout failed. Please try again.");
       setBuyingPlan(null);
     }
   };
