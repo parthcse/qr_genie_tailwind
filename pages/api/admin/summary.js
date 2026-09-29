@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     prisma.qRCode.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
-      include: { user: true },
+      include: { user: { select: { id: true, email: true, name: true } } },
     }),
   ]);
 

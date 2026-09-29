@@ -1,9 +1,10 @@
 import prisma from "../../../../lib/prisma";
 import { getUserFromRequest } from "../../../../lib/auth";
+import { getQrPauseReason } from "../../../../lib/subscription";
 
 /**
  * POST /api/qrs/[id]/resume
- * Sets QR status to ACTIVE. Owner only.
+ * Sets QR status to ACTIVE. Owner only, and only while their trial or subscription is active.
  */
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,16 +19,23 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "QR code ID is required" });
   }
   const qr = await prisma.qRCode.findFirst({
-    where: { id, userId: user.id },
+    where: { id, userId: user.id, status: { not: "DELETED" } },
   });
   if (!qr) {
     return res.status(404).json({ error: "QR code not found" });
+  }
+  const pauseReason = getQrPauseReason(user);
+  if (pauseReason) {
+    return res.status(403).json({
+      error: pauseReason === "TRIAL_EXPIRED"
+        ? "Your free trial has ended. Subscribe to reactivate your QR codes."
+        : "Your subscription has ended. Renew to reactivate your QR codes.",
+    });
   }
   const updated = await prisma.qRCode.update({
     where: { id },
     data: {
       status: "ACTIVE",
-      isActive: true,
       deactivatedReason: null,
     },
     select: {

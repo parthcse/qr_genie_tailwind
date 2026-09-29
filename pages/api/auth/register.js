@@ -61,10 +61,10 @@ export default async function handler(req, res) {
     }
 
     // Validate password length
-    if (password.length < 6) {
-      return res.status(400).json({ 
+    if (password.length < 8) {
+      return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters" 
+        error: "Password must be at least 8 characters long"
       });
     }
 
@@ -111,7 +111,6 @@ export default async function handler(req, res) {
           email: email.trim().toLowerCase(),
           password: hashed,
           name: name ? name.trim() : null,
-          plan: "free",
           trialEndsAt,
           subscriptionPlan: "TRIAL",
           trialStartedAt: now,

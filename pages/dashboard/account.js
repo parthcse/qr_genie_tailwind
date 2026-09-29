@@ -26,6 +26,10 @@ export async function getServerSideProps(context) {
   };
 }
 
+// Sections are open blocks divided by a rule on phones (no card-in-card), cards from sm up
+const sectionClass =
+  "border-t border-gray-100 pt-8 first:border-t-0 first:pt-0 sm:rounded-2xl sm:border sm:border-indigo-100 sm:bg-white sm:p-6 sm:shadow-lg sm:first:border-t sm:first:pt-6";
+
 export default function AccountPage({ user: initialUser }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(router.query.tab === "billing" ? "billing" : "general");
@@ -331,37 +335,34 @@ export default function AccountPage({ user: initialUser }) {
       description="Manage your personal details, password and billing information."
     >
 
-      {/* Tabs */}
-      <div className="mb-4 sm:mb-6 border-b border-gray-200 overflow-x-auto">
-        <nav className="flex space-x-4 sm:space-x-8 min-w-max sm:min-w-0">
+      {/* Tabs: full-width segmented control on phones */}
+      <div role="tablist" aria-label="Account sections" className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 sm:mb-6 sm:w-fit sm:self-start">
+        {[
+          { id: 'general', label: 'General information' },
+          { id: 'billing', label: 'Billing information' },
+        ].map((tab) => (
           <button
-            onClick={() => setActiveTab('general')}
-            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-              activeTab === 'general'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+              activeTab === tab.id
+                ? 'bg-white font-semibold text-indigo-700 shadow-sm'
+                : 'font-medium text-gray-600 hover:text-gray-900'
             }`}
           >
-            General information
+            {tab.label}
           </button>
-          <button
-            onClick={() => setActiveTab('billing')}
-            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-              activeTab === 'billing'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Billing information
-          </button>
-        </nav>
+        ))}
       </div>
 
       {activeTab === 'general' && (
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-8 sm:space-y-6">
           {/* Personal Information Section */}
-          <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 md:p-6 shadow-lg">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Personal information</h3>
+          <div className={sectionClass}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-5">Personal information</h3>
             
             {error && (
               <div className="mb-3 sm:mb-4 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4 rounded">
@@ -377,11 +378,11 @@ export default function AccountPage({ user: initialUser }) {
             )}
 
             <form onSubmit={handlePersonalInfoSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-6">
                 {/* First Name */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
+                    First name
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -393,16 +394,16 @@ export default function AccountPage({ user: initialUser }) {
                       name="firstName"
                       value={personalInfo.firstName}
                       onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="First Name"
                     />
                   </div>
                 </div>
 
                 {/* Last Name */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name & Surname
+                    Last name
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -414,14 +415,14 @@ export default function AccountPage({ user: initialUser }) {
                       name="lastName"
                       value={personalInfo.lastName}
                       onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Last Name"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                   </label>
@@ -435,16 +436,16 @@ export default function AccountPage({ user: initialUser }) {
                       name="email"
                       value={personalInfo.email}
                       onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Email"
                     />
                   </div>
                 </div>
 
                 {/* Telephone */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Telephone
+                    Phone
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -456,14 +457,14 @@ export default function AccountPage({ user: initialUser }) {
                       name="telephone"
                       value={personalInfo.telephone}
                       onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="E.g. 6555123"
                     />
                   </div>
                 </div>
 
                 {/* Company */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
                     Company
                   </label>
@@ -477,14 +478,14 @@ export default function AccountPage({ user: initialUser }) {
                       name="company"
                       value={personalInfo.company}
                       onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Company Name"
                     />
                   </div>
                 </div>
 
                 {/* Address */}
-                <div className="md:col-span-2">
+                <div className="col-span-2">
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                     Address
                   </label>
@@ -494,7 +495,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="address"
                     value={personalInfo.address}
                     onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Street Address"
                   />
                 </div>
@@ -510,7 +511,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="city"
                     value={personalInfo.city}
                     onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="City"
                   />
                 </div>
@@ -518,7 +519,7 @@ export default function AccountPage({ user: initialUser }) {
                 {/* State */}
                 <div>
                   <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                    State/Province
+                    State / province
                   </label>
                   <input
                     type="text"
@@ -526,7 +527,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="state"
                     value={personalInfo.state}
                     onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="State/Province"
                   />
                 </div>
@@ -534,7 +535,7 @@ export default function AccountPage({ user: initialUser }) {
                 {/* Zip Code */}
                 <div>
                   <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    Zip/Postal Code
+                    ZIP / postal code
                   </label>
                   <input
                     type="text"
@@ -542,7 +543,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="zipCode"
                     value={personalInfo.zipCode}
                     onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Zip/Postal Code"
                   />
                 </div>
@@ -558,27 +559,28 @@ export default function AccountPage({ user: initialUser }) {
                     name="country"
                     value={personalInfo.country}
                     onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Country"
                   />
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex sm:justify-end">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Updating...' : 'Update'}
+                  {loading ? 'Saving…' : 'Save changes'}
                 </button>
               </div>
             </form>
           </div>
 
           {/* Change Password Section */}
-          <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Change password</h3>
+          <div className={sectionClass}>
+            <h3 className="text-lg font-semibold text-gray-900">Change password</h3>
+            <p className="mt-1 mb-5 text-sm text-gray-500">Use at least 8 characters.</p>
 
             {passwordSuccess && (
               <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded flex items-center">
@@ -588,7 +590,7 @@ export default function AccountPage({ user: initialUser }) {
             )}
 
             <form onSubmit={handlePasswordSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 sm:gap-6">
                 {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -601,7 +603,7 @@ export default function AccountPage({ user: initialUser }) {
                       name="password"
                       value={passwordInfo.password}
                       onChange={handlePasswordChange}
-                      className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Enter new password"
                     />
                     <button
@@ -630,7 +632,7 @@ export default function AccountPage({ user: initialUser }) {
                       name="confirmPassword"
                       value={passwordInfo.confirmPassword}
                       onChange={handlePasswordChange}
-                      className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Confirm new password"
                     />
                     <button
@@ -648,21 +650,21 @@ export default function AccountPage({ user: initialUser }) {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex sm:justify-end">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Updating...' : 'Update'}
+                  {loading ? 'Saving…' : 'Update password'}
                 </button>
               </div>
             </form>
           </div>
 
           {/* Language Section */}
-          <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Language</h3>
+          <div className={sectionClass}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-5">Language</h3>
 
             {languageSuccess && (
               <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded flex items-center">
@@ -674,7 +676,7 @@ export default function AccountPage({ user: initialUser }) {
             <form onSubmit={handleLanguageSubmit}>
               <div className="max-w-md">
                 <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Language
+                  Display language
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -684,7 +686,7 @@ export default function AccountPage({ user: initialUser }) {
                     id="language"
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
                   >
                     <option value="English">English</option>
                     <option value="Spanish">Spanish</option>
@@ -700,13 +702,13 @@ export default function AccountPage({ user: initialUser }) {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex sm:justify-end">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Updating...' : 'Update'}
+                  {loading ? 'Saving…' : 'Save language'}
                 </button>
               </div>
             </form>
@@ -715,10 +717,10 @@ export default function AccountPage({ user: initialUser }) {
       )}
 
       {activeTab === 'billing' && (
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-8 sm:space-y-6">
           {/* Billing Information Section */}
-          <div className="rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 md:p-6 shadow-lg">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Billing information</h3>
+          <div className={sectionClass}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-5">Billing information</h3>
             
             {error && (
               <div className="mb-3 sm:mb-4 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4 rounded">
@@ -734,11 +736,11 @@ export default function AccountPage({ user: initialUser }) {
             )}
 
             <form onSubmit={handleBillingInfoSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-6">
                 {/* Billing Name */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="billingName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing Name
+                    Billing name
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -750,16 +752,16 @@ export default function AccountPage({ user: initialUser }) {
                       name="billingName"
                       value={billingInfo.billingName}
                       onChange={handleBillingInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Billing Name"
                     />
                   </div>
                 </div>
 
                 {/* Billing Company */}
-                <div>
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="billingCompany" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing Company
+                    Billing company
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -771,16 +773,16 @@ export default function AccountPage({ user: initialUser }) {
                       name="billingCompany"
                       value={billingInfo.billingCompany}
                       onChange={handleBillingInfoChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="Billing Company"
                     />
                   </div>
                 </div>
 
                 {/* Billing Address */}
-                <div className="md:col-span-2">
+                <div className="col-span-2">
                   <label htmlFor="billingAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing Address
+                    Billing address
                   </label>
                   <input
                     type="text"
@@ -788,7 +790,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="billingAddress"
                     value={billingInfo.billingAddress}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Street Address"
                   />
                 </div>
@@ -804,7 +806,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="billingCity"
                     value={billingInfo.billingCity}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="City"
                   />
                 </div>
@@ -812,7 +814,7 @@ export default function AccountPage({ user: initialUser }) {
                 {/* Billing State */}
                 <div>
                   <label htmlFor="billingState" className="block text-sm font-medium text-gray-700 mb-2">
-                    State/Province
+                    State / province
                   </label>
                   <input
                     type="text"
@@ -820,7 +822,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="billingState"
                     value={billingInfo.billingState}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="State/Province"
                   />
                 </div>
@@ -828,7 +830,7 @@ export default function AccountPage({ user: initialUser }) {
                 {/* Billing Zip Code */}
                 <div>
                   <label htmlFor="billingZipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    Zip/Postal Code
+                    ZIP / postal code
                   </label>
                   <input
                     type="text"
@@ -836,7 +838,7 @@ export default function AccountPage({ user: initialUser }) {
                     name="billingZipCode"
                     value={billingInfo.billingZipCode}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Zip/Postal Code"
                   />
                 </div>
@@ -852,15 +854,15 @@ export default function AccountPage({ user: initialUser }) {
                     name="billingCountry"
                     value={billingInfo.billingCountry}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Country"
                   />
                 </div>
 
                 {/* Tax ID */}
-                <div className="md:col-span-2">
+                <div className="col-span-2">
                   <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tax ID / VAT Number
+                    Tax ID / VAT number
                   </label>
                   <input
                     type="text"
@@ -868,19 +870,19 @@ export default function AccountPage({ user: initialUser }) {
                     name="taxId"
                     value={billingInfo.taxId}
                     onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     placeholder="Tax ID / VAT Number (Optional)"
                   />
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex sm:justify-end">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Updating...' : 'Update Billing Information'}
+                  {loading ? 'Saving…' : 'Save billing details'}
                 </button>
               </div>
             </form>

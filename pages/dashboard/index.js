@@ -229,7 +229,7 @@ export default function Dashboard() {
       const matchesSearch = !searchQuery || 
         (code.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         code.type?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "All" || (statusFilter === "Active" && (code.status === "ACTIVE" || (code.isActive !== false && !code.status))) || (statusFilter === "Paused" && (code.status === "PAUSED" || code.isActive === false));
+      const matchesStatus = statusFilter === "All" || (statusFilter === "Active" && code.status === "ACTIVE") || (statusFilter === "Paused" && code.status === "PAUSED");
       const matchesType = !typeFilter || code.type === typeFilter;
       const matchesFolder = !selectedFolderId || code.folderId === selectedFolderId;
       return matchesSearch && matchesStatus && matchesType && matchesFolder;
@@ -295,7 +295,7 @@ export default function Dashboard() {
     const code = codes.find(c => c.id === firstSelectedId);
     if (code) {
       const isExpiredCode =
-        code.isActive === false &&
+        code.status === "PAUSED" &&
         (code.deactivatedReason === "TRIAL_EXPIRED" ||
           code.deactivatedReason === "SUBSCRIPTION_EXPIRED");
       if (isExpiredCode || hasExpiredAccess) {
@@ -311,7 +311,7 @@ export default function Dashboard() {
   const handleDownloadClick = (code, e) => {
     e.stopPropagation();
     const isExpiredCode =
-      code.isActive === false &&
+      code.status === "PAUSED" &&
       (code.deactivatedReason === "TRIAL_EXPIRED" ||
         code.deactivatedReason === "SUBSCRIPTION_EXPIRED");
     if (isExpiredCode || hasExpiredAccess) {
@@ -347,7 +347,7 @@ export default function Dashboard() {
   };
 
   const handlePauseResume = async (code) => {
-    const isPaused = code.status === "PAUSED" || code.isActive === false;
+    const isPaused = code.status === "PAUSED";
     const endpoint = isPaused ? `/api/qrs/${code.id}/resume` : `/api/qrs/${code.id}/pause`;
     try {
       const res = await fetch(endpoint, {
@@ -771,7 +771,7 @@ export default function Dashboard() {
                   const linkType = code.linkType || "DYNAMIC";
                   const isDynamic = linkType === "DYNAMIC";
                   const scanCount = code.scanCount || 0;
-                  const isInactive = code.status === "PAUSED" || code.isActive === false;
+                  const isInactive = code.status === "PAUSED";
                   const isExpiredBySubscription =
                     isInactive &&
                     (code.deactivatedReason === "TRIAL_EXPIRED" ||
@@ -1024,7 +1024,7 @@ export default function Dashboard() {
                                       }}
                                       className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
                                     >
-                                      {(code.status === "PAUSED" || code.isActive === false) ? (
+                                      {code.status === "PAUSED" ? (
                                         <>
                                           <FaPlay className="w-4 h-4 text-gray-500 flex-shrink-0" />
                                           <span>Resume</span>
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
       {/* Bulk Actions Bar */}
       {selectedCodes.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 w-full">
+          <div className="max-w-site mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 w-full">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <button
                 type="button"

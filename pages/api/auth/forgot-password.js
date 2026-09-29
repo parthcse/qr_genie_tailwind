@@ -54,13 +54,14 @@ export default async function handler(req, res) {
     }
 
     // Send email with reset link
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
-      console.error("NEXT_PUBLIC_APP_URL environment variable is not set!");
-      return res.status(500).json({ 
-        error: "Server configuration error. Please contact support." 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL;
+    if (!appUrl) {
+      console.error("NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_BASE_URL environment variable is not set!");
+      return res.status(500).json({
+        error: "Server configuration error. Please contact support."
       });
     }
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${resetToken}`;
     
     // Send email (will log to console in development if RESEND_API_KEY not set)
     // Don't fail the request if email sending fails - token is already saved
@@ -81,8 +82,8 @@ export default async function handler(req, res) {
       stack: error.stack,
       name: error.name
     });
-    return res.status(500).json({ 
-      error: error.message || "An error occurred. Please try again later." 
+    return res.status(500).json({
+      error: "An error occurred. Please try again later."
     });
   }
 }

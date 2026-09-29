@@ -9,46 +9,9 @@ import { validateRedirectUrl } from "../../lib/redirectValidation";
 import { hashIp, getDeviceFingerprint, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
 import { getGeoFromIp } from "../../lib/geoIp";
 import { isRateLimited } from "../../lib/rateLimit";
-
-/**
- * Extract client IP from request headers (handles Nginx/proxy forwarding).
- * Checks multiple headers in order: cf-connecting-ip, x-forwarded-for, x-real-ip, true-client-ip, cf-connecting-ipv6
- */
-function getClientIp(req) {
-  // Cloudflare
-  if (req.headers["cf-connecting-ip"]) {
-    const ip = req.headers["cf-connecting-ip"];
-    if (typeof ip === "string") return ip.split(",")[0].trim();
-  }
-  
-  // Standard proxy headers
-  const forwardedFor = req.headers["x-forwarded-for"];
-  if (forwardedFor && typeof forwardedFor === "string") {
-    // x-forwarded-for can contain multiple IPs: "client, proxy1, proxy2"
-    return forwardedFor.split(",")[0].trim();
-  }
-  
-  // Nginx real IP
-  if (req.headers["x-real-ip"]) {
-    const ip = req.headers["x-real-ip"];
-    if (typeof ip === "string") return ip.split(",")[0].trim();
-  }
-  
-  // Other common headers
-  if (req.headers["true-client-ip"]) {
-    const ip = req.headers["true-client-ip"];
-    if (typeof ip === "string") return ip.split(",")[0].trim();
-  }
-  
-  // IPv6 Cloudflare
-  if (req.headers["cf-connecting-ipv6"]) {
-    const ip = req.headers["cf-connecting-ipv6"];
-    if (typeof ip === "string") return ip.split(",")[0].trim();
-  }
-  
-  // Fallback to socket address (direct connection)
-  return req.socket?.remoteAddress || null;
-}
+import { getQrPauseReason } from "../../lib/subscription";
+import { pauseActiveQrCodes } from "../../lib/subscriptionSync";
+import { getClientIp } from "../../lib/clientIp";
 
 export async function getServerSideProps({ params, req }) {
   const { slug } = params;
@@ -81,36 +44,19 @@ export async function getServerSideProps({ params, req }) {
     };
   }
 
-  // ACTIVE: legacy trial/subscription check
-  const user = qr.user;
-  const now = new Date();
-  let expired = false;
-  if (
-    user &&
-    user.subscriptionPlan === "TRIAL" &&
-    user.trialEndsAt &&
-    new Date(user.trialEndsAt) < now
-  ) {
-    expired = true;
-  }
-  if (expired) {
+  // ACTIVE, but the owner's trial or subscription has ended: pause their codes
+  const pauseReason = getQrPauseReason(qr.user);
+  if (pauseReason) {
     try {
-      await prisma.qRCode.update({
-        where: { slug },
-        data: {
-          status: "PAUSED",
-          isActive: false,
-          deactivatedReason: "TRIAL_EXPIRED",
-        },
-      });
+      await pauseActiveQrCodes(qr.user.id, pauseReason);
     } catch (e) {
-      console.error("Failed to pause expired QR code:", e);
+      console.error("Failed to pause expired QR codes:", e);
     }
     return {
       props: {
         view: "paused",
         pausedMessage: null,
-        reason: "TRIAL_EXPIRED",
+        reason: pauseReason,
       },
     };
   }
@@ -161,8 +107,8 @@ export async function getServerSideProps({ params, req }) {
       console.error("ScanEvent create error:", e);
     }
     await prisma.qRCode.update({
-      where: { slug },
-      data: { scanCount: qr.scanCount + 1 },
+      where: { id: qr.id },
+      data: { scanCount: { increment: 1 } },
     });
     return {
       props: {
@@ -216,8 +162,8 @@ export async function getServerSideProps({ params, req }) {
   }
 
   await prisma.qRCode.update({
-    where: { slug },
-    data: { scanCount: qr.scanCount + 1 },
+    where: { id: qr.id },
+    data: { scanCount: { increment: 1 } },
   });
 
   return {

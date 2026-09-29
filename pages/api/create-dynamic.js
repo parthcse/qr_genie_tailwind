@@ -39,8 +39,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // Check QR code limit (2 during trial, unlimited for paid plans)
-  const qrCount = await prisma.qRCode.count({ where: { userId: user.id } });
+  // Check QR code limit (2 during trial, unlimited for paid plans); deleted codes don't count
+  const qrCount = await prisma.qRCode.count({ where: { userId: user.id, status: { not: "DELETED" } } });
   const limitCheck = await checkQRCodeLimit(user, qrCount);
   
   if (!limitCheck.canCreate) {
@@ -283,7 +283,6 @@ export default async function handler(req, res) {
         qrColor: safeQrColor,
         bgColor: safeBgColor,
         meta: metaString,
-        isActive: true,
         deactivatedReason: null,
         status: "ACTIVE",
         linkType,

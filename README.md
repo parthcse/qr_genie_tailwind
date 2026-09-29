@@ -1,59 +1,56 @@
-# QR-Genie
+# QR Genie
 
-Minimal SaaS for creating, managing, and tracking dynamic QR codes. Built with Next.js and Tailwind CSS.
+SaaS for creating QR codes that can be edited after printing and tracked when scanned.
+New accounts get a 14-day trial (2 QR codes); the Basic plan is a monthly Razorpay subscription.
 
-## Features
+**Stack:** Next.js 16 (Pages Router), React 18, Tailwind 3, Prisma 5 + PostgreSQL, JWT cookie auth, Razorpay, Resend.
 
-- **QR code types**: Website, WiFi, Instagram, WhatsApp, vCard, PDF, social links, menu, coupon, and more
-- **Design**: Frames, patterns, colors, logos, gradients (via `qr-code-styling`)
-- **Dynamic vs static**: Dynamic = short link `/r/[slug]` with tracking; static = direct URL in QR, no tracking
-- **Analytics**: Scan events, device/browser, geo (country/region/city), time-series charts (Pro)
-- **Folders**: Organize QR codes (Pro)
-- **Auth**: Email/password, HTTP-only JWT, password reset (Resend)
-- **Billing**: 14-day trial, Pro plans; trial/limit enforcement in API
+## How it works
 
-## Tech stack
-
-- **Frontend**: Next.js, React, Tailwind CSS, Recharts, qrcode.react, qr-code-styling
-- **Backend**: Next.js API routes, Prisma, PostgreSQL (production) / SQLite (dev), JWT, bcrypt, nanoid
-- **Email**: Resend (optional)
+- **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused).
+- **Scan:** `pages/r/[slug].js` checks the code's status and the owner's plan, records a `ScanEvent` (hashed IP, device, country), then redirects.
+- **Plans:** `lib/subscription.js` decides what a user may do; `lib/subscriptionSync.js` pauses codes when a trial or subscription ends; `lib/activateBasicSubscription.js` restores them after payment. Paid codes keep working for 3 days after the end date to cover late renewals.
+- **Payments:** billing page → `api/checkout/razorpay/create-subscription` → Razorpay Checkout → `api/checkout/razorpay/verify`. `api/webhooks/razorpay` handles renewals and is the backup if the browser never calls verify.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` and set at least:
-   - `DATABASE_URL` (e.g. `file:./prisma/dev.db` for SQLite)
-   - `JWT_SECRET` (e.g. `openssl rand -base64 32`)
-   - `NEXT_PUBLIC_APP_URL` (e.g. `http://localhost:3000`)
+Needs Node 20+ and a local PostgreSQL.
 
-2. Install and run migrations:
-   ```bash
-   npm install
-   npx prisma migrate dev --name init
-   ```
+```bash
+cp .env.example .env        # then fill it in; use rzp_test_ keys and NEXT_PUBLIC_BASE_URL=http://localhost:3000
+npm install
+npx prisma migrate deploy   # creates the tables
+npm run dev                 # http://localhost:3000
+```
 
-3. Start dev server:
-   ```bash
-   npm run dev
-   ```
+## Changing the database
 
-4. Open http://localhost:3000
+1. Edit `prisma/schema.prisma`.
+2. `npx prisma migrate dev --name short_description` creates a migration folder and applies it locally.
+3. Commit the new folder under `prisma/migrations/`. On the server, `npx prisma migrate deploy` applies it.
 
-## Production
+Never edit or delete a migration folder that has already been applied on the server.
 
-- Set `DATABASE_URL` (PostgreSQL), `JWT_SECRET`, `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_BASE_URL`, optional `RESEND_*`.
-- On server: `npm install`, `npx prisma generate`, `npm run migrate` (or `npx prisma migrate deploy`), `npm run build`, then `npm start` (or PM2). Use Nginx (or similar) as reverse proxy and SSL (e.g. Let’s Encrypt).
+## Deploying
 
-Full steps, Nginx config for POST/API, migration order, and troubleshooting: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+Every push to `main` runs `.github/workflows/deploy.yml`, which copies the source to the Lightsail server (`/var/www/qr-genie`). It does **not** build, migrate or restart, and it does **not** delete files removed from the repo. After a push, on the server:
 
-## Documentation (relevant to this codebase)
+```bash
+cd /var/www/qr-genie
+npm ci                       # only if package.json changed
+npx prisma migrate deploy    # only if prisma/migrations changed
+npx prisma generate
+npm run build
+pm2 restart qr-genie-next   # the name in ecosystem.config.js; check with `pm2 list`
+```
 
-| Document | Purpose |
-|----------|---------|
-| **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** | Project overview, tech stack, folder structure, key files, env vars, API routes, dev workflow |
-| **[DATABASE_DOCUMENTATION.md](DATABASE_DOCUMENTATION.md)** | Database config, schema, tables, relationships, migrations, operations, best practices |
-| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Production deploy (env, build, PM2, Nginx, SSL), DB migration, Nginx POST fix, SSH/firewall troubleshooting |
-| **[README_EMAIL_SETUP.md](README_EMAIL_SETUP.md)** | Password reset and Resend setup (dev vs production) |
-| **[SUBSCRIPTION_IMPLEMENTATION.md](SUBSCRIPTION_IMPLEMENTATION.md)** | Trial, plans, QR limits, pause/resume, billing APIs |
-| **[DYNAMIC_FORM_SYSTEM.md](DYNAMIC_FORM_SYSTEM.md)** | Schema-driven QR form (qrSchemas, DynamicForm, field components) |
+The server reads its secrets from `/var/www/qr-genie/.env` (see `.env.example`); `ecosystem.config.js` holds no secrets.
 
-All other one-off fix summaries and duplicate checklists have been removed; the above files are the single source of truth for this project.
+### Server requirements
+
+- **Nginx** must pass the client address: `proxy_set_header X-Real-IP $remote_addr;` and `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`. Scan analytics and the scan rate limit rely on it.
+- **Razorpay plans** (Live mode): create a monthly Basic plan for each currency you want to offer and set `RAZORPAY_PLAN_ID_INR` and/or `RAZORPAY_PLAN_ID_USD`. A currency appears on the site only when its plan is set; prices shown on the site are read from the plans (cached for 10 minutes), so change a price by creating a new plan and updating the ID. Visitors in India see rupees by default, everyone else dollars, with a switch when both exist.
+- **Razorpay webhook** (Live mode): URL `https://qr-genie.co/api/webhooks/razorpay`, events `subscription.activated` and `subscription.charged`, secret = `RAZORPAY_WEBHOOK_SECRET`.
+- **Resend:** set `RESEND_API_KEY` and a `RESEND_FROM_EMAIL` on a domain verified in Resend, or password reset emails and contact-form notifications won't be sent. Contact messages are always saved in the `ContactMessage` table, so none are lost (view them with `npx prisma studio`).
+- **Cloudflare Turnstile** (contact form spam check): create a widget in Cloudflare (mode: Managed, hostname `qr-genie.co`), then set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. The site key is baked in at build time, so run `npm run build` after adding it. With both empty the check is skipped.
+- **Support email** shown on the site lives in `lib/site.js` (`SUPPORT_EMAIL`).

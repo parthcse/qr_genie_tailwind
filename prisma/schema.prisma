@@ -24,7 +24,6 @@ model User {
   password              String
   name                  String?
   role                  String    @default("user")
-  plan                  String    @default("free")   // legacy
   trialEndsAt           DateTime?
   resetToken            String?
   resetTokenExpires     DateTime?
@@ -76,7 +75,6 @@ model QRCode {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   scanCount         Int       @default(0)
-  isActive          Boolean   @default(true) // legacy; kept for backward compat, synced from status
   deactivatedReason String?   // TRIAL_EXPIRED | SUBSCRIPTION_EXPIRED | MANUAL | null
   status            QrStatus  @default(ACTIVE) // ACTIVE | PAUSED | DELETED
   linkType          LinkType  @default(DYNAMIC) // STATIC = no tracking, DYNAMIC = /r/slug + tracking
@@ -107,6 +105,20 @@ model ScanEvent {
   qrCodeId  String
 }
 
+
+// Messages from the /contact form; kept so none are lost if email delivery fails
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  topic     String
+  message   String
+  userId    String?  // set when the sender was signed in
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
 
 model Folder {
   id        String   @id @default(cuid())

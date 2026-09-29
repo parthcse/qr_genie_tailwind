@@ -2,8 +2,7 @@
 import prisma from "../../../lib/prisma";
 import { getUserFromRequest } from "../../../lib/auth";
 import { getUserSubscriptionStatus } from "../../../lib/subscription";
-
-const TRIAL_DAYS = 14;
+import { syncSubscriptionState } from "../../../lib/subscriptionSync";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -16,60 +15,10 @@ export default async function handler(req, res) {
     let user = await getUserFromRequest(req);
 
     if (user) {
-      const plan = user.subscriptionPlan ?? null;
-      const hasTrialEnd = user.trialEndsAt != null;
-      const hadPaid = user.subscriptionStartedAt != null;
-      const needsInit = (plan === null || plan === "" || plan === "EXPIRED") && !hasTrialEnd && !hadPaid;
-
-      if (needsInit) {
-        try {
-          const qrCount = await prisma.qRCode.count({ where: { userId: user.id } });
-          const now = new Date();
-          if (qrCount > 0) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { subscriptionPlan: "EXPIRED" },
-            });
-            await prisma.qRCode.updateMany({
-              where: { userId: user.id },
-              data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED", status: "PAUSED" },
-            });
-            user = { ...user, subscriptionPlan: "EXPIRED", trialEndsAt: null };
-          } else {
-            const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                subscriptionPlan: "TRIAL",
-                trialStartedAt: now,
-                trialEndsAt,
-                subscriptionStartedAt: null,
-                subscriptionEndsAt: null,
-              },
-            });
-            user = { ...user, subscriptionPlan: "TRIAL", trialStartedAt: now, trialEndsAt, subscriptionStartedAt: null, subscriptionEndsAt: null };
-          }
-        } catch (err) {
-          console.error("Auth me: trial init failed", err);
-        }
-      }
-
-      // Check if trial expired and pause QR codes if needed
-      const now = new Date();
-      if (user.subscriptionPlan === "TRIAL" && user.trialEndsAt && new Date(user.trialEndsAt) < now) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { subscriptionPlan: "EXPIRED" },
-          });
-          await prisma.qRCode.updateMany({
-            where: { userId: user.id, isActive: true },
-            data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED", status: "PAUSED" },
-          });
-          user = { ...user, subscriptionPlan: "EXPIRED" };
-        } catch (err) {
-          console.error("Auth me: trial expiry check failed", err);
-        }
+      try {
+        user = await syncSubscriptionState(user);
+      } catch (err) {
+        console.error("Auth me: subscription sync failed", err);
       }
 
       // Fetch full user from DB so account/billing fields are included (getUserFromRequest returns subset)

@@ -5,9 +5,9 @@ module.exports = {
       cwd: "/var/www/qr-genie",
       script: "npm",
       args: "start",
+      // DATABASE_URL and all other secrets come from /var/www/qr-genie/.env, which Next.js loads at startup
       env: {
-        NODE_ENV: "production",
-        DATABASE_URL: "postgresql://qr_genie:QrGenie123!@localhost:5432/qr_genie?schema=public"
+        NODE_ENV: "production"
       }
     }
   ]

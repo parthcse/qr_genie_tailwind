@@ -1,6 +1,7 @@
 import prisma from "../../../lib/prisma";
 import bcrypt from "bcryptjs";
 import { setLoginSession } from "../../../lib/auth";
+import { syncSubscriptionState } from "../../../lib/subscriptionSync";
 
 // Disable body parsing limit for this route (Next.js default is 1mb)
 export const config = {
@@ -86,52 +87,8 @@ export default async function handler(req, res) {
     }
 
 
-    const now = new Date();
-
-    // Trial / subscription initialization (first-time or backward compat)
-    const plan = user.subscriptionPlan ?? null;
-    const needsMigration = plan === null || plan === "EXPIRED" || plan === "";
-
     try {
-      if (needsMigration) {
-        const qrCount = await prisma.qRCode.count({ where: { userId: user.id } });
-        if (qrCount > 0) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { subscriptionPlan: "EXPIRED" },
-          });
-          await prisma.qRCode.updateMany({
-            where: { userId: user.id },
-            data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
-          });
-          user.subscriptionPlan = "EXPIRED";
-        } else {
-          const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              subscriptionPlan: "TRIAL",
-              trialStartedAt: now,
-              trialEndsAt,
-              subscriptionStartedAt: null,
-              subscriptionEndsAt: null,
-            },
-          });
-          user.subscriptionPlan = "TRIAL";
-          user.trialStartedAt = now;
-          user.trialEndsAt = trialEndsAt;
-        }
-      } else if (user.subscriptionPlan === "TRIAL" && user.trialEndsAt && new Date(user.trialEndsAt) < now) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { subscriptionPlan: "EXPIRED" },
-        });
-        await prisma.qRCode.updateMany({
-          where: { userId: user.id },
-          data: { isActive: false, deactivatedReason: "TRIAL_EXPIRED" },
-        });
-        user.subscriptionPlan = "EXPIRED";
-      }
+      user = await syncSubscriptionState(user);
     } catch (subError) {
       // Prisma client/schema out of sync (e.g. Unknown argument subscriptionPlan) or DB error
       console.error("Login: subscription update failed (run npx prisma generate):", subError);

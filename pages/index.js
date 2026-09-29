@@ -25,6 +25,10 @@ import {
   FaEye,
   FaDownload
 } from "react-icons/fa";
+import SiteHeader from "../components/SiteHeader";
+import SiteFooter from "../components/SiteFooter";
+import CurrencySwitch from "../components/CurrencySwitch";
+import { formatPrice, formatPeriod } from "../lib/price";
 // Reusable auth hook for checking authentication state
 function useAuth() {
   const [user, setUser] = useState(null);
@@ -59,11 +63,26 @@ function useAuth() {
 export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import('../lib/auth');
   const user = await getUserFromRequest(context.req);
-  
+
+  // Basic Package prices from Razorpay (cached), shown in rupees to visitors in India and dollars elsewhere
+  let plans = {};
+  let defaultCurrency = null;
+  try {
+    const { getBasicPlans, publicPlans, pickDefaultCurrency } = await import('../lib/plans');
+    const { getClientIp } = await import('../lib/clientIp');
+    const all = await getBasicPlans();
+    plans = publicPlans(all);
+    defaultCurrency = pickDefaultCurrency(all, { ip: getClientIp(context.req) });
+  } catch (err) {
+    console.error('Landing prices:', err.message);
+  }
+
   return {
     props: {
       // Pass initial auth state from server to avoid flashing
       initialUser: user ? JSON.parse(JSON.stringify(user)) : null,
+      plans,
+      defaultCurrency,
     },
   };
 }
@@ -174,8 +193,7 @@ const testimonials = [
 const pricingPlans = [
   {
     name: "Free Trial",
-    price: "$0",
-    period: "14 days",
+    period: "for 14 days",
     description: "Perfect for getting started",
     features: [
       "14-day full access",
@@ -191,8 +209,6 @@ const pricingPlans = [
   },
   {
     name: "Basic Package",
-    price: "$5",
-    period: "per month",
     description: "For individuals and small businesses",
     features: [
       "Unlimited QR codes",
@@ -260,12 +276,25 @@ const companies = [
   }
 ];
 
-export default function Landing({ initialUser }) {
+export default function Landing({ initialUser, plans = {}, defaultCurrency = null }) {
   // Use auth hook with initial server state
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  // Pricing: real Razorpay prices in the visitor's currency, switchable when both are offered
+  const [currency, setCurrency] = useState(defaultCurrency);
+  const availableCurrencies = ["INR", "USD"].filter((c) => plans[c]);
+  const basicPlan = currency ? plans[currency] : null;
+  const displayPlans = pricingPlans.map((plan) =>
+    plan.name === "Basic Package"
+      ? {
+          ...plan,
+          price: basicPlan ? formatPrice(basicPlan.amount, basicPlan.currency) : "—",
+          period: basicPlan ? formatPeriod(basicPlan.period, basicPlan.interval) : "",
+        }
+      : { ...plan, price: formatPrice(0, currency || "USD") }
+  );
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-  
   // Use server-provided user initially, then update with client state
   const currentUser = user || initialUser;
   const isAuthenticated = !!currentUser;
@@ -350,58 +379,6 @@ export default function Landing({ initialUser }) {
     );
   };
 
-  // Dynamic Navigation component
-  const Navigation = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center space-x-4">
-
-          <div className="w-20 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
-          <div className="w-24 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
-        </div>
-      );
-    }
-
-    if (isAuthenticated) {
-      return (
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/dashboard"
-
-            className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Dashboard
-          </Link>
-          <button
-            onClick={handleLogout}
-
-            className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center space-x-4">
-        <Link
-          href="/auth/login"
-
-          className="text-gray-700 hover:text-indigo-600 px-4 py-2 text-sm font-medium transition-colors"
-        >
-          Log in
-        </Link>
-        <Link
-          href="/auth/register"
-          className="px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
-        >
-          Get Started
-        </Link>
-      </div>
-    );
-  };
-
   return (
 
     <div className="min-h-screen bg-white">
@@ -411,30 +388,7 @@ export default function Landing({ initialUser }) {
         <meta name="keywords" content="QR codes, dynamic QR codes, QR code generator, QR code analytics, QR code tracking" />
       </Head>
 
-      {/* Navigation */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20 items-center">
-            <div className="flex items-center">
-              <Link href="/" className="flex-shrink-0 flex items-center group">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <FaQrcode className="h-6 w-6 text-white" />
-                </div>
-                <span className="ml-3 text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  QR-Genie
-                </span>
-              </Link>
-              <nav className="hidden md:ml-12 md:flex space-x-8">
-                <a href="#features" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">Features</a>
-                <a href="#how-it-works" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">How It Works</a>
-                <a href="#pricing" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">Pricing</a>
-                <a href="#testimonials" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition-colors">Testimonials</a>
-              </nav>
-            </div>
-            <Navigation />
-          </div>
-        </div>
-      </header>
+      <SiteHeader isAuthenticated={isAuthenticated} loading={loading} onLogout={handleLogout} />
 
       {/* Hero Section */}
 
@@ -446,7 +400,7 @@ export default function Landing({ initialUser }) {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto py-20 px-4 sm:py-32 sm:px-6 lg:px-8">
+        <div className="relative max-w-site mx-auto py-20 px-4 sm:py-32 sm:px-6 lg:px-8">
           <div className="text-center">
             {/* Badge */}
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold mb-8">
@@ -485,7 +439,7 @@ export default function Landing({ initialUser }) {
 
       {/* Trust Indicators */}
       <section className="bg-gradient-to-b from-white to-gray-50 py-16 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <p className="text-sm font-semibold uppercase text-gray-500 tracking-wider mb-2">
               Trusted by innovative companies
@@ -587,7 +541,7 @@ export default function Landing({ initialUser }) {
 
       {/* Features */}
       <section id="features" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold mb-4">
               Features
@@ -619,7 +573,7 @@ export default function Landing({ initialUser }) {
 
       {/* How It Works */}
       <section id="how-it-works" className="py-20 bg-gradient-to-br from-gray-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold mb-4">
               How It Works
@@ -660,7 +614,7 @@ export default function Landing({ initialUser }) {
 
       {/* Pricing */}
       <section id="pricing" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-semibold mb-4">
               Pricing
@@ -669,12 +623,13 @@ export default function Landing({ initialUser }) {
               Simple, transparent pricing
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Choose the plan that works best for you. Upgrade or downgrade anytime.
+              Start free for 14 days, no card needed. Cancel anytime.
             </p>
+            <CurrencySwitch currencies={availableCurrencies} value={currency} onChange={setCurrency} className="mt-8" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {pricingPlans.map((plan, index) => (
+            {displayPlans.map((plan, index) => (
               <div
                 key={index}
                 className={`relative bg-white rounded-2xl border-2 ${plan.color} p-8 shadow-lg hover:shadow-2xl transition-all duration-300 ${plan.popular ? 'scale-105' : ''}`}
@@ -690,10 +645,8 @@ export default function Landing({ initialUser }) {
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline justify-center">
-                    <span className="text-5xl font-extrabold text-gray-900">{plan.price}</span>
-                    {plan.period !== "forever" && plan.period !== "pricing" && (
-                      <span className="ml-2 text-gray-600">/{plan.period}</span>
-                    )}
+                    <span className="text-5xl font-extrabold text-gray-900 tabular-nums">{plan.price}</span>
+                    {plan.period && <span className="ml-2 text-gray-600">{plan.period}</span>}
                   </div>
                   <p className="mt-2 text-gray-600">{plan.description}</p>
                 </div>
@@ -781,7 +734,7 @@ export default function Landing({ initialUser }) {
 
       {/* Testimonials */}
       <section id="testimonials" className="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-sm font-semibold mb-4">
               Testimonials
@@ -825,124 +778,9 @@ export default function Landing({ initialUser }) {
 
       </section>
 
-      {/* ----- Single CTA strip in footer (no duplicate above) ----- */}
-      <footer className="relative overflow-hidden" role="contentinfo">
-        {/* 1. CTA Section — centered, clear hierarchy, single conversion focus */}
-        <section
-          className="relative bg-gradient-to-r from-indigo-600 to-purple-700 overflow-hidden"
-          aria-labelledby="footer-cta-heading"
-        >
-          {/* Subtle radial glow behind content for depth (no layout impact) */}
-          <div className="footer-cta-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
-            <h2 id="footer-cta-heading" className="text-white text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              Ready to get started?
-            </h2>
-            <p className="text-indigo-100 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
-              Join thousands of businesses using QR-Genie to create and manage dynamic QR codes.
-              Start your 14-day free trial today – no credit card required.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <Link
-                href={isAuthenticated ? "/dashboard" : "/auth/register"}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl border-2 border-white bg-gradient-to-r from-indigo-600 to-purple-600 !text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {isAuthenticated ? "Go to Dashboard" : "Start Free Trial"}
-                <FaArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-              <a
-                href="#pricing"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl border-2 border-indigo-300 text-gray-900 bg-white hover:bg-indigo-50 hover:border-indigo-200 shadow-md hover:shadow-lg transition-all duration-200"
-              >
-                View Pricing
-              </a>
-            </div>
-            {/* Trust microcopy — reassurance below CTAs */}
-            <p className="mt-6 text-sm text-indigo-200/90">
-              No credit card required for trial · Secure & reliable
-            </p>
-          </div>
-        </section>
-
-        {/* 2. Main footer — 4 columns desktop, stacked mobile; strong contrast & hierarchy */}
-        <div className="bg-gray-950 text-gray-300 border-t border-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 pb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 lg:gap-12">
-              {/* Brand column — logo, tagline, social (hover scale) */}
-              <div className="sm:col-span-2 md:col-span-1">
-                <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-indigo-500/30">
-                    <FaQrcode className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold text-white">QR-Genie</span>
-                </Link>
-                <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
-                  Empowering businesses with dynamic QR code solutions.
-                </p>
-                <nav className="mt-5 flex items-center gap-2" aria-label="Social links">
-                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="Twitter">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" /></svg>
-                  </a>
-                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="GitHub">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" /></svg>
-                  </a>
-                  <a href="#" className="h-11 w-11 rounded-lg bg-gray-800/80 text-gray-400 flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-300 min-w-[44px] min-h-[44px]" aria-label="LinkedIn">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
-                  </a>
-                </nav>
-              </div>
-
-              {/* Product — heading hierarchy: text-gray-200 */}
-              <nav aria-labelledby="footer-product">
-                <h3 id="footer-product" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Product</h3>
-                <ul className="space-y-2">
-                  <li><a href="#features" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Features</a></li>
-                  <li><a href="#pricing" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Pricing</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Integrations</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Changelog</a></li>
-                </ul>
-              </nav>
-
-              {/* Company */}
-              <nav aria-labelledby="footer-company">
-                <h3 id="footer-company" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Company</h3>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">About</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Blog</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Careers</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Contact</a></li>
-                </ul>
-              </nav>
-
-              {/* Resources (was Legal & support) — Documentation, Help, Privacy, Terms */}
-              <nav aria-labelledby="footer-resources">
-                <h3 id="footer-resources" className="text-xs font-semibold uppercase tracking-wider text-gray-200 mb-4">Resources</h3>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Documentation</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Help Center</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Privacy Policy</a></li>
-                  <li><a href="#" className="text-sm text-gray-400 hover:text-white hover:translate-x-0.5 inline-block transition-all duration-200 py-2">Terms of Service</a></li>
-                </ul>
-              </nav>
-            </div>
-
-            {/* 3. Bottom bar — divider, copyright, micro-copy */}
-            <div className="mt-12 sm:mt-14 pt-8 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-gray-500 order-2 sm:order-1">
-                &copy; {new Date().getFullYear()} QR-Genie. All rights reserved.
-              </p>
-              <p className="text-sm text-gray-400 order-1 sm:order-2">
-                Trusted by businesses worldwide.
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter showCta isAuthenticated={isAuthenticated} />
 
       <style jsx>{`
-        .footer-cta-glow {
-          background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.25) 0%, transparent 65%);
-        }
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

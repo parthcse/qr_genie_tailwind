@@ -11,6 +11,13 @@ body {
   font-family: theme('fontFamily.sans');
 }
 
-a {
-  @apply text-sky-600 hover:text-sky-700;
+/* Default colour for plain links. In the base layer, with :where() on the hover rule, so any link or
+   link-styled button that sets its own text colour keeps it on hover instead of turning sky blue. */
+@layer base {
+  a {
+    @apply text-sky-600;
+  }
+  :where(a):hover {
+    @apply text-sky-700;
+  }
 }

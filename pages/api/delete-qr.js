@@ -38,7 +38,6 @@ export default async function handler(req, res) {
       where: { id: String(id) },
       data: {
         status: "DELETED",
-        isActive: false,
         deactivatedReason: "MANUAL",
       },
     });

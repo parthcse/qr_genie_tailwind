@@ -1,5 +1,5 @@
 import prisma from "../../../lib/prisma";
-import { activateBasicSubscriptionForUser } from "../../../lib/activateBasicSubscription";
+import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../lib/activateBasicSubscription";
 import { verifyWebhookSignature } from "../../../lib/razorpayVerify";
 import { trimEnv } from "../../../lib/razorpayClient";
 
@@ -71,12 +71,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, ignored: true });
     }
 
+    // Uses Razorpay's period end, so activated + charged for the same payment, and webhook retries, don't stack
     await activateBasicSubscriptionForUser({
       userId,
+      periodEnd: getRazorpayPeriodEnd(subscription),
       razorpayCustomerId: subscription.customer_id || undefined,
       razorpaySubscriptionId: subscription.id,
       razorpayPaymentId: event.payload?.payment?.entity?.id || undefined,
-      isRenewal: eventName === "subscription.charged",
     });
   } catch (err) {
     console.error("Razorpay webhook activate:", err);

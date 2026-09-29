@@ -54,6 +54,43 @@ module.exports = {
           },
         },
       },
+
+      // One content width for the whole site: header, footer, landing sections and dashboard
+      maxWidth: {
+        site: '84rem',
+      },
+
+      // Used by PaymentResultModal
+      keyframes: {
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'modal-pop': {
+          from: { opacity: '0', transform: 'translateY(16px) scale(0.95)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'badge-pop': {
+          '0%': { transform: 'scale(0)' },
+          '70%': { transform: 'scale(1.12)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        'draw-check': {
+          from: { strokeDashoffset: '34' },
+          to: { strokeDashoffset: '0' },
+        },
+        'confetti-fall': {
+          from: { transform: 'translateY(-20px) rotate(0deg)', opacity: '1' },
+          to: { transform: 'translateY(170px) rotate(600deg)', opacity: '0' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 0.2s ease-out',
+        'modal-pop': 'modal-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        'badge-pop': 'badge-pop 0.45s ease-out 0.1s both',
+        'draw-check': 'draw-check 0.4s ease-out 0.45s both',
+        'confetti-fall': 'confetti-fall 2.4s ease-in 0s 2 both',
+      },
     },
   },
   plugins: [],

@@ -1,6 +1,7 @@
 // pages/api/duplicate-qr.js
 import prisma from "../../lib/prisma";
 import { getUserFromRequest } from "../../lib/auth";
+import { checkQRCodeLimit } from "../../lib/subscription";
 import { nanoid } from "nanoid";
 
 export default async function handler(req, res) {
@@ -25,12 +26,23 @@ export default async function handler(req, res) {
       where: { id: String(id) },
     });
 
-    if (!originalQR) {
+    if (!originalQR || originalQR.status === "DELETED") {
       return res.status(404).json({ error: "QR code not found" });
     }
 
     if (originalQR.userId !== user.id) {
       return res.status(403).json({ error: "You don't have permission to duplicate this QR code" });
+    }
+
+    // Same plan and QR limit rules as creating a new code
+    const qrCount = await prisma.qRCode.count({ where: { userId: user.id, status: { not: "DELETED" } } });
+    const limitCheck = await checkQRCodeLimit(user, qrCount);
+    if (!limitCheck.canCreate) {
+      return res.status(403).json({
+        error: limitCheck.reason,
+        limit: limitCheck.limit,
+        current: limitCheck.current,
+      });
     }
 
     // Create a duplicate with new slug (same linkType, fresh ACTIVE status)
@@ -48,7 +60,6 @@ export default async function handler(req, res) {
         folderId: originalQR.folderId,
         status: "ACTIVE",
         linkType: originalQR.linkType || "DYNAMIC",
-        isActive: true,
         deactivatedReason: null,
       },
     });

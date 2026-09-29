@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 
 import Link from 'next/link';
-import { FaEye, FaEyeSlash, FaExclamationCircle, FaQrcode } from 'react-icons/fa';
+import PublicLayout from '../../components/PublicLayout';
+import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 // Custom hook for form state management
 const useLoginForm = () => {
   const [email, setEmail] = useState('');
@@ -184,7 +185,7 @@ export default function Login() {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <PublicLayout>
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -193,14 +194,6 @@ export default function Login() {
 
       <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center mb-6">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
-              <FaQrcode className="h-7 w-7 text-white" />
-            </div>
-            <span className="ml-3 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              QR-Genie
-            </span>
-          </Link>
           <h2 className="text-4xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
@@ -360,6 +353,6 @@ export default function Login() {
           animation-delay: 2s;
         }
       `}</style>
-    </div>
+    </PublicLayout>
   );
 }

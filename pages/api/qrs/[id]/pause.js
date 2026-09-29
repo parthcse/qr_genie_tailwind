@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "QR code ID is required" });
   }
   const qr = await prisma.qRCode.findFirst({
-    where: { id, userId: user.id },
+    where: { id, userId: user.id, status: { not: "DELETED" } },
   });
   if (!qr) {
     return res.status(404).json({ error: "QR code not found" });
@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     where: { id },
     data: {
       status: "PAUSED",
-      isActive: false,
       deactivatedReason: "MANUAL",
     },
     select: {
