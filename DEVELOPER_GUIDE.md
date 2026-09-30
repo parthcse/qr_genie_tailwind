@@ -268,7 +268,7 @@ Without SMTP settings both are printed to the log. The SMTP connection is create
 
 1. Installs dependencies (only when `package-lock.json` changed).
 2. Applies database migrations.
-3. Builds the new version next to the running one.
+3. Checks there's enough memory for a build, then builds the new version next to the running one.
 4. Swaps it in and restarts the app (a few seconds of downtime).
 5. Checks the site answers. If not, it puts the previous build back and the workflow fails, and GitHub emails you.
 
@@ -292,6 +292,7 @@ Without SMTP settings both are printed to the log. The SMTP connection is create
 |---|---|
 | Site shows 502 | The app isn't running: `pm2 list`, then `pm2 logs qr-genie-next`. |
 | Deploy failed | Actions tab → the failed run shows which step broke. If the health check failed, the previous version is already back. |
+| Deploy stops during the build with `Killed` (exit 137), or says there's too little memory | The server ran out of memory. The build needs about 1.5 GB including swap: check `swapon --show`, and that the swap file is listed in `/etc/fstab` so it comes back after a reboot. |
 | Deploy can't connect (`i/o timeout` on port 22) | The server's firewall must allow SSH, and the repository's deploy secrets must be correct. |
 | Prisma `P1001` | The database can't be reached; check that PostgreSQL is running and `DATABASE_URL`. |
 | Prisma `P2002` | A unique value already exists (e.g. an email that's already registered). |

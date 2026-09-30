@@ -33,6 +33,12 @@ echo "==> Applying database migrations"
 npx prisma migrate deploy
 
 echo "==> Building"
+# The build needs roughly 1.5 GB; on a small server that only works with swap turned on
+MEM_KB="$(awk '/^(MemTotal|SwapTotal):/ {sum += $2} END {print sum}' /proc/meminfo)"
+if [ "$MEM_KB" -lt 1500000 ]; then
+  echo "!!  Only $((MEM_KB / 1024)) MB of memory + swap: the build would be killed. Turn swap on (swapon --show) and deploy again."
+  exit 1
+fi
 rm -rf .next-build
 NODE_ENV=production NEXT_DIST_DIR=.next-build npx next build
 
