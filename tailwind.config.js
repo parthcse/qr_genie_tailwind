@@ -7,8 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // The variables are set in pages/_app.js from next/font; the system fonts are only a fallback
       fontFamily: {
-        sans: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "system-ui", "sans-serif"],
       },
 
       colors: {
@@ -83,6 +85,21 @@ module.exports = {
           from: { transform: 'translateY(-20px) rotate(0deg)', opacity: '1' },
           to: { transform: 'translateY(170px) rotate(600deg)', opacity: '0' },
         },
+        // Landing page hero cards
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        // Landing page feature cards on hover and the "Most Popular" lettering (background larger than the element)
+        'gradient-pan': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        // Light sweeping across the "Most Popular" badge, then a pause
+        sheen: {
+          '0%': { transform: 'translateX(0) skewX(-12deg)' },
+          '45%, 100%': { transform: 'translateX(400%) skewX(-12deg)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.2s ease-out',
@@ -90,6 +107,9 @@ module.exports = {
         'badge-pop': 'badge-pop 0.45s ease-out 0.1s both',
         'draw-check': 'draw-check 0.4s ease-out 0.45s both',
         'confetti-fall': 'confetti-fall 2.4s ease-in 0s 2 both',
+        float: 'float 6s ease-in-out infinite',
+        'gradient-pan': 'gradient-pan 4s ease-in-out infinite',
+        sheen: 'sheen 4s ease-in-out infinite',
       },
     },
   },

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaQrcode, FaThLarge, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 
-// Main menu. "/#..." scrolls in place on the landing page and navigates there from anywhere else
+// Main menu. "/#..." glides to the section on the landing page and navigates there from anywhere else
 const SECTION_LINKS = [
+  { href: "/#qr-types", label: "QR types" },
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/#pricing", label: "Pricing" },
@@ -24,7 +25,7 @@ function Logo({ onClick }) {
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg transition-shadow group-hover:shadow-xl sm:h-10 sm:w-10">
         <FaQrcode className="h-5 w-5 text-white sm:h-6 sm:w-6" />
       </span>
-      <span className="ml-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent sm:ml-3 sm:text-2xl">
+      <span className="ml-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text font-display text-xl font-bold tracking-tight text-transparent sm:ml-3 sm:text-2xl">
         QR-Genie
       </span>
     </Link>
@@ -81,6 +82,25 @@ export default function SiteHeader({
   useEffect(() => {
     setOpen(false);
   }, [router.asPath]);
+
+  // On the landing page, underline the menu link of the section being read: the one crossing a thin
+  // line 40% down the screen (none while the hero or the "trusted by" band is there)
+  const [activeSection, setActiveSection] = useState(null);
+  useEffect(() => {
+    setActiveSection(null);
+    if (router.pathname !== "/" || !("IntersectionObserver" in window)) return undefined;
+    const sections = SECTION_LINKS.map((link) => document.getElementById(link.href.split("#")[1] || "")).filter(Boolean);
+    const crossing = new Set();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => (entry.isIntersecting ? crossing.add(entry.target.id) : crossing.delete(entry.target.id)));
+        setActiveSection(sections.find((section) => crossing.has(section.id))?.id || null);
+      },
+      { rootMargin: "-40% 0px -59% 0px" }
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [router.pathname]);
 
   const handleLogout =
     onLogout ||
@@ -180,15 +200,21 @@ export default function SiteHeader({
               <Logo />
             </div>
             <nav className="hidden lg:flex lg:items-center lg:gap-1 xl:gap-6" aria-label="Site sections">
-              {SECTION_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="relative whitespace-nowrap px-3 py-2 text-[15px] font-semibold !text-gray-700 transition-colors duration-200 hover:!text-indigo-700 focus:outline-none focus-visible:!text-indigo-700 after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-gradient-to-r after:from-indigo-600 after:to-purple-600 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100 motion-reduce:after:transition-none"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {SECTION_LINKS.map((link) => {
+                const current = activeSection !== null && link.href === `/#${activeSection}`;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={current ? "true" : undefined}
+                    className={`relative whitespace-nowrap px-3 py-2 text-[15px] font-semibold transition-colors duration-200 hover:!text-indigo-700 focus:outline-none focus-visible:!text-indigo-700 after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-gradient-to-r after:from-indigo-600 after:to-purple-600 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100 motion-reduce:after:transition-none ${
+                      current ? "!text-indigo-700 after:scale-x-100" : "!text-gray-700 after:scale-x-0"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="flex flex-none items-center justify-end gap-1 sm:gap-2">
               {actions}

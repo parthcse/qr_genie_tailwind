@@ -143,7 +143,7 @@ function StatCard({ icon: Icon, label, value, hint, iconClass }) {
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      {hint && <p className="mt-1.5 truncate text-xs text-gray-500">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs leading-snug text-gray-500">{hint}</p>}
     </div>
   );
 }

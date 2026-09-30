@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
 import DynamicForm from "../../components/qrFields/DynamicForm";
 import { getSchemaForType } from "../../lib/qrSchemas";
@@ -2028,6 +2029,18 @@ export default function CreateQrPage() {
   const [selectedType, setSelectedType] = useState(null);
   const [hoveredType, setHoveredType] = useState(null);
   const [previewMode, setPreviewMode] = useState("destination"); // "destination" | "qr"
+
+  // ?type=wifi (used by the landing page) starts at step 2 with that type picked; unknown or
+  // unreleased types are ignored
+  const router = useRouter();
+  useEffect(() => {
+    if (!router.isReady) return;
+    const requested = qrTypes.find((type) => type.active && type.id === router.query.type);
+    if (requested) {
+      setSelectedType(requested.id);
+      setStep(2);
+    }
+  }, [router.isReady, router.query.type]);
 
   // Form data - unified state
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);

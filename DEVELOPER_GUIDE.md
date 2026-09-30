@@ -14,10 +14,10 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 
 | Page | What's there |
 |---|---|
-| `/` | Landing page: features, how it works, pricing (INR or USD), FAQ. |
+| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, "trusted by" companies, **QR code types** (tabs for the released types, each with a phone preview of what a scan does and a button to create one), features, how it works, pricing (INR or USD), testimonials, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
 | `/auth/register`, `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial), login, password reset by email. All protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
-| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. |
+| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or `wifi`, `whatsapp`, `instagram`) opens straight at step 2 with that type chosen; the landing page links there. |
 | `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
 | `/dashboard/account` | Profile, email change (needs the current password), password change (signs out other devices), language, billing details. |
@@ -35,6 +35,7 @@ All dashboard pages share `components/DashboardLayout.js`: the sidebar has a **C
 |---|---|
 | Framework | Next.js 16 with the **Pages Router** (no App Router), React 19, Turbopack builds |
 | Styling | Tailwind CSS 3.4 (theme in `tailwind.config.js`; `max-w-site` is the site width) |
+| Fonts | Inter (text, `font-sans`) and Plus Jakarta Sans (headings, `font-display`), loaded with `next/font/google` in `pages/_app.js`: downloaded at build time and served from our own domain |
 | Database | PostgreSQL 16 through Prisma 6 |
 | Auth | JWT in an httpOnly cookie (`jsonwebtoken`, `cookie`, `bcryptjs`) |
 | Payments | Razorpay subscriptions |
@@ -223,7 +224,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 3. Add it to `ENABLED_TYPES` in `api/create-dynamic.js` with input validation like the open types have.
 4. If the type uploads files (PDFs, videos, audio), store them outside the database (e.g. object storage) first; the forms only keep images, and those are capped at 150 KB.
 5. Make sure the page or file it serves escapes everything it shows (follow `pages/pdf/[slug].js` and `api/vcard/[slug].js`), and that a password-protected code can't be opened there directly, bypassing `/r/<slug>`.
-6. Update the landing page and pricing copy.
+6. Update the landing page and pricing copy, and add the type to `qrTypeShowcase` in `pages/index.js` (the "QR code types" tabs only list released types).
 
 **Downloads** are made in the browser (`lib/qrDownload.js`, and the create page's own export) using the address of the page you're on, so download codes from the live site, not from localhost. On the create page, downloading is only offered after the code is created, so the file always holds the real short link (for dynamic codes) or the final content (for static ones).
 
@@ -275,6 +276,9 @@ Without SMTP settings both are printed to the log. The SMTP connection is create
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.
 - **Links styled as buttons** need `!text-…` color classes (e.g. `!text-white`), because the global link style sets link colors.
 - **Brand look:** indigo→purple gradient (`from-indigo-600 to-purple-600`) for primary actions, white cards with `rounded-2xl` and light borders, `max-w-site` for page width.
+- **Typography:** `h1`–`h4` use the heading font automatically (`styles/globals.css`); add `font-display` for anything else that should match, such as the logo or big numbers. The fonts are set as CSS variables on `:root` in `pages/_app.js`, so pop-ups portaled into `<body>` get them too. The build needs to reach Google Fonts once to download them; nothing is fetched from Google when the site runs, so the CSP needs no font domains.
+- **Motion:** animations are decoration only. Use `motion-safe:` / `motion-reduce:` so they stop for people who turn motion off (the count-up stats, floating cards and smooth scrolling already do). Smooth scrolling for in-page links comes from `styles/globals.css` plus `data-scroll-behavior="smooth"` on `<html>` in `pages/_document.js`, which makes Next.js jump instantly on page changes. Landing page sections that the header links to need an `id` and an entry in `SECTION_LINKS` (`components/SiteHeader.js`).
+- **Colour contrast:** text must meet WCAG AA (4.5:1, or 3:1 for large text). On white, `gray-500`/`slate-500` is the lightest grey allowed for text; don't use `gray-400` or lighter for anything people need to read.
 - **Keep the docs current.** Any change that adds, changes or removes a feature, page, API route, environment variable, database field, dependency or deploy step updates the matching part of this guide (and the README if it's affected) **in the same commit**. Delete the docs for anything you remove. Never put secrets or private server details in either file: the repository is public.
 
 ## Deploying

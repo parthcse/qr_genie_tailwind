@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FaQrcode } from "react-icons/fa";
+import { FaQrcode, FaCheck } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 
-const SIGNUP_URL = `${(process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "")}/auth/register`;
+const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
+const SIGNUP_URL = `${SITE_URL}/auth/register`;
 
 const footerLink = "!text-gray-500 transition hover:!text-indigo-700";
 
@@ -54,24 +55,59 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                 </div>
               </div>
 
-              {!isAuthenticated && (
-                <figure className="hidden flex-col items-center md:flex">
-                  <div className="rounded-2xl bg-white p-4 shadow-xl ring-1 ring-white/10">
+              {/* Illustration of the headline: one printed code whose link changes. Signed out, the code is
+                  real and opens the sign-up page; the notes around it never cover the code itself. */}
+              <figure className="relative mx-auto hidden w-60 pb-16 pt-10 md:block lg:w-72">
+                <div className="absolute inset-6 rounded-full bg-purple-400/30 blur-3xl" aria-hidden="true" />
+
+                <div className="relative -rotate-2 rounded-2xl bg-white p-5 shadow-2xl shadow-black/30 transition-transform duration-500 hover:rotate-0 motion-reduce:transition-none">
+                  <div className="flex items-center justify-between gap-2" aria-hidden="true">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700">Printed once</span>
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Dynamic</span>
+                  </div>
+                  <div className="mt-4 flex justify-center rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
                     <QRCodeSVG
-                      value={SIGNUP_URL}
+                      value={isAuthenticated ? SITE_URL : SIGNUP_URL}
                       size={152}
                       level="H"
                       fgColor="#1e1b4b"
                       bgColor="#ffffff"
                       imageSettings={{ src: "/favicon.png", height: 30, width: 30, excavate: true }}
-                      title="QR code that opens the QR-Genie sign-up page"
+                      title={isAuthenticated ? "QR code that opens the QR-Genie website" : "QR code that opens the QR-Genie sign-up page"}
                     />
                   </div>
-                  <figcaption className="mt-4 max-w-[12rem] text-center text-sm leading-snug text-indigo-200">
-                    Scan with your phone camera to sign up
-                  </figcaption>
-                </figure>
-              )}
+                  {!isAuthenticated && (
+                    <figcaption className="mt-3 text-center text-xs leading-snug text-slate-600">
+                      Scan with your phone camera to sign up
+                    </figcaption>
+                  )}
+                </div>
+
+                <div
+                  className="absolute -right-6 top-0 flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 shadow-xl shadow-black/25 motion-safe:animate-float lg:-right-10"
+                  aria-hidden="true"
+                >
+                  <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <FaCheck className="h-3 w-3" />
+                  </span>
+                  <span>
+                    <span className="block text-xs font-semibold text-slate-900">Link updated</span>
+                    <span className="block text-[11px] text-slate-500">yourcafe.com/winter-menu</span>
+                  </span>
+                </div>
+
+                <div
+                  className="absolute -left-6 bottom-0 w-40 rounded-xl bg-white px-3 py-2.5 shadow-xl shadow-black/25 motion-safe:animate-float motion-safe:[animation-delay:-3s] lg:-left-10"
+                  aria-hidden="true"
+                >
+                  <span className="block text-[11px] font-medium text-slate-500">Scans this month</span>
+                  <span className="mt-2 flex h-8 items-end gap-1">
+                    {[35, 55, 45, 70, 60, 90, 100].map((height, i) => (
+                      <span key={i} className="flex-1 rounded-sm bg-gradient-to-t from-indigo-500 to-purple-400" style={{ height: `${height}%` }} />
+                    ))}
+                  </span>
+                </div>
+              </figure>
             </div>
           </section>
         </div>
@@ -84,7 +120,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
                 <FaQrcode className="h-5 w-5 text-white" />
               </span>
-              <span className="text-lg font-bold text-gray-900">QR-Genie</span>
+              <span className="font-display text-lg font-bold tracking-tight text-gray-900">QR-Genie</span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-gray-500">
               Dynamic QR codes for menus, events and campaigns, editable any time after printing.
@@ -95,6 +131,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
             <nav aria-labelledby="footer-product">
               <h3 id="footer-product" className="text-sm font-semibold text-gray-900">Product</h3>
               <ul className="mt-4 space-y-3 text-sm">
+                <li><Link href="/#qr-types" className={footerLink}>QR code types</Link></li>
                 <li><Link href="/#features" className={footerLink}>Features</Link></li>
                 <li><Link href="/#how-it-works" className={footerLink}>How it works</Link></li>
                 <li><Link href="/#pricing" className={footerLink}>Pricing</Link></li>
@@ -130,7 +167,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-gray-100 pt-6 text-sm text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-2 border-t border-gray-100 pt-6 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} QR-Genie. All rights reserved.</p>
           <p>Payments are processed securely by Razorpay.</p>
         </div>
