@@ -1,26 +1,39 @@
-name: Upload Code Only (No Build)
+name: Deploy to production
 
+# Every push to main updates the Lightsail server and runs scripts/deploy.sh there
+# (install, database migrations, build, restart, health check). Can also be started by hand from the Actions tab.
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+# Deploys queue up; one never interrupts another
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Upload to Lightsail
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.LIGHTSAIL_HOST }}
-        username: ${{ secrets.LIGHTSAIL_USER }}
-        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-        port: 22
-        timeout: 300s
-        source: "package.json,package-lock.json,next.config.js,tailwind.config.js,postcss.config.js,ecosystem.config.js,pages,components,lib,styles,prisma,public"
-        target: ${{ secrets.REMOTE_PATH }}
-        strip_components: 0
+      - name: Update the server and deploy
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
+          command_timeout: 25m
+          script: |
+            set -e
+            cd "${{ secrets.REMOTE_PATH }}"
+            git fetch --quiet origin main
+            git reset --hard "${{ github.sha }}"
+            git clean -fd
+            bash scripts/deploy.sh

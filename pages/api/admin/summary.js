@@ -4,8 +4,9 @@ import { getUserFromRequest } from "../../../lib/auth";
 
 export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
+  // Same answer as a missing route, so the admin API isn't discoverable
   if (!user || user.role !== "admin") {
-    return res.status(403).json({ error: "Forbidden" });
+    return res.status(404).json({ error: "Not found" });
   }
 
   const [userCount, qrCount, totalScans, latestQrs] = await Promise.all([

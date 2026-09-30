@@ -2,8 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import PublicLayout from '../../components/PublicLayout';
+import Turnstile from '../../components/Turnstile';
 
 import { FaEnvelope, FaCheckCircle } from 'react-icons/fa';
+
+// Cloudflare Turnstile bot check; skipped when no site key is configured
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 // Custom hook for form state management
 const useForgotPasswordForm = () => {
   const [email, setEmail] = useState('');
@@ -58,6 +62,8 @@ export default function ForgotPassword() {
     errors,
     isFormValid
   } = useForgotPasswordForm();
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   // Focus email input on mount
   useEffect(() => {
@@ -74,14 +80,18 @@ export default function ForgotPassword() {
     setTouched({ email: true });
     
     if (!isFormValid) return;
-    
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('Please complete the security check above the button.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() })
+        body: JSON.stringify({ email: email.trim(), turnstileToken })
       });
 
       let data;
@@ -120,6 +130,8 @@ export default function ForgotPassword() {
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
+      // Each Turnstile token works once; get a fresh one for another request
+      if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
     }
   };
 
@@ -223,6 +235,10 @@ export default function ForgotPassword() {
                   </p>
                 )}
               </div>
+
+              {TURNSTILE_SITE_KEY && (
+                <Turnstile siteKey={TURNSTILE_SITE_KEY} action="forgot" onToken={setTurnstileToken} resetKey={turnstileReset} />
+              )}
 
               <div>
                 <button

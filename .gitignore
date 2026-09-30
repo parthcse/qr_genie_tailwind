@@ -38,3 +38,6 @@ Thumbs.db
 
 # Other
 .next/cache/
+
+# Side build folders used by scripts/deploy.sh
+.next-*/

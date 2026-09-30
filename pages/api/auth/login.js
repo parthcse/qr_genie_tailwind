@@ -2,121 +2,56 @@ import prisma from "../../../lib/prisma";
 import bcrypt from "bcryptjs";
 import { setLoginSession } from "../../../lib/auth";
 import { syncSubscriptionState } from "../../../lib/subscriptionSync";
+import { getClientIp } from "../../../lib/clientIp";
+import { isRateLimited } from "../../../lib/rateLimit";
+import { verifyTurnstile } from "../../../lib/turnstile";
 
-// Disable body parsing limit for this route (Next.js default is 1mb)
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};
+const WINDOW = 15 * 60 * 1000;
+// Compared against when the email doesn't exist, so response time doesn't reveal which emails have accounts
+const DUMMY_HASH = bcrypt.hashSync("qr-genie-timing-equaliser", 10);
 
+/**
+ * POST /api/auth/login
+ * Brute-force protection: 20 attempts per 15 minutes per IP and 10 per email address, plus Cloudflare Turnstile.
+ */
 export default async function handler(req, res) {
-  // Set Content-Type header to ensure JSON response
-  res.setHeader('Content-Type', 'application/json');
-
-  // Log request method for debugging (remove in production if needed)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Login API - Method:', req.method);
-    console.log('Login API - Headers:', req.headers);
-  }
-
-  // Check method - be more explicit
   if (req.method !== "POST") {
-    console.error(`Login API - Wrong method: ${req.method}, expected POST`);
-    return res.status(405).json({ 
-      error: "Method not allowed",
-      received: req.method,
-      expected: "POST"
-    });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // Ensure body exists and is parsed
-    if (!req.body) {
-      console.error('Login API - No request body received');
-      return res.status(400).json({ error: "Request body is required" });
+    const { email, password, turnstileToken } = req.body || {};
+    if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+
+    const ip = getClientIp(req);
+    if (isRateLimited(`login-ip:${ip}`, WINDOW, 20) || isRateLimited(`login-email:${cleanEmail}`, WINDOW, 10)) {
+      return res.status(429).json({ error: "Too many login attempts. Please wait 15 minutes and try again." });
     }
 
-
-  const { email, password } = req.body;
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password required" });
+    const human = await verifyTurnstile(turnstileToken, ip);
+    if (!human.ok) {
+      return res.status(400).json({ error: "Please complete the security check and try again.", turnstile: true });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return res.status(400).json({ error: "Invalid email format" });
+    let user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    const valid = await bcrypt.compare(password.slice(0, 128), user?.password || DUMMY_HASH);
+    if (!user || !valid) {
+      return res.status(401).json({ error: "Invalid email or password." });
     }
-
-    // Find user
-    let user;
-    try {
-      user = await prisma.user.findUnique({ 
-        where: { email: email.trim().toLowerCase() } 
-      });
-    } catch (dbError) {
-      console.error("Database error finding user:", dbError);
-      return res.status(500).json({ 
-
-        error: "Login is temporarily unavailable. Please try again in a few moments." 
-      });
-    }
-
-    if (!user) {
-      // Don't reveal if user exists for security
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    // Verify password
-    let valid;
-    try {
-      valid = await bcrypt.compare(password, user.password);
-    } catch (compareError) {
-      console.error("Password comparison error:", compareError);
-      return res.status(500).json({ 
-        error: "Server error. Please try again later." 
-      });
-    }
-
-    if (!valid) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
 
     try {
       user = await syncSubscriptionState(user);
     } catch (subError) {
-      // Prisma client/schema out of sync (e.g. Unknown argument subscriptionPlan) or DB error
-      console.error("Login: subscription update failed (run npx prisma generate):", subError);
-      // Continue login with current user; subscription state may be stale until prisma generate + migrate
+      console.error("Login: subscription sync failed:", subError);
     }
 
-    // Set login session
-    try {
-  setLoginSession(res, user);
-    } catch (sessionError) {
-      console.error("Session creation error:", sessionError);
-      return res.status(500).json({ 
-        error: "Failed to create session. Please try again." 
-      });
-    }
-
-    return res.status(200).json({ 
-      id: user.id, 
-      email: user.email,
-      message: "Login successful"
-    });
-
+    setLoginSession(res, user);
+    return res.status(200).json({ id: user.id, email: user.email, message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error);
-
-    // Never expose technical errors to the client
-    return res.status(500).json({ 
-      error: "Login is temporarily unavailable. Please try again in a few moments." 
-    });
+    return res.status(500).json({ error: "Login is temporarily unavailable. Please try again in a few moments." });
   }
 }

@@ -5,9 +5,9 @@ import QRCode from "qrcode";
 export default async function handler(req, res) {
   const { slug } = req.query;
 
-  const qr = await prisma.qRCode.findUnique({ where: { slug } });
+  const qr = await prisma.qRCode.findUnique({ where: { slug: String(slug) } });
 
-  if (!qr) {
+  if (!qr || qr.status === "DELETED") {
     res.status(404).send("QR code not found");
     return;
   }

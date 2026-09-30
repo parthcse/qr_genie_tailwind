@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
-import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle, FaBuilding } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle, FaBuilding, FaLock } from "react-icons/fa";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
@@ -56,9 +56,13 @@ export default function AccountPage({ user: initialUser }) {
   
   // Password Form
   const [passwordInfo, setPasswordInfo] = useState({
+    currentPassword: '',
     password: '',
     confirmPassword: '',
   });
+  const [passwordError, setPasswordError] = useState('');
+  // Current password, asked for only when the email address is being changed
+  const [emailChangePassword, setEmailChangePassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
@@ -139,8 +143,11 @@ export default function AccountPage({ user: initialUser }) {
     const { name, value } = e.target;
     setPasswordInfo(prev => ({ ...prev, [name]: value }));
     setPasswordSuccess(false);
-    setError('');
+    setPasswordError('');
   };
+
+  const emailChanged =
+    !!user?.email && personalInfo.email.trim().toLowerCase() !== user.email.toLowerCase();
 
   const handlePersonalInfoSubmit = async (e) => {
     e.preventDefault();
@@ -167,6 +174,7 @@ export default function AccountPage({ user: initialUser }) {
           zipCode: personalInfo.zipCode,
           country: personalInfo.country,
           language: language,
+          currentPassword: emailChanged ? emailChangePassword : undefined,
         }),
       });
 
@@ -180,18 +188,12 @@ export default function AccountPage({ user: initialUser }) {
       // Update local user state
       if (data.user) {
         setUser(prev => ({ ...prev, ...data.user }));
+        setPersonalInfo(prev => ({ ...prev, email: data.user.email }));
       }
+      setEmailChangePassword('');
 
       setPersonalInfoSuccess(true);
       setTimeout(() => setPersonalInfoSuccess(false), 3000);
-
-      // If email was changed, show a message about re-authentication
-      if (personalInfo.email !== user?.email) {
-        setTimeout(() => {
-          alert('Email updated successfully. Please log in again with your new email address.');
-          window.location.href = '/auth/login';
-        }, 3000);
-      }
     } catch (err) {
       console.error('Error updating personal information:', err);
       setError('Failed to update personal information. Please try again.');
@@ -203,17 +205,23 @@ export default function AccountPage({ user: initialUser }) {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setPasswordError('');
     setPasswordSuccess(false);
 
+    if (!passwordInfo.currentPassword) {
+      setPasswordError('Enter your current password.');
+      setLoading(false);
+      return;
+    }
+
     if (passwordInfo.password !== passwordInfo.confirmPassword) {
-      setError('Passwords do not match');
+      setPasswordError('New passwords do not match');
       setLoading(false);
       return;
     }
 
     if (passwordInfo.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setPasswordError('Password must be at least 8 characters');
       setLoading(false);
       return;
     }
@@ -226,6 +234,7 @@ export default function AccountPage({ user: initialUser }) {
         },
         credentials: 'include',
         body: JSON.stringify({
+          currentPassword: passwordInfo.currentPassword,
           password: passwordInfo.password,
           confirmPassword: passwordInfo.confirmPassword,
         }),
@@ -234,16 +243,16 @@ export default function AccountPage({ user: initialUser }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to update password');
+        setPasswordError(data.error || 'Failed to update password');
         return;
       }
 
       setPasswordSuccess(true);
-      setPasswordInfo({ password: '', confirmPassword: '' });
-      setTimeout(() => setPasswordSuccess(false), 3000);
+      setPasswordInfo({ currentPassword: '', password: '', confirmPassword: '' });
+      setTimeout(() => setPasswordSuccess(false), 5000);
     } catch (err) {
       console.error('Error updating password:', err);
-      setError('Failed to update password. Please try again.');
+      setPasswordError('Failed to update password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -563,6 +572,33 @@ export default function AccountPage({ user: initialUser }) {
                     placeholder="Country"
                   />
                 </div>
+
+                {/* Changing the sign-in email needs the current password */}
+                {emailChanged && (
+                  <div className="col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <label htmlFor="emailChangePassword" className="block text-sm font-medium text-amber-900 mb-2">
+                      Current password
+                    </label>
+                    <p className="mb-3 text-xs text-amber-800">
+                      You're changing the email you sign in with. Enter your current password to confirm.
+                    </p>
+                    <div className="relative md:max-w-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaLock className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input
+                        type="password"
+                        id="emailChangePassword"
+                        name="emailChangePassword"
+                        autoComplete="current-password"
+                        value={emailChangePassword}
+                        onChange={(e) => { setEmailChangePassword(e.target.value); setError(''); }}
+                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="Current password"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-8 flex sm:justify-end">
@@ -580,27 +616,53 @@ export default function AccountPage({ user: initialUser }) {
           {/* Change Password Section */}
           <div className={sectionClass}>
             <h3 className="text-lg font-semibold text-gray-900">Change password</h3>
-            <p className="mt-1 mb-5 text-sm text-gray-500">Use at least 8 characters.</p>
+            <p className="mt-1 mb-5 text-sm text-gray-500">
+              Use at least 8 characters. Changing it signs you out on your other devices.
+            </p>
+
+            {passwordError && (
+              <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                <p className="text-sm text-red-700">{passwordError}</p>
+              </div>
+            )}
 
             {passwordSuccess && (
               <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded flex items-center">
-                <FaCheckCircle className="h-5 w-5 text-green-400 mr-3" />
-                <p className="text-sm text-green-700">Password updated successfully!</p>
+                <FaCheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                <p className="text-sm text-green-700">Password updated. You've been signed out on your other devices.</p>
               </div>
             )}
 
             <form onSubmit={handlePasswordSubmit}>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 sm:gap-6">
+                {/* Current Password */}
+                <div className="md:col-span-2 md:max-w-[calc(50%-0.75rem)]">
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Current password
+                  </label>
+                  <input
+                    type="password"
+                    id="currentPassword"
+                    name="currentPassword"
+                    autoComplete="current-password"
+                    value={passwordInfo.currentPassword}
+                    onChange={handlePasswordChange}
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Enter current password"
+                  />
+                </div>
+
                 {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
+                    New password
                   </label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       id="password"
                       name="password"
+                      autoComplete="new-password"
                       value={passwordInfo.password}
                       onChange={handlePasswordChange}
                       className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -623,13 +685,14 @@ export default function AccountPage({ user: initialUser }) {
                 {/* Confirm Password */}
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm password
+                    Confirm new password
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       id="confirmPassword"
                       name="confirmPassword"
+                      autoComplete="new-password"
                       value={passwordInfo.confirmPassword}
                       onChange={handlePasswordChange}
                       className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"

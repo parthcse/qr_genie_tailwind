@@ -56,8 +56,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Error updating QR code name:", error);
     return res.status(500).json({ 
-      error: "Failed to update QR code name",
-      message: error.message || "Unknown error occurred"
+      error: "Failed to update QR code name. Please try again."
     });
   }
 }

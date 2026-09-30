@@ -5,18 +5,13 @@ export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ error: "Not authenticated" });
 
-  const { id } = req.query;
+  const id = typeof req.query.id === "string" ? req.query.id : "";
   if (!id) return res.status(400).json({ error: "Folder ID is required" });
 
   // Verify folder exists and belongs to user
   const folder = await prisma.folder.findFirst({
     where: { id, userId: user.id },
-    include: {
-      qrCodes: true,
-      _count: {
-        select: { qrCodes: true },
-      },
-    },
+    select: { id: true },
   });
 
   if (!folder) {
@@ -25,10 +20,13 @@ export default async function handler(req, res) {
 
   if (req.method === "PUT") {
     // Rename folder
-    const { name } = req.body;
-    
-    if (!name || !name.trim()) {
+    const { name } = req.body || {};
+
+    if (typeof name !== "string" || !name.trim()) {
       return res.status(400).json({ error: "Name is required" });
+    }
+    if (name.trim().length > 60) {
+      return res.status(400).json({ error: "Keep the folder name under 60 characters" });
     }
 
     // Check if name already exists for this user

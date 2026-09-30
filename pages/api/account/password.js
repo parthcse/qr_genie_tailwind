@@ -1,8 +1,13 @@
 // pages/api/account/password.js
 import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
+import { getUserFromRequest, setLoginSession } from "../../../lib/auth";
+import { isRateLimited } from "../../../lib/rateLimit";
 import bcrypt from "bcryptjs";
 
+/**
+ * PUT /api/account/password — change password (current password required).
+ * Signs out every other session; this one stays signed in with a fresh cookie.
+ */
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -14,39 +19,36 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const { password, confirmPassword } = req.body;
-
-    // Validation
-    if (!password || !confirmPassword) {
-      return res.status(400).json({ error: "Password and confirmation are required" });
+    const { currentPassword, password, confirmPassword } = req.body || {};
+    if (!currentPassword || !password || !confirmPassword) {
+      return res.status(400).json({ error: "Current password, new password and confirmation are required." });
     }
-
     if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
+      return res.status(400).json({ error: "New passwords do not match." });
+    }
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+      return res.status(400).json({ error: "Password must be 8 to 128 characters long." });
     }
 
-    if (password.length < 8) {
-      return res.status(400).json({ error: "Password must be at least 8 characters long" });
+    if (isRateLimited(`password-change:${user.id}`, 15 * 60 * 1000, 5)) {
+      return res.status(429).json({ error: "Too many attempts. Please wait 15 minutes and try again." });
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const account = await prisma.user.findUnique({ where: { id: user.id }, select: { password: true } });
+    if (!(await bcrypt.compare(String(currentPassword).slice(0, 128), account.password))) {
+      return res.status(400).json({ error: "Your current password is incorrect." });
+    }
 
-    // Update password in database
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword },
+      data: { password: await bcrypt.hash(password, 10), sessionVersion: { increment: 1 } },
+      select: { id: true, sessionVersion: true },
     });
+    setLoginSession(res, updated);
 
-    return res.status(200).json({
-      success: true,
-      message: "Password updated successfully",
-    });
+    return res.status(200).json({ success: true, message: "Password updated. You've been signed out on other devices." });
   } catch (error) {
     console.error("Error updating password:", error);
-    return res.status(500).json({
-      error: "Failed to update password",
-      message: error.message || "Unknown error occurred",
-    });
+    return res.status(500).json({ error: "Failed to update password. Please try again." });
   }
 }

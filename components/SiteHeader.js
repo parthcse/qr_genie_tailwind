@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FaQrcode, FaThLarge, FaSignOutAlt, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
+import { FaQrcode, FaThLarge, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 
 // Main menu. "/#..." scrolls in place on the landing page and navigates there from anywhere else
 const SECTION_LINKS = [
@@ -12,8 +12,11 @@ const SECTION_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-const iconButton =
-  "flex h-10 w-10 items-center justify-center rounded-xl !text-gray-600 transition hover:bg-indigo-50 hover:!text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400";
+// Header account icons share one filled style, signed in or not; log out turns red on hover
+const iconBase =
+  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br !text-white shadow-md shadow-indigo-500/20 transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+const iconButton = `${iconBase} from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus-visible:ring-indigo-400`;
+const logoutIconButton = `${iconBase} from-indigo-600 to-purple-600 hover:from-rose-500 hover:to-red-600 focus-visible:ring-red-400`;
 
 function Logo({ onClick }) {
   return (
@@ -95,10 +98,10 @@ export default function SiteHeader({
 
   let actions;
   if (loading) {
-    actions = <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100 sm:w-44" aria-hidden="true" />;
+    actions = <div className="h-10 w-[84px] animate-pulse rounded-xl bg-gray-100" aria-hidden="true" />;
   } else if (isAuthenticated) {
     actions = (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <Link href="/dashboard" aria-label="Dashboard" title="Dashboard" className={iconButton}>
           <FaThLarge className="h-[18px] w-[18px]" />
         </Link>
@@ -107,7 +110,7 @@ export default function SiteHeader({
           onClick={handleLogout}
           aria-label="Log out"
           title="Log out"
-          className={`${iconButton} hover:!bg-red-50 hover:!text-red-600 focus-visible:ring-red-400`}
+          className={logoutIconButton}
         >
           <FaSignOutAlt className="h-[18px] w-[18px]" />
         </button>
@@ -115,18 +118,12 @@ export default function SiteHeader({
     );
   } else {
     actions = (
-      <div className="hidden items-center gap-2 sm:flex">
-        <Link
-          href="/auth/login"
-          className="whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium !text-gray-700 transition hover:bg-indigo-50 hover:!text-indigo-700"
-        >
-          Log in
+      <div className="flex items-center gap-1.5">
+        <Link href="/auth/login" aria-label="Log in" title="Log in" className={iconButton}>
+          <FaSignInAlt className="h-[18px] w-[18px]" />
         </Link>
-        <Link
-          href="/auth/register"
-          className="whitespace-nowrap rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-md shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg"
-        >
-          Get started
+        <Link href="/auth/register" aria-label="Get started free" title="Get started free" className={iconButton}>
+          <FaUserPlus className="h-[18px] w-[18px]" />
         </Link>
       </div>
     );

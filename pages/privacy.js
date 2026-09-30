@@ -93,9 +93,8 @@ const sections = [
         <p>We share information only with the providers we need to run QR-Genie, and only for that purpose:</p>
         <ul>
           <li><strong>Razorpay</strong>, to take payments;</li>
-          <li><strong>Resend</strong>, to send emails;</li>
-          <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots;</li>
-          <li><strong>Amazon Web Services</strong>, which hosts our servers and database.</li>
+          <li><strong>Amazon Web Services</strong>, which hosts our servers and database and sends our emails;</li>
+          <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots.</li>
         </ul>
         <p>We may also disclose information if the law requires it.</p>
       </>

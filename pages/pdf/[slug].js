@@ -2,11 +2,16 @@
 import prisma from "../../lib/prisma";
 import { FaEye } from "react-icons/fa";
 
+// Only plain web links and hex colours reach the page, never javascript: URLs or CSS tricks
+const webUrl = (value) => (typeof value === "string" && /^https?:\/\//i.test(value.trim()) ? value.trim() : "");
+const hexColor = (value, fallback) => (typeof value === "string" && /^#[0-9a-f]{3,8}$/i.test(value) ? value : fallback);
+const text = (value, fallback = "", max = 500) => (typeof value === "string" && value ? value.slice(0, max) : fallback);
+
 export async function getServerSideProps({ params }) {
   const { slug } = params;
 
-  const qr = await prisma.qRCode.findUnique({ where: { slug } });
-  if (!qr || qr.type !== "pdf" || !qr.meta) {
+  const qr = await prisma.qRCode.findUnique({ where: { slug: String(slug) } });
+  if (!qr || qr.type !== "pdf" || !qr.meta || qr.status !== "ACTIVE") {
     return { notFound: true };
   }
 
@@ -19,15 +24,15 @@ export async function getServerSideProps({ params }) {
 
   return {
     props: {
-      pdfUrl: meta.pdfUrl || "",
-      title: meta.title || "PDF Document",
-      description: meta.description || "",
-      company: meta.company || "",
-      website: meta.website || "",
-      buttonText: meta.buttonText || "View PDF",
-      thumbnail: meta.thumbnail || "",
-      primaryColor: meta.primaryColor || "#B69EDF",
-      secondaryColor: meta.secondaryColor || "#242420",
+      pdfUrl: webUrl(meta.pdfUrl),
+      title: text(meta.title, "PDF Document", 200),
+      description: text(meta.description, "", 2000),
+      company: text(meta.company, "", 200),
+      website: webUrl(meta.website),
+      buttonText: text(meta.buttonText, "View PDF", 60),
+      thumbnail: webUrl(meta.thumbnail),
+      primaryColor: hexColor(meta.primaryColor, "#B69EDF"),
+      secondaryColor: hexColor(meta.secondaryColor, "#242420"),
     },
   };
 }
@@ -44,7 +49,7 @@ export default function PdfLandingPage({
   secondaryColor,
 }) {
   const handleViewPdf = () => {
-    window.open(pdfUrl, "_blank");
+    if (pdfUrl) window.open(pdfUrl, "_blank", "noopener,noreferrer");
   };
 
   return (

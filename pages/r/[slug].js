@@ -6,7 +6,7 @@
 // pages/r/[slug].js
 import prisma from "../../lib/prisma";
 import { validateRedirectUrl } from "../../lib/redirectValidation";
-import { hashIp, getDeviceFingerprint, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
+import { hashIp, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
 import { getGeoFromIp } from "../../lib/geoIp";
 import { isRateLimited } from "../../lib/rateLimit";
 import { getQrPauseReason } from "../../lib/subscription";
@@ -17,7 +17,7 @@ export async function getServerSideProps({ params, req }) {
   const { slug } = params;
 
   const ip = getClientIp(req);
-  if (isRateLimited(ip)) {
+  if (isRateLimited(`scan:${ip}`)) {
     return { props: { view: "rate_limited" } };
   }
 
@@ -86,7 +86,12 @@ export async function getServerSideProps({ params, req }) {
 
   // WiFi: show connection page (no redirect)
   if (qr.type === "wifi") {
-    const meta = qr.meta ? JSON.parse(qr.meta) : {};
+    let meta = {};
+    try {
+      meta = qr.meta ? JSON.parse(qr.meta) : {};
+    } catch {
+      meta = {};
+    }
     try {
       await prisma.scanEvent.create({
         data: {

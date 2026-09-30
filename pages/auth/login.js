@@ -3,7 +3,11 @@ import { useRouter } from 'next/router';
 
 import Link from 'next/link';
 import PublicLayout from '../../components/PublicLayout';
+import Turnstile from '../../components/Turnstile';
 import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
+
+// Cloudflare Turnstile bot check; skipped when no site key is configured
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 // Custom hook for form state management
 const useLoginForm = () => {
   const [email, setEmail] = useState('');
@@ -65,6 +69,8 @@ export default function Login() {
     errors,
     isFormValid
   } = useLoginForm();
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   // Focus email input on mount
   useEffect(() => {
@@ -80,16 +86,21 @@ export default function Login() {
     setTouched({ email: true, password: true });
     
     if (!isFormValid) return;
-    
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('Please complete the security check above the Sign in button.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: email.trim(), 
-          password: password.trim() 
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password.trim(),
+          turnstileToken,
         }),
         credentials: 'same-origin' // Important for cookies
       });
@@ -114,7 +125,7 @@ export default function Login() {
                 errorMessage = 'Invalid email or password';
                 break;
               case 429:
-                errorMessage = 'Too many attempts. Please try again later.';
+                errorMessage = data.error || 'Too many attempts. Please try again later.';
                 break;
               default:
                 errorMessage = data.error || 'Login failed. Please try again.';
@@ -162,6 +173,8 @@ export default function Login() {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred during login. Please try again.');
       errorRef.current?.focus();
+      // Each Turnstile token works once; get a fresh one for the next attempt
+      if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
     } finally {
       setIsSubmitting(false);
     }
@@ -301,6 +314,10 @@ export default function Login() {
                 </p>
               )}
             </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <Turnstile siteKey={TURNSTILE_SITE_KEY} action="login" onToken={setTurnstileToken} resetKey={turnstileReset} />
+            )}
 
             <div>
               <button

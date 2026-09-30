@@ -1,90 +1,65 @@
 import prisma from "../../../lib/prisma";
-import crypto from "crypto";
 import { sendPasswordResetEmail } from "../../../lib/email";
+import { createResetToken } from "../../../lib/resetToken";
+import { getClientIp } from "../../../lib/clientIp";
+import { isRateLimited } from "../../../lib/rateLimit";
+import { verifyTurnstile } from "../../../lib/turnstile";
 
+const HOUR = 60 * 60 * 1000;
+// Same answer whether or not the account exists, so this can't be used to discover accounts
+const DONE = { message: "If an account with that email exists, we've sent you a password reset link." };
+
+/**
+ * POST /api/auth/forgot-password
+ * Abuse protection: 5 requests per hour per IP, 3 reset emails per hour per address, Cloudflare Turnstile.
+ */
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+  const { email, turnstileToken } = req.body || {};
+  if (typeof email !== "string" || !email.trim()) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  const cleanEmail = email.trim().toLowerCase();
+
+  const ip = getClientIp(req);
+  if (isRateLimited(`forgot-ip:${ip}`, HOUR, 5)) {
+    return res.status(429).json({ error: "Too many requests. Please try again in an hour." });
+  }
+
+  const human = await verifyTurnstile(turnstileToken, ip);
+  if (!human.ok) {
+    return res.status(400).json({ error: "Please complete the security check and try again.", turnstile: true });
+  }
+
+  // Stop anyone flooding one inbox with reset emails
+  if (isRateLimited(`forgot-email:${cleanEmail}`, HOUR, 3)) {
+    return res.status(200).json(DONE);
   }
 
   try {
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() }
-    });
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail }, select: { id: true, email: true, name: true } });
+    if (!user) return res.status(200).json(DONE);
 
-    // Don't reveal if email exists for security reasons
-    // Always return success even if user doesn't exist
-    if (!user) {
-      return res.status(200).json({ 
-        message: "If an account with that email exists, we've sent you a password reset link." 
-      });
-    }
-
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-
-    // Save reset token to database
-    try {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          resetToken,
-          resetTokenExpires
-        }
-      });
-    } catch (dbError) {
-      console.error("Database update error:", dbError);
-      // If database update fails, it might be because fields don't exist
-      // Check if it's a schema issue
-      if (dbError.message && dbError.message.includes('Unknown field')) {
-        console.error("Schema mismatch! Run: npx prisma db push && npx prisma generate");
-        return res.status(500).json({ 
-          error: "Database schema needs to be updated. Please contact support." 
-        });
-      }
-      throw dbError;
-    }
-
-    // Send email with reset link
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL;
     if (!appUrl) {
-      console.error("NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_BASE_URL environment variable is not set!");
-      return res.status(500).json({
-        error: "Server configuration error. Please contact support."
-      });
-    }
-    const resetUrl = `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${resetToken}`;
-    
-    // Send email (will log to console in development if RESEND_API_KEY not set)
-    // Don't fail the request if email sending fails - token is already saved
-    try {
-      await sendPasswordResetEmail(user.email, resetUrl, user.name);
-    } catch (emailError) {
-      console.error('Email sending failed (but token saved):', emailError);
-      // Continue anyway - token is saved, user can check console for link
+      console.error("NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_BASE_URL is not set");
+      return res.status(500).json({ error: "Something went wrong. Please try again later." });
     }
 
-    return res.status(200).json({ 
-      message: "If an account with that email exists, we've sent you a password reset link." 
+    const { token, tokenHash } = createResetToken();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: tokenHash, resetTokenExpires: new Date(Date.now() + HOUR) },
     });
+
+    const resetUrl = `${appUrl.replace(/\/$/, "")}/auth/reset-password?token=${token}`;
+    await sendPasswordResetEmail(user.email, resetUrl, user.name);
+    return res.status(200).json(DONE);
   } catch (error) {
     console.error("Forgot password error:", error);
-    console.error("Error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    return res.status(500).json({
-      error: "An error occurred. Please try again later."
-    });
+    return res.status(500).json({ error: "Something went wrong. Please try again later." });
   }
 }
-

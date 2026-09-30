@@ -3,7 +3,11 @@ import { useRouter } from 'next/router';
 
 import Link from 'next/link';
 import PublicLayout from '../../components/PublicLayout';
+import Turnstile from '../../components/Turnstile';
 import { FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
+
+// Cloudflare Turnstile bot check; skipped when no site key is configured
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 // Custom hook for form state management
 const useFormState = (initialState) => {
   const [state, setState] = useState(initialState);
@@ -71,6 +75,9 @@ export default function Register() {
   const firstErrorRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [honeypot, setHoneypot] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
   const { 
@@ -151,9 +158,13 @@ export default function Register() {
     // Check for any validation errors
     const hasErrors = Object.keys(errors).some(key => errors[key]);
     if (hasErrors) return;
-    
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setSubmitError('Please complete the security check above the Create account button.');
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -161,7 +172,9 @@ export default function Register() {
         body: JSON.stringify({
           email: state.email.trim(),
           name: state.name.trim(),
-          password: state.password.trim()
+          password: state.password.trim(),
+          website: honeypot,
+          turnstileToken,
         }),
       });
       
@@ -280,6 +293,8 @@ export default function Register() {
       setSubmitError(userMessage);
     } finally {
       setIsSubmitting(false);
+      // Each Turnstile token works once; get a fresh one in case the user needs to try again
+      if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
     }
   };
 
@@ -535,6 +550,16 @@ export default function Register() {
                 </a>
               </label>
             </div>
+
+            {/* Hidden from people; bots that fill it in are refused */}
+            <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+              <label htmlFor="register-website">Website</label>
+              <input id="register-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+            </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <Turnstile siteKey={TURNSTILE_SITE_KEY} action="register" onToken={setTurnstileToken} resetKey={turnstileReset} />
+            )}
 
             <div>
               <button

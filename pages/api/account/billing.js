@@ -2,6 +2,9 @@
 import prisma from "../../../lib/prisma";
 import { getUserFromRequest } from "../../../lib/auth";
 
+// Optional text field: trimmed, capped in length, empty becomes null
+const clean = (value, max = 200) => (typeof value === "string" ? value.trim().slice(0, max) || null : null);
+
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -28,35 +31,35 @@ export default async function handler(req, res) {
     const updateData = {};
 
     if (billingName !== undefined) {
-      updateData.billingName = billingName?.trim() || null;
+      updateData.billingName = clean(billingName);
     }
 
     if (billingCompany !== undefined) {
-      updateData.billingCompany = billingCompany?.trim() || null;
+      updateData.billingCompany = clean(billingCompany);
     }
 
     if (billingAddress !== undefined) {
-      updateData.billingAddress = billingAddress?.trim() || null;
+      updateData.billingAddress = clean(billingAddress);
     }
 
     if (billingCity !== undefined) {
-      updateData.billingCity = billingCity?.trim() || null;
+      updateData.billingCity = clean(billingCity);
     }
 
     if (billingState !== undefined) {
-      updateData.billingState = billingState?.trim() || null;
+      updateData.billingState = clean(billingState);
     }
 
     if (billingZipCode !== undefined) {
-      updateData.billingZipCode = billingZipCode?.trim() || null;
+      updateData.billingZipCode = clean(billingZipCode);
     }
 
     if (billingCountry !== undefined) {
-      updateData.billingCountry = billingCountry?.trim() || null;
+      updateData.billingCountry = clean(billingCountry);
     }
 
     if (taxId !== undefined) {
-      updateData.taxId = taxId?.trim() || null;
+      updateData.taxId = clean(taxId);
     }
 
     // Update user billing information in database
@@ -84,8 +87,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Error updating billing information:", error);
     return res.status(500).json({
-      error: "Failed to update billing information",
-      message: error.message || "Unknown error occurred",
+      error: "Failed to update billing information. Please try again.",
     });
   }
 }

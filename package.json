@@ -1,41 +1,49 @@
 {
   "name": "qr-genie-tailwind",
   "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "postinstall": "prisma generate",
     "migrate": "prisma migrate deploy",
     "migrate:dev": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "email:test": "node scripts/test-email.mjs"
   },
   "dependencies": {
-    "@prisma/client": "5.7.0",
-    "bcryptjs": "^2.4.3",
-    "canvas": "^3.2.1",
-    "cookie": "^1.1.1",
-    "geoip-lite": "^1.4.10",
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "cookie": "^2.0.1",
+    "geoip-lite": "^2.0.3",
     "html-to-image": "^1.11.13",
-    "jsonwebtoken": "9.0.2",
+    "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.1.0",
-    "nanoid": "^5.1.6",
-    "next": "^16.1.1",
-    "prisma": "5.7.0",
+    "mailchecker": "^6.0.21",
+    "nanoid": "^6.0.1",
+    "next": "^16.3.7",
+    "nodemailer": "^10.0.13",
+    "prisma": "^6.19.3",
     "qr-code-styling": "^1.9.2",
-    "qrcode": "1.5.3",
+    "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "razorpay": "^2.9.6",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "react-icons": "^5.5.0",
-    "recharts": "^3.5.1",
-    "resend": "^6.6.0"
+    "recharts": "^3.5.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.14"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2"
   }
 }

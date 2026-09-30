@@ -3,10 +3,17 @@ import prisma from "../../lib/prisma";
 import { nanoid } from "nanoid";
 import QRCode from "qrcode";
 import { getUserFromRequest } from "../../lib/auth";
+import { validateRedirectUrl } from "../../lib/redirectValidation";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "../../lib/subscription";
+// QR types open for new codes; the others stay in the code for a later launch
+const ENABLED_TYPES = new Set(["website", "wifi", "whatsapp", "instagram"]);
+const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+const MAX_META_LENGTH = 1_500_000; // the design may carry an uploaded logo as a data URL
+
 function normalizeUrl(u) {
-  if (!u) return "";
+  if (!u || typeof u !== "string") return "";
   const trimmed = u.trim();
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
@@ -89,13 +96,17 @@ export default async function handler(req, res) {
 
   // Normalise colors (fallbacks if not provided or invalid)
   const safeQrColor =
-    typeof qrColor === "string" && qrColor.startsWith("#")
+    typeof qrColor === "string" && HEX_COLOR.test(qrColor)
       ? qrColor
       : "#000000";
   const safeBgColor =
-    typeof bgColor === "string" && bgColor.startsWith("#")
+    typeof bgColor === "string" && HEX_COLOR.test(bgColor)
       ? bgColor
       : "#ffffff";
+
+  if (!ENABLED_TYPES.has(qrType)) {
+    return res.status(400).json({ error: "This QR code type isn't available yet." });
+  }
 
   let type = qrType;
   let targetUrl = "";
@@ -110,7 +121,11 @@ export default async function handler(req, res) {
         .status(400)
         .json({ error: "Website URL is required." });
     }
-    targetUrl = finalUrl;
+    const checked = validateRedirectUrl(finalUrl);
+    if (!checked.valid || checked.url.length > 2048) {
+      return res.status(400).json({ error: "Please enter a valid website URL." });
+    }
+    targetUrl = checked.url;
   } else if (type === "pdf") {
     const link = normalizeUrl(pdfUrl || url);
     if (!link) {
@@ -177,16 +192,22 @@ export default async function handler(req, res) {
 
   } else if (type === "wifi") {
     const w = wifi || {};
-    const ssid = w.ssid || "";
+    const ssid = typeof w.ssid === "string" ? w.ssid.trim() : "";
     if (!ssid) {
       return res.status(400).json({
         error: "WiFi SSID (Network name) is required.",
       });
     }
+    if (ssid.length > 64) {
+      return res.status(400).json({ error: "The network name is too long." });
+    }
 
     // Build WiFi QR code string: WIFI:S:<SSID>;T:<SECURITY>;P:<PASSWORD>;H:<HIDDEN>;;
-    const security = w.security || "WPA";
-    const password = w.password || "";
+    const security = WIFI_SECURITY.has(w.security) ? w.security : "WPA";
+    const password = typeof w.password === "string" ? w.password : "";
+    if (password.length > 128) {
+      return res.status(400).json({ error: "The network password is too long." });
+    }
     const hidden = w.hidden === true || w.hidden === "true" ? "true" : "false";
     
     // Escape special characters in SSID and password
@@ -216,11 +237,19 @@ export default async function handler(req, res) {
     };
   } else if (type === "instagram") {
     const instagramData = instagram || {};
-    const username = (instagramData.username || "").trim().replace(/^@/, "");
+    // Accept "@name", "name" or a pasted profile link
+    const username = String(instagramData.username || "")
+      .trim()
+      .replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i, "")
+      .replace(/^@/, "")
+      .replace(/[/?#].*$/, "");
     if (!username) {
       return res.status(400).json({
         error: "Instagram username is required.",
       });
+    }
+    if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) {
+      return res.status(400).json({ error: "Please enter a valid Instagram username." });
     }
     targetUrl = `https://instagram.com/${username}/`;
     metaObj = {
@@ -228,14 +257,17 @@ export default async function handler(req, res) {
     };
   } else if (type === "whatsapp") {
     const whatsappData = whatsapp || {};
-    const countryCode = whatsappData.countryCode || "+91";
-    const phone = (whatsappData.phone || "").trim().replace(/[\s\-\(\)]/g, "");
-    const message = whatsappData.message || "";
+    const countryCode = /^\+\d{1,4}$/.test(whatsappData.countryCode) ? whatsappData.countryCode : "+91";
+    const phone = String(whatsappData.phone || "").trim().replace(/[\s\-\(\)]/g, "");
+    const message = typeof whatsappData.message === "string" ? whatsappData.message.slice(0, 1000) : "";
     
     if (!phone) {
       return res.status(400).json({
         error: "WhatsApp phone number is required.",
       });
+    }
+    if (!/^\d{4,15}$/.test(phone)) {
+      return res.status(400).json({ error: "Please enter a valid WhatsApp phone number (digits only)." });
     }
     
     const fullPhone = countryCode + phone;
@@ -258,20 +290,28 @@ export default async function handler(req, res) {
 
 
   // Add design config to metaObj if provided
-  if (design && typeof design === "object") {
+  if (design && typeof design === "object" && !Array.isArray(design)) {
+    // A logo is only ever an uploaded image (data URL); drop anything else
+    const safeDesign = { ...design };
+    if (safeDesign.logo && !(typeof safeDesign.logo === "string" && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/i.test(safeDesign.logo))) {
+      safeDesign.logo = null;
+    }
     if (!metaObj) {
       metaObj = {};
     }
-    metaObj.designConfig = design;
+    metaObj.designConfig = safeDesign;
   }
 
   const metaString = metaObj ? JSON.stringify(metaObj) : null;
+  if (metaString && metaString.length > MAX_META_LENGTH) {
+    return res.status(413).json({ error: "The QR design is too large. Please use a smaller logo." });
+  }
 
   // Save QR code in DB
     let code;
     try {
       // Process name: trim whitespace, use null if empty
-      const processedName = name && typeof name === "string" ? name.trim() : null;
+      const processedName = name && typeof name === "string" ? name.trim().slice(0, 100) : null;
       const finalName = processedName && processedName.length > 0 ? processedName : null;
 
       const linkType = requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
@@ -290,7 +330,7 @@ export default async function handler(req, res) {
       };
 
       // Add folder if provided and valid
-      if (folder && folder.trim()) {
+      if (typeof folder === "string" && folder.trim()) {
         // Verify folder belongs to user
         const folderExists = await prisma.folder.findFirst({
           where: {
@@ -359,7 +399,7 @@ export default async function handler(req, res) {
     
     // Ensure we always return JSON, never HTML
     return res.status(500).json({ 
-      error: error.message || "An unexpected error occurred. Please try again later." 
+      error: "An unexpected error occurred. Please try again later."
     });
   }
 }
