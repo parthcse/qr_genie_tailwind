@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: "Not authenticated" });
 
   const codes = await prisma.qRCode.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, status: { not: "DELETED" } },
 
     include: {
       folder: {

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/router";
 import { FaFolder, FaEdit, FaTrash, FaTimes, FaCheck, FaChevronLeft } from "react-icons/fa";
 
@@ -140,7 +141,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
   return (
     <>
       {/* Folder Header */}
-      <div className="mb-4 sm:mb-6 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5 shadow-sm">
+      <div className="mb-4 sm:mb-6 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* Left: Folder Info */}
           <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -238,7 +239,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleRenameStart}
                 disabled={isLoading || showDeleteConfirm}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-indigo-700 bg-white border-2 border-indigo-300 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Rename folder"
               >
                 <FaEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -248,7 +249,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleDeleteClick}
                 disabled={isLoading || showDeleteConfirm}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Delete folder"
               >
                 <FaTrash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -259,8 +260,8 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
+      {/* Delete Confirmation Modal, on <body> so the dashboard card's backdrop-blur can't trap it */}
+      {showDeleteConfirm && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
           onClick={(e) => {
@@ -324,7 +325,8 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

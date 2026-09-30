@@ -117,7 +117,7 @@ function SidebarFooter({ user, subscriptionStatus, onLogout, onNavigate }) {
   );
 }
 
-export default function DashboardLayout({ children, title, description }) {
+export default function DashboardLayout({ children, title, description, actions }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -215,16 +215,19 @@ export default function DashboardLayout({ children, title, description }) {
         {/* Main content */}
         <div className="flex min-h-full flex-1 flex-col md:pl-4 lg:pl-6 xl:pl-8 min-w-0">
           <main className="flex w-full flex-1 flex-col rounded-xl md:rounded-2xl border border-indigo-100 bg-white md:bg-white/80 md:backdrop-blur-lg px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 shadow-xl max-w-full overflow-hidden">
-            {(title || description) && (
-              <div className="mb-4 md:mb-6">
-                {title && (
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">
-                    {title}
-                  </h1>
-                )}
-                {description && (
-                  <p className="mt-1 md:mt-2 text-xs sm:text-sm text-gray-600">{description}</p>
-                )}
+            {(title || description || actions) && (
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-6">
+                <div className="min-w-0">
+                  {title && (
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">
+                      {title}
+                    </h1>
+                  )}
+                  {description && (
+                    <p className="mt-1 md:mt-2 text-xs sm:text-sm text-gray-600">{description}</p>
+                  )}
+                </div>
+                {actions && <div className="flex flex-none items-center gap-2">{actions}</div>}
               </div>
             )}
             {children}
