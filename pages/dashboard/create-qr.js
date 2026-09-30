@@ -8,6 +8,7 @@ import DynamicForm from "../../components/qrFields/DynamicForm";
 import { getSchemaForType } from "../../lib/qrSchemas";
 import { createQRConfig } from "../../components/DesignedQRCode";
 import { downloadDesignedQR } from "../../lib/qrDownload";
+import { prepareLogo, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
 import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
 import { jsPDF } from "jspdf";
 
@@ -125,6 +126,15 @@ import {
   FaMicrophone,
   FaPaperclip,
   FaCamera,
+  FaCheck,
+  FaCheckCircle,
+  FaArrowLeft,
+  FaArrowRight,
+  FaCopy,
+  FaPlus,
+  FaExclamationTriangle,
+  FaInfoCircle,
+  FaLightbulb,
 } from "react-icons/fa";
 
 // QR Type definitions with icons and field schemas
@@ -132,7 +142,8 @@ const qrTypes = [
   {
     id: "website",
     label: "Website",
-    description: "Link to any website URL",
+    description: "Open any web page",
+    hint: "Editable link, scan stats, optional password",
     icon: FaGlobe,
     active: true,
     color: "indigo"
@@ -141,7 +152,8 @@ const qrTypes = [
 
     id: "wifi",
     label: "WiFi",
-    description: "Connect to a WiFi network",
+    description: "Join a Wi-Fi network in one scan",
+    hint: "No typing passwords",
     icon: FaWifi,
     active: true,
     color: "cyan"
@@ -149,7 +161,8 @@ const qrTypes = [
   {
     id: "whatsapp",
     label: "WhatsApp",
-    description: "Get WhatsApp messages",
+    description: "Start a WhatsApp chat with you",
+    hint: "Optional pre-filled message",
     icon: FaWhatsapp,
     active: true,
     color: "emerald"
@@ -158,7 +171,8 @@ const qrTypes = [
 
     id: "instagram",
     label: "Instagram",
-    description: "Share your Instagram",
+    description: "Open your Instagram profile",
+    hint: "Grow your followers",
     icon: FaInstagram,
     active: true,
     color: "pink"
@@ -266,6 +280,14 @@ const qrTypes = [
     color: "amber"
   },
 ];
+
+// Icon colours for the released QR types
+const TYPE_ACCENTS = {
+  website: "bg-sky-50 text-sky-600",
+  wifi: "bg-cyan-50 text-cyan-600",
+  whatsapp: "bg-emerald-50 text-emerald-600",
+  instagram: "bg-pink-50 text-pink-600",
+};
 
 // Helper function to generate preview URL based on QR type and form data
 const generatePreviewUrl = (qrType, formData) => {
@@ -747,41 +769,50 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
               </div>
             </div>
 
-            {/* Website Content Area */}
-            <div className="flex-1 overflow-auto bg-white">
-              <div className="px-6 py-8 max-w-sm mx-auto">
-                {/* Main Title */}
-                <div className="mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-                    {mainTitle}
-                  </h1>
+            {/* Website Content Area (a password screen first when protection is on) */}
+            {passwordEnabled ? (
+              <div className="flex flex-1 flex-col items-center justify-center overflow-auto bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-6 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
+                  <FaLock className="h-6 w-6" />
                 </div>
-                
-                {/* Description Placeholder */}
-                <div className="mb-6 space-y-3">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Welcome to our website. Discover amazing content and stay connected with us.
-                  </p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Explore our services and learn more about what we offer.
-                  </p>
+                <p className="text-base font-bold text-gray-900">This QR code is protected</p>
+                <p className="mt-1 text-xs text-gray-500">Enter the password you were given to continue.</p>
+                <div className="mt-5 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-left text-sm leading-10 tracking-widest text-gray-400">
+                  {formData.password ? "•".repeat(Math.min(formData.password.length, 16)) : "Password"}
                 </div>
-                
-                {/* Protected indicator */}
-                {passwordEnabled && (
-                  <div className="mb-6 flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg border border-indigo-200">
-                    <FaLock className="w-4 h-4 text-indigo-600" />
-                    <span className="text-xs text-indigo-700 font-medium">This website is password protected</span>
+                <div className="mt-2 h-10 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-semibold leading-10 text-white">
+                  Continue
+                </div>
+                <p className="mt-4 text-[11px] text-gray-400">Then they're sent to {domain}</p>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-auto bg-white">
+                <div className="px-6 py-8 max-w-sm mx-auto">
+                  {/* Main Title */}
+                  <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                      {mainTitle}
+                    </h1>
                   </div>
-                )}
-                
-                {/* Sample Content Blocks */}
-                <div className="mt-8 space-y-4">
-                  <div className="h-32 bg-gray-100 rounded-lg"></div>
-                  <div className="h-24 bg-gray-50 rounded-lg"></div>
+
+                  {/* Description Placeholder */}
+                  <div className="mb-6 space-y-3">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Welcome to our website. Discover amazing content and stay connected with us.
+                    </p>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Explore our services and learn more about what we offer.
+                    </p>
+                  </div>
+
+                  {/* Sample Content Blocks */}
+                  <div className="mt-8 space-y-4">
+                    <div className="h-32 bg-gray-100 rounded-lg"></div>
+                    <div className="h-24 bg-gray-50 rounded-lg"></div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Safari Bottom Navigation Bar */}
             <div className="bg-white border-t border-gray-200 flex-shrink-0 relative">
@@ -1791,58 +1822,203 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
 
 
 // Step Indicator Component - Responsive
-const StepIndicator = ({ currentStep, onStepClick }) => {
+const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
   const steps = [
-    { id: 1, label: "Type of QR code", shortLabel: "Type" },
-    { id: 2, label: "Content", shortLabel: "Content" },
-    { id: 3, label: "QR design", shortLabel: "Design" },
+    { id: 1, label: "Choose a type", shortLabel: "Type" },
+    { id: 2, label: "Add content", shortLabel: "Content" },
+    { id: 3, label: "Style it", shortLabel: "Design" },
   ];
 
   return (
-    <div className="mb-4 sm:mb-6 w-full overflow-x-auto pb-2 -mx-3 sm:mx-0 px-3 sm:px-0">
-      <div className="flex items-center gap-2 sm:gap-4 min-w-max sm:min-w-0">
-        {steps.map((step, idx) => (
-          <div key={step.id} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+    <ol className="grid grid-cols-3 gap-1.5 rounded-2xl border border-gray-100 bg-gray-50/80 p-1.5" aria-label="Steps">
+      {steps.map((step) => {
+        const done = currentStep > step.id || allDone;
+        const active = currentStep === step.id && !allDone;
+        const canClick = !!onStepClick && done && !allDone;
+        return (
+          <li key={step.id} className="min-w-0">
             <button
               type="button"
-              onClick={() => onStepClick && onStepClick(step.id)}
-              className={`
-                flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 text-xs sm:text-sm font-medium transition-all flex-shrink-0
-                ${currentStep === step.id
-                  ? "border-indigo-600 bg-indigo-600 text-white shadow-md"
-                  : currentStep > step.id
-                    ? "border-emerald-500 bg-emerald-500 text-white"
-                    : "border-slate-300 bg-white text-slate-500 hover:border-slate-400"
-                }
-              `}
+              onClick={() => canClick && onStepClick(step.id)}
+              disabled={!canClick}
+              aria-current={active ? "step" : undefined}
+              className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-2 py-2 text-left transition sm:gap-2.5 sm:px-3 sm:py-2.5 ${
+                active ? "bg-white shadow-sm ring-1 ring-indigo-100" : canClick ? "hover:bg-white/70" : "cursor-default"
+              }`}
             >
-              {currentStep > step.id ? "✓" : step.id}
+              <span
+                className={`flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-semibold ${
+                  done
+                    ? "bg-emerald-500 text-white"
+                    : active
+                      ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30"
+                      : "bg-white text-gray-400 ring-1 ring-gray-200"
+                }`}
+              >
+                {done ? <FaCheck className="h-3 w-3" /> : step.id}
+              </span>
+              <span className="min-w-0">
+                <span className="hidden text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:block">Step {step.id}</span>
+                <span className={`block truncate text-xs font-semibold sm:text-sm ${active || done ? "text-gray-900" : "text-gray-500"}`}>
+                  <span className="hidden md:inline">{step.label}</span>
+                  <span className="md:hidden">{step.shortLabel}</span>
+                </span>
+              </span>
             </button>
-            <span
-              className={`
-                text-xs sm:text-sm font-medium whitespace-nowrap
-                ${currentStep === step.id || currentStep > step.id
-                  ? "text-slate-900"
-                  : "text-slate-500"
-                }
-              `}
-            >
-              <span className="hidden sm:inline">{step.label}</span>
-              <span className="sm:hidden">{step.shortLabel}</span>
-            </span>
-            {idx < steps.length - 1 && (
-              <div
-                className={`
-                  h-0.5 w-6 sm:w-12 transition-all flex-shrink-0
-                  ${currentStep > step.id ? "bg-emerald-500" : "bg-slate-200"}
-                `}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+          </li>
+        );
+      })}
+    </ol>
   );
+};
+
+// Starting values of the content form (also used by "Create another")
+const INITIAL_FORM_DATA = {
+  linkType: "DYNAMIC", // "STATIC" = encode URL only, no tracking; "DYNAMIC" = /r/slug + tracking + pause/resume
+  // Website
+  url: "",
+  name: "",
+  password: "",
+
+  passwordEnabled: false,
+  folder: "",
+  // PDF
+  pdfUrl: "",
+  pdfFile: null,
+  directShow: false,
+  title: "",
+  company: "",
+  description: "",
+  website: "",
+  buttonText: "View PDF",
+  thumbnail: null,
+  primaryColor: "#527AC9",
+  secondaryColor: "#7EC09F",
+  titleFont: "GT Walsheim Pro",
+  bodyFont: "GT Walsheim Pro",
+  // vCard
+  vcard: {
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    company: "",
+    jobTitle: "",
+    website: "",
+  },
+  // List of Links
+  links: {
+    profileImage: null,
+    name: "",
+    description: "",
+    buttons: [{ title: "", url: "", icon: "" }],
+  },
+  // Business
+  business: {
+    name: "",
+    description: "",
+    phone: "",
+    email: "",
+    address: "",
+    website: "",
+  },
+  // Video
+  videoUrl: "",
+  // Images
+  images: [],
+  // Social Media
+  social: {
+    facebook: "",
+    instagram: "",
+    twitter: "",
+    linkedin: "",
+  },
+  // WhatsApp
+  whatsapp: {
+
+    countryCode: "+91",
+    phone: "",
+    message: "",
+  },
+  // Instagram
+  instagram: {
+    username: "",
+  },
+  // MP3
+  mp3Url: "",
+  // Menu
+  menu: {
+    restaurantName: "",
+    items: [],
+  },
+  // Apps
+  apps: {
+    ios: "",
+    android: "",
+  },
+  // Coupon
+  coupon: {
+    title: "",
+    description: "",
+    code: "",
+    expiry: "",
+  },
+  // WiFi
+  wifi: {
+    ssid: "",
+    password: "",
+    security: "WPA",
+
+    hidden: false,
+  },
+};
+
+// Starting values of the design step
+const INITIAL_DESIGN_DATA = {
+  // Frame options
+  frameStyle: "none", // none, label, tag, bubble, badge
+  frameText: "Scan me!",
+  frameTextColor: "#000000", // Color for frame text (single color, no gradient)
+  frameColor: "#000000", // Border color only (no gradient support)
+  frameBgColor: "#ffffff",
+  frameBgTransparent: false,
+  frameBgUseGradient: false,
+  frameBgColor1: "#ffffff",
+  frameBgColor2: "#ffffff",
+  
+  // QR Pattern options
+  patternStyle: "classic", // classic, dots, rounded, pixels, grid
+  patternColor: "#000000",
+  patternUseGradient: false,
+  patternGradientType: "vertical", // vertical, horizontal, diagonal, inverse-diagonal, radial
+  patternColor1: "#000000",
+  patternColor2: "#000000",
+  patternBgColor: "#ffffff",
+  patternBgTransparent: false,
+  patternBgUseGradient: false,
+  patternBgGradientType: "linear", // linear, radial
+  patternBgColor1: "#ffffff",
+  patternBgColor2: "#ffffff",
+  
+  // Corner customization
+  cornerFrameStyle: "square", // square, rounded, circle, extra-rounded
+  cornerDotStyle: "square", // square, rounded, circle, extra-rounded
+  cornerFrameColor: "#000000",
+  cornerDotColor: "#000000",
+  
+  // Logo options
+  logo: null,
+  logoSize: 40,
+  
+  // Legacy support (for backward compatibility)
+  qrColor: "#000000",
+  bgColor: "#ffffff",
+  useGradientPattern: false,
+  bgTransparent: false,
+  useGradientBg: false,
+  bgColor1: "#ffffff",
+  bgColor2: "#ffffff",
+
 };
 
 export default function CreateQrPage() {
@@ -1854,105 +2030,7 @@ export default function CreateQrPage() {
   const [previewMode, setPreviewMode] = useState("destination"); // "destination" | "qr"
 
   // Form data - unified state
-  const [formData, setFormData] = useState({
-    linkType: "DYNAMIC", // "STATIC" = encode URL only, no tracking; "DYNAMIC" = /r/slug + tracking + pause/resume
-    // Website
-    url: "",
-    name: "",
-    password: "",
-
-    passwordEnabled: false,
-    folder: "",
-    // PDF
-    pdfUrl: "",
-    pdfFile: null,
-    directShow: false,
-    title: "",
-    company: "",
-    description: "",
-    website: "",
-    buttonText: "View PDF",
-    thumbnail: null,
-    primaryColor: "#527AC9",
-    secondaryColor: "#7EC09F",
-    titleFont: "GT Walsheim Pro",
-    bodyFont: "GT Walsheim Pro",
-    // vCard
-    vcard: {
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      company: "",
-      jobTitle: "",
-      website: "",
-    },
-    // List of Links
-    links: {
-      profileImage: null,
-      name: "",
-      description: "",
-      buttons: [{ title: "", url: "", icon: "" }],
-    },
-    // Business
-    business: {
-      name: "",
-      description: "",
-      phone: "",
-      email: "",
-      address: "",
-      website: "",
-    },
-    // Video
-    videoUrl: "",
-    // Images
-    images: [],
-    // Social Media
-    social: {
-      facebook: "",
-      instagram: "",
-      twitter: "",
-      linkedin: "",
-    },
-    // WhatsApp
-    whatsapp: {
-
-      countryCode: "+91",
-      phone: "",
-      message: "",
-    },
-    // Instagram
-    instagram: {
-      username: "",
-    },
-    // MP3
-    mp3Url: "",
-    // Menu
-    menu: {
-      restaurantName: "",
-      items: [],
-    },
-    // Apps
-    apps: {
-      ios: "",
-      android: "",
-    },
-    // Coupon
-    coupon: {
-      title: "",
-      description: "",
-      code: "",
-      expiry: "",
-    },
-    // WiFi
-    wifi: {
-      ssid: "",
-      password: "",
-      security: "WPA",
-
-      hidden: false,
-    },
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
   // Folders state
   const [folders, setFolders] = useState([]);
@@ -1975,52 +2053,7 @@ export default function CreateQrPage() {
   const canCreate = subscriptionStatus && (subscriptionStatus.status === "TRIAL_ACTIVE" || subscriptionStatus.status === "SUBSCRIPTION_ACTIVE");
 
   // Design data - comprehensive design options
-  const [designData, setDesignData] = useState({
-    // Frame options
-    frameStyle: "none", // none, label, tag, bubble, badge
-    frameText: "Scan me!",
-    frameTextColor: "#000000", // Color for frame text (single color, no gradient)
-    frameColor: "#000000", // Border color only (no gradient support)
-    frameBgColor: "#ffffff",
-    frameBgTransparent: false,
-    frameBgUseGradient: false,
-    frameBgColor1: "#ffffff",
-    frameBgColor2: "#ffffff",
-    
-    // QR Pattern options
-    patternStyle: "classic", // classic, dots, rounded, pixels, grid
-    patternColor: "#000000",
-    patternUseGradient: false,
-    patternGradientType: "vertical", // vertical, horizontal, diagonal, inverse-diagonal, radial
-    patternColor1: "#000000",
-    patternColor2: "#000000",
-    patternBgColor: "#ffffff",
-    patternBgTransparent: false,
-    patternBgUseGradient: false,
-    patternBgGradientType: "linear", // linear, radial
-    patternBgColor1: "#ffffff",
-    patternBgColor2: "#ffffff",
-    
-    // Corner customization
-    cornerFrameStyle: "square", // square, rounded, circle, extra-rounded
-    cornerDotStyle: "square", // square, rounded, circle, extra-rounded
-    cornerFrameColor: "#000000",
-    cornerDotColor: "#000000",
-    
-    // Logo options
-    logo: null,
-    logoSize: 40,
-    
-    // Legacy support (for backward compatibility)
-    qrColor: "#000000",
-    bgColor: "#ffffff",
-    useGradientPattern: false,
-    bgTransparent: false,
-    useGradientBg: false,
-    bgColor1: "#ffffff",
-    bgColor2: "#ffffff",
-
-  });
+  const [designData, setDesignData] = useState(INITIAL_DESIGN_DATA);
 
   // Wrapper to update design data and trigger preview refresh
   const updateDesignData = (newData) => {
@@ -2107,6 +2140,7 @@ export default function CreateQrPage() {
     // Type-specific validation
     switch (selectedType) {
       case "website":
+        if (formData.passwordEnabled && (formData.password || "").length < 4) return false;
         return !!formData.url;
       case "pdf":
         return !!(formData.pdfUrl || formData.pdfFile);
@@ -2172,7 +2206,10 @@ export default function CreateQrPage() {
     // Type-specific messages
     switch (qrType) {
       case "website":
-        return "Please fill data like Website URL*";
+        if (formData.url && formData.passwordEnabled && (formData.password || "").length < 4) {
+          return "Add a password of at least 4 characters, or turn password protection off.";
+        }
+        return "Add the website address to continue.";
       case "pdf":
         return "Please fill data like PDF URL or upload PDF file*";
       case "vcard":
@@ -2186,7 +2223,7 @@ export default function CreateQrPage() {
       case "images":
         return "Please upload at least one image*";
       case "whatsapp":
-        return "Please fill data like Country* and Phone Number*";
+        return "Choose the country and add the phone number to continue.";
       case "mp3":
         return "Please fill data like MP3 URL*";
       case "menu":
@@ -2195,9 +2232,9 @@ export default function CreateQrPage() {
         const wifiDataCheck = formData.wifi || {};
         const securityCheck = wifiDataCheck.security || "WPA";
         if (securityCheck !== "nopass") {
-          return "Please fill data like Network name* and Network password*";
+          return "Add the network name and password to continue.";
         }
-        return "Please fill data like Network name*";
+        return "Add the network name to continue.";
       case "apps":
         return "Please fill data like iOS or Android App URL*";
       case "coupon":
@@ -2205,7 +2242,7 @@ export default function CreateQrPage() {
       case "facebook":
         return "Please fill data like Facebook URL*";
       case "instagram":
-        return "Please fill data like Username*";
+        return "Add the Instagram username to continue.";
       case "social":
         return "Please fill data like at least one Social Media URL*";
       default:
@@ -2234,8 +2271,10 @@ export default function CreateQrPage() {
 
   const goBack = () => setStep((s) => Math.max(1, s - 1));
 
+  // Creates the code. Only the "Create QR code" button on step 3 calls this.
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    if (step < 3 || saving) return;
     if (!canContinueFromStep2()) {
       setStep(2);
       return;
@@ -2254,8 +2293,10 @@ export default function CreateQrPage() {
         credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           qrType: selectedType,
-          linkType: formData.linkType || "DYNAMIC",
           ...formData, // Send all form data
+          // WiFi codes are always static; a password only applies to website codes
+          linkType: selectedType === "wifi" ? "STATIC" : formData.linkType || "DYNAMIC",
+          passwordEnabled: selectedType === "website" && !!formData.passwordEnabled,
           // Use pattern colors for QR, fallback to legacy qrColor
           qrColor: designData.patternColor || designData.qrColor || "#000000",
           // Use pattern background colors, fallback to legacy bgColor
@@ -2291,9 +2332,13 @@ export default function CreateQrPage() {
         }
       } else {
         setSuccess({
+          id: data.id,
           slug: data.slug,
-          shortUrl: data.dynamicUrl || `/r/${data.slug}`,
+          linkType: data.linkType,
+          staticContent: data.staticContent,
+          isProtected: !!data.protected,
         });
+        setPreviewMode("qr");
         setStep(3);
       }
     } catch (err) {
@@ -2305,171 +2350,219 @@ export default function CreateQrPage() {
   };
 
   // Render Step 1 - QR Type Selection
-  const renderStep1 = () => (
-    <div>
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">
-        Select a type of QR code
-      </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {qrTypes.map((type) => {
-          const Icon = type.icon;
-          const isSelected = selectedType === type.id;
-          const isHovered = hoveredType === type.id;
+  const renderStep1 = () => {
+    const available = qrTypes.filter((type) => type.active !== false);
+    const upcoming = qrTypes.filter((type) => type.active === false);
 
-          const isActive = type.active !== false;
-          return (
-            <button
-              key={type.id}
-              type="button"
+    return (
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">What should your QR code do?</h2>
+        <p className="mt-1 text-sm text-gray-500">Pick a type. You'll add the details in the next step.</p>
 
-              onClick={() => {
-                if (isActive) {
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {available.map((type) => {
+            const Icon = type.icon;
+            const isSelected = selectedType === type.id;
+            return (
+              <button
+                key={type.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => {
                   setSelectedType(type.id);
-                  // Auto-navigate to step 2 after selection
-                  setTimeout(() => setStep(2), 300);
-                }
-              }}
-              onMouseEnter={() => {
-                if (isActive) {
-                  setHoveredType(type.id);
-                }
-              }}
-              onMouseLeave={() => setHoveredType(null)}
-              disabled={!isActive}
-              className={`
-                group relative flex flex-col items-center justify-center rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 transition-all
-                ${!isActive
-                  ? "border-slate-100 bg-slate-50 opacity-50 cursor-not-allowed"
-                  : isSelected
-                    ? "border-indigo-600 bg-indigo-50 shadow-md"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                }
-              `}
-            >
-              <div
-                className={`
-                  mb-2 flex h-12 w-12 items-center justify-center rounded-lg transition-colors
-
-                  ${!isActive
-                    ? "bg-slate-100 text-slate-400"
-                    : isSelected
-                      ? "bg-indigo-600 text-white"
-                      : `bg-slate-100 text-slate-600 group-hover:bg-slate-200`
-                  }
-                `}
+                  setTimeout(() => setStep(2), 250);
+                }}
+                onMouseEnter={() => setHoveredType(type.id)}
+                onMouseLeave={() => setHoveredType(null)}
+                className={`group relative flex flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-5 ${
+                  isSelected
+                    ? "border-indigo-300 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                    : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5"
+                }`}
               >
-                <Icon className="text-xl" />
-              </div>
-              <span
-                className={`
-                  text-sm font-medium
+                <span className="flex items-start justify-between">
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${TYPE_ACCENTS[type.id] || "bg-indigo-50 text-indigo-600"}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  {isSelected ? (
+                    <FaCheckCircle className="h-5 w-5 text-indigo-600" />
+                  ) : (
+                    <FaArrowRight className="mt-1 h-3.5 w-3.5 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500" />
+                  )}
+                </span>
+                <span className="mt-3 font-semibold text-gray-900">{type.label}</span>
+                <span className="mt-0.5 text-sm text-gray-500">{type.description}</span>
+                {type.hint && <span className="mt-2 text-xs text-gray-400">{type.hint}</span>}
+              </button>
+            );
+          })}
+        </div>
 
-                  ${!isActive
-                    ? "text-slate-400"
-                    : isSelected
-                      ? "text-indigo-700"
-                      : "text-slate-700"
-                  }
-                `}
-              >
-                {type.label}
-              </span>
-
-              <span className={`mt-1 text-xs ${!isActive ? "text-slate-400" : "text-slate-500"}`}>
-                {type.description}
-              </span>
-            </button>
-          );
-        })}
+        {upcoming.length > 0 && (
+          <div className="mt-8 border-t border-gray-100 pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Coming soon</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {upcoming.map((type) => {
+                const Icon = type.icon;
+                return (
+                  <span
+                    key={type.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-dashed border-gray-200 bg-gray-50/60 px-3 py-1.5 text-xs font-medium text-gray-400"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {type.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render Step 2 - Dynamic Content Form
   const renderStep2 = () => {
     if (!selectedType) return null;
 
     const schema = getSchemaForType(selectedType);
-    const linkType = formData.linkType || "DYNAMIC";
+    const typeInfo = qrTypes.find((type) => type.id === selectedType);
+    const TypeIcon = typeInfo?.icon || FaQrcode;
+    const isWifi = selectedType === "wifi";
+    const passwordOn = selectedType === "website" && !!formData.passwordEnabled;
+    const linkType = isWifi ? "STATIC" : formData.linkType || "DYNAMIC";
 
     const updateFormData = (newData) => {
-      setFormData(newData);
-
-      // Force preview update
-      setPreviewKey(prev => prev + 1);
+      // A password only works on a dynamic code
+      setFormData(newData.passwordEnabled && newData.linkType === "STATIC" ? { ...newData, linkType: "DYNAMIC" } : newData);
+      setPreviewKey((prev) => prev + 1);
     };
+
+    const linkOptions = [
+      {
+        id: "DYNAMIC",
+        title: "Dynamic",
+        badge: "Recommended",
+        icon: FaChartBar,
+        text:
+          selectedType === "website"
+            ? "Change where it points any time, see its scans, pause it or add a password."
+            : "Change where it points any time, see its scans and pause it.",
+      },
+      {
+        id: "STATIC",
+        title: "Static",
+        icon: FaQrcode,
+        text: "The content is printed into the code itself. It can't be changed or tracked later.",
+        disabled: passwordOn,
+      },
+    ];
 
     return (
       <div className="space-y-6">
-        {/* Link type: Static vs Dynamic */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">How should this QR code work?</p>
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="linkType"
-                checked={linkType === "DYNAMIC"}
-                onChange={() => updateFormData({ ...formData, linkType: "DYNAMIC" })}
-                className="mt-1 h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
-              />
-              <span>
-                <span className="font-medium text-slate-900">Dynamic</span>
-                <span className="text-slate-600 text-sm"> – Track scans and change the destination URL anytime. QR encodes a short link.</span>
-              </span>
-            </label>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="linkType"
-                checked={linkType === "STATIC"}
-                onChange={() => updateFormData({ ...formData, linkType: "STATIC" })}
-                className="mt-1 h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
-              />
-              <span>
-                <span className="font-medium text-slate-900">Static</span>
-                <span className="text-slate-600 text-sm"> – No tracking. QR encodes the final URL directly. You cannot change the destination later without reprinting.</span>
-              </span>
-            </label>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl ${TYPE_ACCENTS[selectedType] || "bg-indigo-50 text-indigo-600"}`}>
+              <TypeIcon className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Add your {typeInfo?.label || "QR code"} details</h2>
+              <p className="text-sm text-gray-500">Fields marked * are required.</p>
+            </div>
           </div>
+          <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700">
+            Change type
+          </button>
         </div>
-      <DynamicForm
-        schema={schema}
-        formData={formData}
-        updateFormData={updateFormData}
 
-        type={selectedType}
-        folders={folders}
-        onFolderCreated={handleFolderCreated}
-      />
+        {isWifi ? (
+          <div className="flex gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4">
+            <FaInfoCircle className="mt-0.5 h-4 w-4 flex-none text-cyan-600" />
+            <p className="text-sm leading-relaxed text-cyan-900">
+              <span className="font-semibold">Wi-Fi codes are static.</span> Phones join the network straight from the camera, with no app or
+              web page in between. Scans aren't counted, and if the network name or password changes you'll need a new code.
+            </p>
+          </div>
+        ) : (
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-gray-700">How should this code work?</legend>
+            <div className="grid gap-3 2xl:grid-cols-2">
+              {linkOptions.map((option) => {
+                const checked = linkType === option.id;
+                const Icon = option.icon;
+                return (
+                  <label
+                    key={option.id}
+                    className={`relative flex gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-indigo-500/40 ${
+                      option.disabled
+                        ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-60"
+                        : checked
+                          ? "cursor-pointer border-indigo-300 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                          : "cursor-pointer border-gray-200 bg-white hover:border-indigo-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="linkType"
+                      value={option.id}
+                      checked={checked}
+                      disabled={option.disabled}
+                      onChange={() => updateFormData({ ...formData, linkType: option.id })}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${
+                        checked ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white" : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 pr-5">
+                      <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
+                        {option.title}
+                        {option.badge && (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                            {option.badge}
+                          </span>
+                        )}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
+                        {option.disabled ? "Not available with a password: protection needs a dynamic code." : option.text}
+                      </span>
+                    </span>
+                    {checked && <FaCheckCircle className="absolute right-3 top-3 h-4 w-4 text-indigo-600" />}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+
+        <DynamicForm
+          schema={schema}
+          formData={formData}
+          updateFormData={updateFormData}
+          type={selectedType}
+          folders={folders}
+          onFolderCreated={handleFolderCreated}
+        />
       </div>
     );
   };
 
-
-  // Handle logo upload
-  const handleLogoUpload = (e) => {
+  // Handle logo upload: the logo is saved with the QR code, so it's shrunk to 150 KB at most
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again after an error
     if (!file) return;
-    
-    // Check file size (1 MB max)
-    if (file.size > 1024 * 1024) {
-      setError("Logo file size must be less than 1 MB");
+
+    setError("");
+    const result = await prepareLogo(file);
+    if (result.error) {
+      setError(result.error);
       return;
     }
-    
-    // Check if it's an image
-    if (!file.type.startsWith("image/")) {
-      setError("Please upload an image file");
-      return;
-    }
-    
-    // Convert to data URL for preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      updateDesignData({ ...designData, logo: reader.result });
-    };
-    reader.readAsDataURL(file);
+    updateDesignData({ ...designData, logo: result.dataUrl });
   };
   
   // Remove logo
@@ -2493,8 +2586,8 @@ export default function CreateQrPage() {
     };
 
     const targetSize = sizeMap[downloadSize] || 1024;
-    const format = downloadFormat === "eps" ? "svg" : downloadFormat;
-    const filename = "qr-code";
+    const format = downloadFormat === "print" ? "png" : downloadFormat;
+    const filename = success?.slug ? `qr-genie-${success.slug}` : "qr-code";
 
     try {
       setSaving(true);
@@ -2617,6 +2710,25 @@ export default function CreateQrPage() {
         dataUrl = await toPng(element, pngOptions);
       }
 
+      // Print: open the image in a new tab and print it from here (inline scripts are blocked by the site's security policy)
+      if (downloadFormat === "print") {
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) {
+          setError("Allow pop-ups for this site to print the QR code.");
+          return;
+        }
+        printWindow.document.write(
+          `<!DOCTYPE html><html><head><title>Print QR code</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${dataUrl}" alt="QR code" style="width:60mm;height:auto"></body></html>`
+        );
+        printWindow.document.close();
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 300);
+        setShowDownloadModal(false);
+        return;
+      }
+
       // Download the file
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -2642,7 +2754,7 @@ export default function CreateQrPage() {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-slate-700">{label}</label>
+          <label className="text-xs font-medium text-gray-700">{label}</label>
           <div className="flex items-center gap-2">
             {showTransparent && (
               <label className="flex items-center gap-1.5 cursor-pointer">
@@ -2650,9 +2762,9 @@ export default function CreateQrPage() {
                   type="checkbox"
                   checked={transparent}
                   onChange={(e) => onTransparentToggle(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="text-xs text-slate-600">Transparent</span>
+                <span className="text-xs text-gray-600">Transparent</span>
               </label>
             )}
             {supportsGradient && !transparent && (
@@ -2661,15 +2773,15 @@ export default function CreateQrPage() {
                   type="checkbox"
                   checked={useGradient || false}
                   onChange={(e) => onGradientToggle(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="text-xs text-slate-600">Gradient</span>
+                <span className="text-xs text-gray-600">Gradient</span>
               </label>
             )}
           </div>
         </div>
         {transparent ? (
-          <div className="text-xs text-slate-500 italic">Background is transparent</div>
+          <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">Transparent background</div>
         ) : (supportsGradient && useGradient) ? (
           <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center gap-2">
@@ -2677,13 +2789,13 @@ export default function CreateQrPage() {
                 type="color"
                 value={color1 || "#000000"}
                 onChange={(e) => onColor1Change(e.target.value)}
-                className="h-8 w-8 cursor-pointer rounded border border-slate-300"
+                className="h-9 w-9 flex-none cursor-pointer rounded-lg border border-gray-200 bg-white p-0.5"
               />
               <input
                 type="text"
                 value={color1 || "#000000"}
                 onChange={(e) => onColor1Change(e.target.value)}
-                className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-gray-200 px-2.5 font-mono text-xs uppercase text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -2691,13 +2803,13 @@ export default function CreateQrPage() {
                 type="color"
                 value={color2 || "#000000"}
                 onChange={(e) => onColor2Change(e.target.value)}
-                className="h-8 w-8 cursor-pointer rounded border border-slate-300"
+                className="h-9 w-9 flex-none cursor-pointer rounded-lg border border-gray-200 bg-white p-0.5"
               />
               <input
                 type="text"
                 value={color2 || "#000000"}
                 onChange={(e) => onColor2Change(e.target.value)}
-                className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-gray-200 px-2.5 font-mono text-xs uppercase text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
           </div>
@@ -2707,13 +2819,13 @@ export default function CreateQrPage() {
               type="color"
               value={color || "#000000"}
               onChange={(e) => onColorChange(e.target.value)}
-              className="h-8 w-8 cursor-pointer rounded border border-slate-300"
+              className="h-9 w-9 flex-none cursor-pointer rounded-lg border border-gray-200 bg-white p-0.5"
             />
             <input
               type="text"
               value={color || "#000000"}
               onChange={(e) => onColorChange(e.target.value)}
-              className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-gray-200 px-2.5 font-mono text-xs uppercase text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
         )}
@@ -2725,17 +2837,17 @@ export default function CreateQrPage() {
   const renderStep3 = () => (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">3. Design the QR</h2>
-        <p className="text-xs sm:text-sm text-slate-600">Customize the appearance of your QR code</p>
+        <h2 className="text-lg font-semibold text-gray-900">Style your QR code</h2>
+        <p className="mt-1 text-sm text-gray-500">Colors, shapes, a frame and your logo. The preview updates as you go.</p>
       </div>
 
       {/* Frame Options */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-        <h3 className="mb-3 sm:mb-4 text-sm font-semibold text-slate-900">Frame</h3>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900"><FaImage className="h-3.5 w-3.5 text-indigo-500" />Frame</h3>
         
         {/* Frame Style Selection */}
         <div className="mb-4">
-          <label className="mb-2 block text-xs font-medium text-slate-700">Frame Style</label>
+          <label className="mb-2 block text-xs font-medium text-gray-700">Style</label>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {[
               { id: "none", label: "No frame", icon: "□" },
@@ -2749,10 +2861,10 @@ export default function CreateQrPage() {
                 type="button"
                 onClick={() => updateDesignData({ ...designData, frameStyle: frame.id })}
                 className={`
-                  flex h-16 sm:h-20 flex-col items-center justify-center rounded-lg border-2 text-[10px] sm:text-xs transition-all
+                  flex h-16 sm:h-20 flex-col items-center justify-center rounded-xl border text-[10px] sm:text-xs transition
                   ${designData.frameStyle === frame.id
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    ? "border-indigo-300 bg-indigo-50/60 text-indigo-700 ring-2 ring-indigo-500/20"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200"
                   }
                 `}
                 title={frame.label}
@@ -2767,13 +2879,13 @@ export default function CreateQrPage() {
         {/* Frame Text (if frame is not "none") */}
         {designData.frameStyle !== "none" && (
           <div className="mb-4">
-            <label className="mb-2 block text-xs font-medium text-slate-700">Frame Text</label>
+            <label className="mb-2 block text-xs font-medium text-gray-700">Text on the frame</label>
             <input
               type="text"
               value={designData.frameText || "Scan me!"}
               onChange={(e) => updateDesignData({ ...designData, frameText: e.target.value })}
               placeholder="Scan me!"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="h-10 w-full rounded-xl border border-gray-200 px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
         )}
@@ -2782,12 +2894,12 @@ export default function CreateQrPage() {
         {designData.frameStyle !== "none" && (
           <div className="space-y-4">
             <ColorPicker
-              label="Frame Color (Border)"
+              label="Frame color"
               color={designData.frameColor}
               onColorChange={(val) => updateDesignData({ ...designData, frameColor: val })}
             />
             <ColorPicker
-              label="Frame Background"
+              label="Frame background"
               color={designData.frameBgColor}
               color1={designData.frameBgColor1}
               color2={designData.frameBgColor2}
@@ -2801,7 +2913,7 @@ export default function CreateQrPage() {
               onTransparentToggle={(val) => updateDesignData({ ...designData, frameBgTransparent: val })}
             />
             <ColorPicker
-              label="Frame Text Color"
+              label="Text color"
               color={designData.frameTextColor || designData.frameColor}
               onColorChange={(val) => updateDesignData({ ...designData, frameTextColor: val })}
             />
@@ -2810,12 +2922,12 @@ export default function CreateQrPage() {
       </div>
 
       {/* QR Pattern Options */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-        <h3 className="mb-3 sm:mb-4 text-sm font-semibold text-slate-900">QR Pattern</h3>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900"><FaQrcode className="h-3.5 w-3.5 text-indigo-500" />Pattern</h3>
         
         {/* Pattern Style Selection */}
         <div className="mb-4">
-          <label className="mb-2 block text-xs font-medium text-slate-700">Pattern Style</label>
+          <label className="mb-2 block text-xs font-medium text-gray-700">Style</label>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {["classic", "dots", "rounded", "pixels", "grid"].map((pattern) => (
               <button
@@ -2823,10 +2935,10 @@ export default function CreateQrPage() {
                 type="button"
                 onClick={() => updateDesignData({ ...designData, patternStyle: pattern })}
                 className={`
-                  flex h-16 sm:h-20 flex-col items-center justify-center rounded-lg border-2 text-[10px] sm:text-xs transition-all
+                  flex h-16 sm:h-20 flex-col items-center justify-center rounded-xl border text-[10px] sm:text-xs transition
                   ${designData.patternStyle === pattern
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    ? "border-indigo-300 bg-indigo-50/60 text-indigo-700 ring-2 ring-indigo-500/20"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200"
                   }
                 `}
               >
@@ -2846,12 +2958,12 @@ export default function CreateQrPage() {
         {/* Pattern Colors */}
         <div className="space-y-4">
           <ColorPicker
-            label="Pattern Color"
+            label="Pattern color"
             color={designData.patternColor || designData.qrColor}
             onColorChange={(val) => updateDesignData({ ...designData, patternColor: val, qrColor: val })}
           />
           <ColorPicker
-            label="Pattern Background"
+            label="Background"
             color={designData.patternBgColor || designData.bgColor}
             color1={designData.patternBgColor1}
             color2={designData.patternBgColor2}
@@ -2876,21 +2988,20 @@ export default function CreateQrPage() {
         </div>
 
         {/* Helper Note */}
-        <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3">
-          <p className="text-xs text-amber-800">
-            <span className="font-semibold">Remember!</span> Use high-contrast colors for best scan results.
-          </p>
-        </div>
+        <p className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50/70 p-3 text-xs text-amber-800">
+          <FaLightbulb className="mt-0.5 h-3 w-3 flex-none" />
+          A dark pattern on a light background scans best. Low-contrast colors may not scan on every phone.
+        </p>
       </div>
 
       {/* Corner Customization */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-        <h3 className="mb-3 sm:mb-4 text-sm font-semibold text-slate-900">Corner Customization</h3>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900"><FaPalette className="h-3.5 w-3.5 text-indigo-500" />Corners</h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Corner Frame Style */}
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-700">Corner Frame Style</label>
+            <label className="mb-2 block text-xs font-medium text-gray-700">Outer corners</label>
             <div className="grid grid-cols-4 gap-2 sm:gap-2">
               {["square", "rounded", "circle", "extra-rounded"].map((style) => (
                 <button
@@ -2898,10 +3009,10 @@ export default function CreateQrPage() {
                   type="button"
                   onClick={() => updateDesignData({ ...designData, cornerFrameStyle: style })}
                   className={`
-                    flex h-12 flex-col items-center justify-center rounded-lg border-2 text-xs transition-all
+                    flex h-12 flex-col items-center justify-center rounded-xl border text-xs transition
                     ${designData.cornerFrameStyle === style
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      ? "border-indigo-300 bg-indigo-50/60 text-indigo-700 ring-2 ring-indigo-500/20"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200"
                     }
                   `}
                   title={style}
@@ -2917,20 +3028,16 @@ export default function CreateQrPage() {
             </div>
             <div className="mt-2">
               <ColorPicker
-                label="Corner Frame Color"
+                label="Corner color"
                 color={designData.cornerFrameColor}
-                useGradient={false}
                 onColorChange={(val) => updateDesignData({ ...designData, cornerFrameColor: val })}
-                onGradientToggle={() => {}}
-                onColor1Change={() => {}}
-                onColor2Change={() => {}}
               />
             </div>
           </div>
 
           {/* Corner Dot Style */}
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-700">Corner Dot Style</label>
+            <label className="mb-2 block text-xs font-medium text-gray-700">Inner dots</label>
             <div className="grid grid-cols-4 gap-2 sm:gap-2">
               {["square", "rounded", "circle", "extra-rounded"].map((style) => (
                 <button
@@ -2938,10 +3045,10 @@ export default function CreateQrPage() {
                   type="button"
                   onClick={() => updateDesignData({ ...designData, cornerDotStyle: style })}
                   className={`
-                    flex h-12 flex-col items-center justify-center rounded-lg border-2 text-xs transition-all
+                    flex h-12 flex-col items-center justify-center rounded-xl border text-xs transition
                     ${designData.cornerDotStyle === style
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      ? "border-indigo-300 bg-indigo-50/60 text-indigo-700 ring-2 ring-indigo-500/20"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200"
                     }
                   `}
                   title={style}
@@ -2957,13 +3064,9 @@ export default function CreateQrPage() {
             </div>
             <div className="mt-2">
               <ColorPicker
-                label="Corner Dot Color"
+                label="Dot color"
                 color={designData.cornerDotColor}
-                useGradient={false}
                 onColorChange={(val) => updateDesignData({ ...designData, cornerDotColor: val })}
-                onGradientToggle={() => {}}
-                onColor1Change={() => {}}
-                onColor2Change={() => {}}
               />
             </div>
           </div>
@@ -2971,8 +3074,8 @@ export default function CreateQrPage() {
       </div>
 
       {/* Logo Options */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-        <h3 className="mb-3 sm:mb-4 text-sm font-semibold text-slate-900">Logo</h3>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900"><FaUpload className="h-3.5 w-3.5 text-indigo-500" />Logo</h3>
         
         {designData.logo ? (
           <div className="space-y-3">
@@ -2981,17 +3084,17 @@ export default function CreateQrPage() {
                 <img
                   src={designData.logo}
                   alt="Logo preview"
-                  className="h-20 w-20 rounded-lg border-2 border-slate-200 object-contain bg-white p-2"
+                  className="h-20 w-20 rounded-xl border border-gray-200 bg-white object-contain p-2"
                 />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 mb-1">Logo uploaded</p>
-                <p className="text-xs text-slate-500">Your logo will appear in the center of the QR code</p>
+                <p className="mb-1 text-sm font-medium text-gray-800">Logo added</p>
+                <p className="text-xs text-gray-500">It sits in the middle of your QR code.</p>
               </div>
               <button
                 type="button"
                 onClick={handleRemoveLogo}
-                className="rounded-lg bg-red-50 p-2 text-red-600 hover:bg-red-100 transition-colors"
+                className="rounded-xl bg-red-50 p-2.5 text-red-600 transition hover:bg-red-100"
                 title="Remove logo"
               >
                 <FaTrash className="text-sm" />
@@ -3000,11 +3103,10 @@ export default function CreateQrPage() {
           </div>
         ) : (
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-700">Upload Logo</label>
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 transition-colors hover:border-indigo-400 hover:bg-indigo-50">
-              <FaUpload className="mb-2 text-2xl text-slate-400" />
-              <span className="text-sm font-medium text-slate-700">Click to upload</span>
-              <span className="mt-1 text-xs text-slate-500">PNG, JPG up to 1 MB</span>
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 p-6 transition hover:border-indigo-300 hover:bg-indigo-50/40">
+              <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm"><FaUpload className="h-4 w-4" /></span>
+              <span className="text-sm font-medium text-gray-800">Upload your logo</span>
+              <span className="mt-1 text-xs text-gray-500">PNG, JPG, WebP or SVG. Big images are shrunk to {MAX_IMAGE_LABEL}.</span>
               <input
                 type="file"
                 accept="image/*"
@@ -3019,361 +3121,393 @@ export default function CreateQrPage() {
   );
 
 
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // What the finished code contains: the short link for dynamic codes, the content itself for static ones
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const finalQrValue = success ? (success.linkType === "STATIC" ? success.staticContent : `${origin}/r/${success.slug}`) : null;
+  const finalShortLink = success && success.linkType !== "STATIC" ? `${origin}/r/${success.slug}` : null;
+
+  const openDownload = () => {
+    setPreviewMode("qr");
+    setShowDownloadModal(true);
+  };
+
+  const copyShortLink = async () => {
+    if (!finalShortLink) return;
+    try {
+      await navigator.clipboard.writeText(finalShortLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      /* the link is visible to copy by hand */
+    }
+  };
+
+  // Start over with a blank form
+  const resetAll = () => {
+    setFormData(INITIAL_FORM_DATA);
+    setDesignData(INITIAL_DESIGN_DATA);
+    setSelectedType(null);
+    setHoveredType(null);
+    setSuccess(null);
+    setError("");
+    setErrorJSX(null);
+    setPreviewMode("destination");
+    setPreviewKey((k) => k + 1);
+    setStep(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (subscriptionStatus !== null && !canCreate) {
+    const trialEnded = subscriptionStatus.status === "TRIAL_EXPIRED";
     return (
-      <DashboardLayout title="Create QR Code" description="">
-        <div className="max-w-xl mx-auto py-8 px-4 text-center">
-          <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-6">
-            <h3 className="text-lg font-bold text-red-900 mb-2">
-              {subscriptionStatus.status === "TRIAL_EXPIRED" ? "Free Trial Expired" : "Subscription Expired"}
-            </h3>
-            <p className="text-red-800 mb-4">
-              {subscriptionStatus.status === "TRIAL_EXPIRED" 
-                ? "Your 14-day free trial has expired. To reactivate your QR codes and continue creating new ones, subscribe to one of our plans."
-                : "Your subscription has expired. Please renew to continue creating QR codes."}
-            </p>
-            <Link
-              href="/dashboard/billing"
-              className="inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-6 py-3 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all"
-            >
-              Activate Account
-            </Link>
-          </div>
+      <DashboardLayout title="Create a QR code" description="">
+        <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-6 text-center sm:p-10">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <FaExclamationTriangle className="h-5 w-5" />
+          </span>
+          <h3 className="mt-4 text-lg font-semibold text-amber-900">{trialEnded ? "Your free trial has ended" : "Your subscription has ended"}</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-amber-800">
+            {trialEnded
+              ? "Subscribe to the Basic plan to create new QR codes and switch your existing ones back on."
+              : "Renew the Basic plan to create new QR codes and switch your existing ones back on."}
+          </p>
+          <Link
+            href="/dashboard/billing"
+            className="mt-6 inline-flex items-center justify-center rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
+          >
+            View plans
+          </Link>
         </div>
       </DashboardLayout>
     );
   }
 
+  const nextDisabled = (step === 1 && !canContinueFromStep1) || (step === 2 && !canContinueFromStep2());
+  const qrPreviewAvailable = !!success || canGenerateQR;
+  const isWifi = selectedType === "wifi";
+  const willBeDynamic = !isWifi && (formData.linkType || "DYNAMIC") === "DYNAMIC";
+
   return (
-    <DashboardLayout
-      title="Create QR Code"
-      description="Create a dynamic QR code in three simple steps"
-    >
+    <DashboardLayout title="Create a QR code" description="Choose a type, add your content and make it yours.">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
+        {/* Left: steps */}
+        <div className="min-w-0 space-y-5">
+          <StepIndicator currentStep={step} allDone={!!success} onStepClick={(s) => setStep(s)} />
 
-      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_400px] gap-4 sm:gap-6">
-        {/* Left: Main Content */}
-        <div className="space-y-4 sm:space-y-6 min-w-0">
-          <StepIndicator currentStep={step} />
+          {success ? (
+            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
+                <FaCheck className="h-6 w-6" />
+              </span>
+              <h2 className="mt-5 text-2xl font-bold text-gray-900">Your QR code is ready</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-600">
+                {success.linkType === "STATIC"
+                  ? isWifi
+                    ? "Print it where guests can see it: their phone joins the network as soon as they scan it."
+                    : "It holds your content directly, so it keeps working even without QR Genie."
+                  : "Download it and print it. You can change where it points, pause it or check its scans at any time."}
+              </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Step Content */}
-            <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:p-6">
-              {step === 1 && renderStep1()}
-              {step === 2 && (
-                <div>
-                  <h2 className="mb-6 text-xl font-semibold text-slate-900">
-                    2. Add content to your QR code
-                  </h2>
-                  {renderStep2()}
-                </div>
-              )}
-              {step === 3 && renderStep3()}
-
-              {/* Error/Success Messages */}
-              {errorJSX && (
-                <div className="mt-4">
-                  {errorJSX}
-                </div>
-              )}
-              {error && !errorJSX && (
-                <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700">
-                  <p className="font-medium mb-1">QR code created successfully!</p>
-
-                  {/* Hide short link for website, wifi, instagram, whatsapp */}
-                  {!["website", "wifi", "instagram", "whatsapp"].includes(selectedType) && (
-                    <p className="mb-3">
-                      Short link:{" "}
-                      <Link
-                        href={success.shortUrl}
-                        className="font-mono text-xs text-emerald-800 underline"
-                        target="_blank"
-                      >
-                        {success.shortUrl}
-                      </Link>
-                    </p>
-                  )}
+              {finalShortLink && (
+                <div className="mx-auto mt-5 flex max-w-sm items-center gap-2 rounded-xl border border-gray-200 bg-white p-1.5 pl-3.5 shadow-sm">
+                  <span className="min-w-0 flex-1 truncate text-left text-sm text-gray-700">{finalShortLink.replace(/^https?:\/\//, "")}</span>
                   <button
                     type="button"
-                    onClick={() => setShowDownloadModal(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    onClick={copyShortLink}
+                    className="inline-flex h-8 flex-none items-center gap-1.5 rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
                   >
-                    <FaDownload className="w-3 h-3" />
-                    Download QR Code
+                    {copiedLink ? <FaCheck className="h-3 w-3" /> : <FaCopy className="h-3 w-3" />}
+                    {copiedLink ? "Copied" : "Copy"}
                   </button>
                 </div>
               )}
-            </div>
 
-            {/* Navigation Buttons */}
+              {success.isProtected && (
+                <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
+                  <FaLock className="h-3 w-3" />
+                  Password protected
+                </p>
+              )}
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={step === 1}
-
-                className="w-full sm:w-auto rounded-xl border-2 border-indigo-300 bg-white px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                Back
-              </button>
-
-              {step < 3 ? (
+              <div className="mt-7 flex flex-col flex-wrap justify-center gap-2 whitespace-nowrap sm:flex-row">
                 <button
                   type="button"
-                  onClick={goNext}
-                  disabled={
-                    (step === 1 && !canContinueFromStep1) ||
-                    (step === 2 && !canContinueFromStep2())
-                  }
-
-                  className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  onClick={openDownload}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
                 >
-                  Next →
+                  <FaDownload className="h-3.5 w-3.5" />
+                  Download
                 </button>
-              ) : (
-
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  {qrCodeUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setShowDownloadModal(true)}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      <FaDownload className="w-4 h-4" />
-                      Download
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={saving || !canContinueFromStep2()}
-                    className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                {success.id && (
+                  <Link
+                    href={`/dashboard/qrs/${success.id}`}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium !text-gray-700 shadow-sm transition hover:border-indigo-300 hover:!text-indigo-700"
                   >
-                    {saving ? "Creating..." : "Create QR Code"}
-                  </button>
-                </div>
-              )}
-            </div>
-          </form>
-        </div>
-
-
-        {/* Download Modal */}
-        {showDownloadModal && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowDownloadModal(false);
-              }
-            }}
-          >
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">Select the format to download</h3>
+                    View details
+                  </Link>
+                )}
                 <button
                   type="button"
-                  onClick={() => setShowDownloadModal(false)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  onClick={resetAll}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
                 >
-                  <FaTimes className="w-5 h-5" />
+                  <FaPlus className="h-3 w-3" />
+                  Create another
                 </button>
               </div>
+              <Link href="/dashboard" className="mt-5 inline-block text-sm font-medium !text-gray-500 hover:!text-indigo-600">
+                Go to My QR codes
+              </Link>
+            </div>
+          ) : (
+            <form
+              className="space-y-5"
+              onSubmit={(e) => {
+                // Enter in a field only moves forward; the code is created by the Create QR code button alone
+                e.preventDefault();
+                if (step < 3) goNext();
+              }}
+            >
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                {step === 1 && renderStep1()}
+                {step === 2 && renderStep2()}
+                {step === 3 && renderStep3()}
 
-              {/* Modal Body */}
-              <div className="p-6">
-                {/* Format Options */}
-                <div className="mb-6">
-                  <label className="mb-3 block text-sm font-medium text-slate-700">Format</label>
-                  <div className="grid grid-cols-3 gap-3">
+                {errorJSX && <div className="mt-5">{errorJSX}</div>}
+                {error && !errorJSX && (
+                  <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+                    <FaExclamationTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                    {error}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className={`inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
+                    step === 1 ? "invisible" : ""
+                  }`}
+                >
+                  <FaArrowLeft className="h-3 w-3" />
+                  Back
+                </button>
+
+                <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3">
+                  {step === 2 && nextDisabled && <p className="text-right text-xs text-gray-500">{getRequiredFieldsMessage(selectedType)}</p>}
+                  {/* Separate keys: React must not turn the clicked Next button into the Create button mid-click */}
+                  {step < 3 ? (
+                    <button
+                      key="next"
+                      type="button"
+                      onClick={goNext}
+                      disabled={nextDisabled}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                    >
+                      {step === 1 ? "Continue" : "Next: style it"}
+                      <FaArrowRight className="h-3 w-3" />
+                    </button>
+                  ) : (
+                    <button
+                      key="create"
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={saving || !canContinueFromStep2()}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {saving ? "Creating…" : "Create QR code"}
+                      {!saving && <FaCheck className="h-3 w-3" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Right: live preview */}
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-[6.5rem] lg:self-start">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
+                <p className="truncate text-xs text-gray-500">
+                  {previewMode === "qr" ? (success ? "Your finished QR code" : "How your code will look") : "What people see after scanning"}
+                </p>
+              </div>
+              <div role="tablist" aria-label="Preview" className="inline-flex flex-none rounded-lg bg-gray-100 p-0.5">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={previewMode === "destination"}
+                  onClick={() => setPreviewMode("destination")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                    previewMode === "destination" ? "bg-white text-indigo-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Page
+                </button>
+                <span title={qrPreviewAvailable ? undefined : selectedType ? getRequiredFieldsMessage(selectedType) : "Choose a QR type first"}>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={previewMode === "qr"}
+                    disabled={!qrPreviewAvailable}
+                    onClick={() => setPreviewMode("qr")}
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      previewMode === "qr" ? "bg-white text-indigo-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    QR code
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <MobilePreview
+                key={`preview-${selectedType}-${previewKey}`}
+                qrType={hoveredType || selectedType}
+                formData={formData}
+                designData={designData}
+                previewMode={previewMode}
+                qrCodeUrl={finalQrValue || qrCodeUrl}
+                qrPreviewRef={qrPreviewRef}
+              />
+            </div>
+
+            {previewMode === "qr" && !success && willBeDynamic && selectedType && (
+              <p className="mt-4 flex items-start gap-2 rounded-xl bg-indigo-50/70 p-3 text-xs leading-relaxed text-indigo-800">
+                <FaInfoCircle className="mt-0.5 h-3 w-3 flex-none" />
+                Preview only. Your finished code will hold its own short link, created when you click Create QR code.
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-500 shadow-sm">
+              <FaLightbulb className="h-3.5 w-3.5" />
+            </span>
+            <p className="text-xs leading-relaxed text-gray-600">
+              <span className="font-semibold text-gray-800">Tip:</span> print codes at least 2 cm wide and test them with a phone before a big
+              print run.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      {/* Download dialog */}
+      {showDownloadModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Download QR code"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/40 p-4 backdrop-blur-sm sm:items-center"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowDownloadModal(false)}
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <FaDownload className="h-4 w-4" />
+              </span>
+              <h3 className="flex-1 text-base font-semibold text-gray-900">Download your QR code</h3>
+              <button
+                type="button"
+                onClick={() => setShowDownloadModal(false)}
+                aria-label="Close"
+                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              >
+                <FaTimes className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-6 px-5 py-5">
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-700">Format</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "png", label: "PNG", note: "Web & print", icon: FaFileImage },
+                    { id: "svg", label: "SVG", note: "Any size", icon: FaFileImage },
+                    { id: "pdf", label: "PDF", note: "Documents", icon: FaFilePdf },
+                    { id: "jpg", label: "JPEG", note: "Photos", icon: FaFileImage },
+                    { id: "print", label: "Print", note: "Printer", icon: FaPrint },
+                  ].map((format) => {
+                    const Icon = format.icon;
+                    const selected = downloadFormat === format.id;
+                    return (
+                      <button
+                        key={format.id}
+                        type="button"
+                        onClick={() => setDownloadFormat(format.id)}
+                        aria-pressed={selected}
+                        className={`flex flex-col items-center justify-center rounded-xl border p-3 transition ${
+                          selected ? "border-indigo-300 bg-indigo-50/60 text-indigo-700 ring-2 ring-indigo-500/20" : "border-gray-200 text-gray-600 hover:border-indigo-200"
+                        }`}
+                      >
+                        <Icon className="mb-1.5 h-5 w-5" />
+                        <span className="text-xs font-semibold">{format.label}</span>
+                        <span className="text-[10px] text-gray-400">{format.note}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {downloadFormat !== "svg" && downloadFormat !== "print" && (
+                <div>
+                  <p className="mb-2 text-sm font-medium text-gray-700">Size</p>
+                  <div className="flex flex-wrap gap-2">
                     {[
-                      { id: "png", label: "PNG", icon: FaFileImage },
-                      { id: "jpg", label: "JPEG", icon: FaFileImage },
-                      { id: "svg", label: "SVG", icon: FaFileImage },
-                      { id: "pdf", label: "PDF", icon: FaFilePdf },
-                      { id: "eps", label: "EPS", icon: FaFileImage },
-                      { id: "print", label: "Print", icon: FaPrint },
-                    ].map((format) => {
-                      const Icon = format.icon;
+                      { id: "512x512", label: "Small", note: "512 px" },
+                      { id: "default", label: "Standard", note: "1024 px" },
+                      { id: "2048x2048", label: "Large", note: "2048 px" },
+                      { id: "4096x4096", label: "Poster", note: "4096 px" },
+                    ].map((size) => {
+                      const selected = downloadSize === size.id || (size.id === "default" && downloadSize === "1024x1024");
                       return (
                         <button
-                          key={format.id}
+                          key={size.id}
                           type="button"
-                          onClick={() => setDownloadFormat(format.id)}
-                          className={`
-                            flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all
-                            ${downloadFormat === format.id
-                              ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                            }
-                          `}
+                          onClick={() => setDownloadSize(size.id)}
+                          aria-pressed={selected}
+                          className={`rounded-xl border px-3 py-2 text-left transition ${
+                            selected ? "border-indigo-300 bg-indigo-50/60 ring-2 ring-indigo-500/20" : "border-gray-200 hover:border-indigo-200"
+                          }`}
                         >
-                          <Icon className="w-6 h-6 mb-2" />
-                          <span className="text-xs font-medium">{format.label}</span>
-                          <input
-                            type="radio"
-                            checked={downloadFormat === format.id}
-                            onChange={() => setDownloadFormat(format.id)}
-                            className="mt-2 h-3 w-3 text-indigo-600 focus:ring-indigo-500"
-                          />
+                          <span className={`block text-xs font-semibold ${selected ? "text-indigo-700" : "text-gray-700"}`}>{size.label}</span>
+                          <span className="block text-[10px] text-gray-400">{size.note}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
-
-                {/* File Size Options */}
-                <div className="mb-6">
-                  <label className="mb-3 block text-sm font-medium text-slate-700">File size</label>
-                  <div className="space-y-2">
-                    {["default", "512x512", "1024x1024", "2048x2048", "4096x4096"].map((size) => (
-                      <label
-                        key={size}
-                        className={`
-                          flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all
-                          ${downloadSize === size
-                            ? "border-indigo-600 bg-indigo-50"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                          }
-                        `}
-                      >
-                        <input
-                          type="radio"
-                          name="downloadSize"
-                          value={size}
-                          checked={downloadSize === size}
-                          onChange={(e) => setDownloadSize(e.target.value)}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="ml-3 text-sm text-slate-700">
-                          {size === "default" ? "Default" : size}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setShowDownloadModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-indigo-700 bg-white border-2 border-indigo-300 rounded-xl hover:bg-indigo-50 transition-all duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadQR}
-                  className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  <FaDownload className="w-4 h-4" />
-                  Download
-                </button>
-              </div>
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Right: Preview Panel */}
-        <div className="space-y-4 order-first lg:order-last">
-          <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:p-6">
-            <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">Preview</h3>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("destination")}
-                  className={`
-                    rounded-lg px-3 py-1 text-xs font-medium transition-colors
-                    ${previewMode === "destination"
-                      ? "bg-indigo-100 text-indigo-700"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }
-                  `}
-                >
-                  Destination
-                </button>
-
-                <div className="relative group">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (canGenerateQR) {
-                        setPreviewMode("qr");
-                      }
-                    }}
-                    disabled={!canGenerateQR}
-                    className={`
-                      rounded-lg px-3 py-1 text-xs font-medium transition-colors relative
-                      ${previewMode === "qr"
-                        ? "bg-indigo-100 text-indigo-700"
-                        : canGenerateQR
-                          ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                          : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                      }
-                    `}
-                  >
-                    QR Code
-                  </button>
-                  {!canGenerateQR && selectedType && (
-                    <div className="absolute bottom-full right-0 mb-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 overflow-hidden">
-                      {/* Header */}
-                      <div className="bg-gray-50 border-b border-gray-200 px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center">
-                            <svg className="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <span className="text-sm font-semibold text-gray-900">Required Fields Missing</span>
-                        </div>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="px-4 py-3">
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {getRequiredFieldsMessage(selectedType)}
-                        </p>
-                      </div>
-                      
-                      {/* Arrow */}
-                      <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></div>
-                      <div className="absolute top-full right-[22px] w-0 h-0 border-l-[7px] border-r-[7px] border-t-[7px] border-transparent border-t-gray-200"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-gray-100 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowDownloadModal(false)}
+                className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadQR}
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
+              >
+                {downloadFormat === "print" ? <FaPrint className="h-3.5 w-3.5" /> : <FaDownload className="h-3.5 w-3.5" />}
+                {downloadFormat === "print" ? "Print" : "Download"}
+              </button>
             </div>
-            <div className="flex justify-center w-full">
-              <div className="w-full max-w-sm mx-auto">
-                <MobilePreview
-                  key={`preview-${selectedType}-${previewKey}`}
-                  qrType={hoveredType || selectedType}
-                  formData={formData}
-                  designData={designData}
-                  previewMode={previewMode}
-                  qrCodeUrl={qrCodeUrl}
-                  qrPreviewRef={qrPreviewRef}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-            <p className="text-xs font-medium text-slate-800 mb-1">💡 Tip</p>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Use high contrast between QR color and background for best scan reliability. Dark QR on light background works best.
-            </p>
           </div>
         </div>
-      </div>
+      )}
     </DashboardLayout>
   );
 }

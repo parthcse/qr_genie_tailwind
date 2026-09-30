@@ -80,6 +80,7 @@ model QRCode {
   status            QrStatus  @default(ACTIVE) // ACTIVE | PAUSED | DELETED
   linkType          LinkType  @default(DYNAMIC) // STATIC = no tracking, DYNAMIC = /r/slug + tracking
   pausedMessage    String?   // configurable "QR paused" landing text
+  passwordHash      String?   // bcrypt hash; when set, scanners must enter the password first (dynamic codes only)
   user              User?     @relation(fields: [userId], references: [id])
   userId            String?
   folder            Folder?   @relation(fields: [folderId], references: [id])

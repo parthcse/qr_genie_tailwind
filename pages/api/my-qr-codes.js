@@ -17,11 +17,12 @@ export default async function handler(req, res) {
         },
       },
     },
+    omit: { passwordHash: false },
     orderBy: { createdAt: "desc" },
   });
 
-  // Parse meta JSON and extract designConfig for each code
-  const codesWithParsedMeta = codes.map(code => {
+  // Parse meta JSON and extract designConfig for each code; report protection without the hash
+  const codesWithParsedMeta = codes.map(({ passwordHash, ...code }) => {
     let parsedMeta = null;
     let designConfig = null;
     
@@ -38,6 +39,7 @@ export default async function handler(req, res) {
     
     return {
       ...code,
+      hasPassword: !!passwordHash,
       meta: parsedMeta || code.meta,
       designConfig: designConfig, // Make designConfig easily accessible
     };

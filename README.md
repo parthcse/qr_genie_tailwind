@@ -9,8 +9,8 @@ New accounts get a 14-day trial (2 QR codes); the Basic plan is a monthly Razorp
 
 ## How it works
 
-- **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused). Four types are open: Website, WiFi, WhatsApp, Instagram.
-- **Scan:** `pages/r/[slug].js` checks the code's status and the owner's plan, records a `ScanEvent` (hashed IP, device, country), then redirects.
+- **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused). Four types are open: Website, WiFi, WhatsApp, Instagram. WiFi codes are always static so phones can join the network straight from the camera; website codes can be password protected.
+- **Scan:** `pages/r/[slug].js` checks the code's status and the owner's plan, records a `ScanEvent` (hashed IP, device, country), asks for the password if the code is protected (`api/r/[slug]/unlock` checks it), then redirects.
 - **Plans:** `lib/subscription.js` decides what a user may do; `lib/subscriptionSync.js` pauses codes when a trial or subscription ends; `lib/activateBasicSubscription.js` restores them after payment. Paid codes keep working for 3 days after the end date to cover late renewals.
 - **Payments:** billing page → `api/checkout/razorpay/create-subscription` → Razorpay Checkout → `api/checkout/razorpay/verify`. `api/webhooks/razorpay` handles renewals and is the backup if the browser never calls verify.
 

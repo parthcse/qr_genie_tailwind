@@ -4,13 +4,16 @@ import { nanoid } from "nanoid";
 import QRCode from "qrcode";
 import { getUserFromRequest } from "../../lib/auth";
 import { validateRedirectUrl } from "../../lib/redirectValidation";
+import { qrPasswordProblem, hashQrPassword } from "../../lib/qrPassword";
+import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "../../lib/subscription";
 // QR types open for new codes; the others stay in the code for a later launch
 const ENABLED_TYPES = new Set(["website", "wifi", "whatsapp", "instagram"]);
 const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-const MAX_META_LENGTH = 1_500_000; // the design may carry an uploaded logo as a data URL
+// The design is saved in the database: a logo of up to 150 KB (as a data URL) plus the other settings
+const MAX_META_LENGTH = MAX_IMAGE_DATA_URL_LENGTH + 50_000;
 
 function normalizeUrl(u) {
   if (!u || typeof u !== "string") return "";
@@ -20,6 +23,9 @@ function normalizeUrl(u) {
   // Default to https
   return "https://" + trimmed;
 }
+
+// Refuse oversized requests before reading them (a 150 KB logo plus the form fits comfortably)
+export const config = { api: { bodyParser: { sizeLimit: "400kb" } } };
 
 export default async function handler(req, res) {
   // Set Content-Type header to ensure JSON response
@@ -81,6 +87,8 @@ export default async function handler(req, res) {
     primaryColor,
     secondaryColor,
     directShow, // If true, QR code points directly to PDF URL
+    passwordEnabled, // Website form: ask scanners for a password before redirecting
+    password,
   } = req.body || {};
 
   const slug = nanoid(6);
@@ -296,6 +304,9 @@ export default async function handler(req, res) {
     if (safeDesign.logo && !(typeof safeDesign.logo === "string" && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/i.test(safeDesign.logo))) {
       safeDesign.logo = null;
     }
+    if (safeDesign.logo && safeDesign.logo.length > MAX_IMAGE_DATA_URL_LENGTH) {
+      return res.status(413).json({ error: `The logo must be ${MAX_IMAGE_LABEL} or smaller. Please upload a smaller image.` });
+    }
     if (!metaObj) {
       metaObj = {};
     }
@@ -307,6 +318,23 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: "The QR design is too large. Please use a smaller logo." });
   }
 
+  // WiFi codes are always static: a phone's camera joins the network straight from the code,
+  // which a web page (dynamic code) can't do
+  const linkType = type === "wifi" ? "STATIC" : requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
+
+  // Password protection works only through the short link, so only on dynamic codes
+  let passwordHash = null;
+  if ((passwordEnabled === true || passwordEnabled === "true") && type !== "wifi") {
+    if (linkType === "STATIC") {
+      return res.status(400).json({ error: "Password protection needs a dynamic QR code. Switch to Dynamic or turn the password off." });
+    }
+    const problem = qrPasswordProblem(password);
+    if (problem) {
+      return res.status(400).json({ error: problem });
+    }
+    passwordHash = await hashQrPassword(password);
+  }
+
   // Save QR code in DB
     let code;
     try {
@@ -314,7 +342,6 @@ export default async function handler(req, res) {
       const processedName = name && typeof name === "string" ? name.trim().slice(0, 100) : null;
       const finalName = processedName && processedName.length > 0 ? processedName : null;
 
-      const linkType = requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
       const createData = {
         slug,
         type,
@@ -326,6 +353,7 @@ export default async function handler(req, res) {
         deactivatedReason: null,
         status: "ACTIVE",
         linkType,
+        passwordHash,
         user: { connect: { id: user.id } },
       };
 
@@ -369,8 +397,7 @@ export default async function handler(req, res) {
     let pngDataUrl;
     try {
       // Static: encode final URL only (no tracking). Dynamic: always encode short link so every scan goes through /r/slug and is tracked.
-      const isStatic = requestedLinkType === "STATIC";
-      const qrContent = isStatic ? targetUrl : dynamicUrl;
+      const qrContent = linkType === "STATIC" ? targetUrl : dynamicUrl;
 
       pngDataUrl = await QRCode.toDataURL(qrContent, {
     margin: 1,
@@ -388,11 +415,16 @@ export default async function handler(req, res) {
 
 
   return res.status(200).json({
+    id: code.id,
     slug: code.slug,
     dynamicUrl,
     pngDataUrl,
     name: code.name || name || null, // Return saved name from database
     type,
+    linkType,
+    // What the printed code must contain: the short link for dynamic codes, the content itself for static ones
+    staticContent: linkType === "STATIC" ? targetUrl : null,
+    protected: !!passwordHash,
   });
   } catch (error) {
     console.error("Create QR code error:", error);

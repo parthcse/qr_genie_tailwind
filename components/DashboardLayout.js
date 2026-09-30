@@ -1,17 +1,29 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
-import { FaCrown, FaChevronRight, FaSignOutAlt } from "react-icons/fa";
+import { FaCrown, FaChevronRight, FaSignOutAlt, FaPlus, FaQrcode, FaChartLine, FaUserCircle, FaCreditCard, FaLifeRing } from "react-icons/fa";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 
-const navItems = [
-  { href: "/dashboard/create-qr", label: "Create QR Code" },
-  { href: "/dashboard", label: "My QR Codes" },
-  { href: "/dashboard/analytics", label: "Analytics" },
-  { href: "/dashboard/account", label: "My Account" },
-  { href: "/dashboard/billing", label: "Billing" },
+const createItem = { href: "/dashboard/create-qr", label: "Create QR code", icon: FaPlus };
+const navGroups = [
+  {
+    title: "Workspace",
+    items: [
+      { href: "/dashboard", label: "My QR codes", icon: FaQrcode },
+      { href: "/dashboard/analytics", label: "Analytics", icon: FaChartLine },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { href: "/dashboard/account", label: "My account", icon: FaUserCircle },
+      { href: "/dashboard/billing", label: "Billing", icon: FaCreditCard },
+      { href: "/contact", label: "Help & support", icon: FaLifeRing },
+    ],
+  },
 ];
+const navItems = [createItem, ...navGroups.flatMap((group) => group.items)];
 
 const TRIAL_DAYS = 14;
 
@@ -140,7 +152,9 @@ export default function DashboardLayout({ children, title, description, actions 
     fetchUserData();
   }, []);
 
-  const isActive = (href) => router.pathname === href || (href === "/dashboard" && router.pathname === "/dashboard/index");
+  // A code's details page belongs to "My QR codes"
+  const isActive = (href) =>
+    router.pathname === href || (href === "/dashboard" && (router.pathname === "/dashboard/index" || router.pathname.startsWith("/dashboard/qrs")));
 
   const handleLogout = async () => {
     try {
@@ -162,10 +176,7 @@ export default function DashboardLayout({ children, title, description, actions 
         isAuthenticated
         onLogout={handleLogout}
         menuBreakpoint="md"
-        drawerLinks={[
-          ...navItems.map((item) => ({ ...item, active: isActive(item.href) })),
-          { href: "/contact", label: "Contact support" },
-        ]}
+        drawerLinks={navItems.map((item) => ({ ...item, active: isActive(item.href) }))}
         drawerFooter={(close) => (
           <SidebarFooter
             user={user}
@@ -183,28 +194,56 @@ export default function DashboardLayout({ children, title, description, actions 
       <div className="mx-auto flex w-full max-w-site flex-1 overflow-x-clip px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Desktop Sidebar: stays in view below the 80px site header while the page scrolls; plan and account pinned to its bottom */}
         <aside className="hidden md:sticky md:top-[6.5rem] md:flex md:h-[calc(100vh-8rem)] md:w-64 lg:w-72 flex-shrink-0 self-start flex-col rounded-2xl border border-indigo-100 bg-white/80 backdrop-blur-lg px-3 md:px-4 pt-4 pb-4 shadow-lg">
-          <nav className="-mx-1 flex-1 space-y-1 overflow-y-auto px-1" aria-label="Dashboard">
-            {navItems.map((item) => {
-              const active = isActive(item.href);
+          <nav className="-mx-1 flex-1 overflow-y-auto px-1" aria-label="Dashboard">
+            {/* Main action */}
+            <Link
+              href={createItem.href}
+              aria-current={isActive(createItem.href) ? "page" : undefined}
+              className={`group mb-5 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
+                isActive(createItem.href) ? "ring-2 ring-indigo-200 ring-offset-2" : ""
+              }`}
+            >
+              <FaPlus className="h-3 w-3 transition-transform duration-300 group-hover:rotate-90" />
+              {createItem.label}
+            </Link>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={[
-                    "flex items-center rounded-xl px-2 md:px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium",
-                    active
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white shadow-md cursor-default hover:from-indigo-600 hover:to-purple-600"
-                      : "!text-gray-700 hover:bg-indigo-50 hover:!text-indigo-700 transition-all duration-200",
-                  ].join(" ")}
-                >
-                  <span className={active ? "font-semibold" : ""}>
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
+            {navGroups.map((group) => (
+              <div key={group.title} className="mb-4 last:mb-0">
+                <p className="px-2.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{group.title}</p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={`group flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+                          active ? "bg-indigo-50 font-semibold !text-indigo-700" : "font-medium !text-gray-600 hover:bg-gray-50 hover:!text-gray-900"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg transition ${
+                            active
+                              ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30"
+                              : "bg-gray-100 text-gray-500 group-hover:bg-white group-hover:text-indigo-600 group-hover:shadow-sm group-hover:ring-1 group-hover:ring-indigo-100"
+                          }`}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {active ? (
+                          <span className="h-1.5 w-1.5 flex-none rounded-full bg-indigo-500" aria-hidden="true" />
+                        ) : (
+                          <FaChevronRight className="h-2.5 w-2.5 flex-none text-gray-300 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
           <div className="mt-4 border-t border-indigo-100 pt-4">

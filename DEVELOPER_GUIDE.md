@@ -16,16 +16,18 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 |---|---|
 | `/` | Landing page: features, how it works, pricing (INR or USD), FAQ. |
 | `/auth/register`, `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial), login, password reset by email. All protected by a Cloudflare Turnstile check. |
-| `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
-| `/dashboard/create-qr` | Three steps: **type** → **content** (form for the chosen type, name, folder, dynamic or static) → **design** (pattern colour or gradient, background colour, gradient or transparent, pattern style, corner styles and colours, frame with text, logo upload up to 1 MB). Live phone preview. |
-| `/dashboard/qrs/[id]` | One code: details, change the destination, set a custom paused message, pause/resume, and its scans over time, by country and by device. |
-| `/dashboard/analytics` | Whole account or one code over 7, 30 or 90 days: total and unique scans, activity over time, top countries and cities, device types, operating systems, scans by hour, per-code performance. |
+| `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
+| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. |
+| `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
+| `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
 | `/dashboard/account` | Profile, email change (needs the current password), password change (signs out other devices), language, billing details. |
 | `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay, currency switch. |
 | `/contact` | Contact form (saved to the database and emailed to support). |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
-| `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects. |
+| `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects (after asking for the password when the code is protected). |
 | `/admin` | Totals and latest codes, for users with the admin role only. |
+
+All dashboard pages share `components/DashboardLayout.js`: the sidebar has a **Create QR code** button, then *Workspace* (My QR codes, Analytics) and *Account* (My account, Billing, Help & support), each with an icon; the plan card and the signed-in user sit at the bottom. On phones the same links, with the same icons, are in the header's menu.
 
 ## Stack
 
@@ -62,7 +64,7 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | File | Job |
 |---|---|
 | `auth.js` | Session cookie; `getUserFromRequest(req)` returns the signed-in user or `null`. |
-| `prisma.js` | The shared Prisma client. |
+| `prisma.js` | The shared Prisma client (leaves QR password hashes out of every query). |
 | `subscription.js` | Plan rules: `getUserSubscriptionStatus`, `canCreateQR`, `checkQRCodeLimit`, `getQrPauseReason`, `TRIAL_QR_LIMIT`. No server dependencies, so pages can import it. |
 | `subscriptionSync.js` | Applies plan changes: pauses codes when a plan ends. |
 | `activateBasicSubscription.js` | Turns the Basic plan on after payment and restores plan-paused codes. |
@@ -76,8 +78,11 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | `scanUtils.js`, `geoIp.js` | Scan details: hashed IP, device, OS, browser, country and city. |
 | `redirectValidation.js` | Accepts only http(s) URLs as redirect targets. |
 | `resetToken.js` | Password-reset tokens and their hashes. |
+| `qrPassword.js` | QR code passwords: length rules, hashing and checking; also reads a `WIFI:` string back into network name and password. |
+| `imageUpload.js` | The 150 KB image limit, and `prepareLogo`, which shrinks an uploaded logo in the browser (max 600 px, PNG or WebP) to fit it. |
 | `qrSchemas.js` | Form definitions for each QR type. |
 | `qrDownload.js` | PNG / JPG / SVG / PDF / print export of a designed code, in the browser. |
+| `useCurrentUser.js` | Browser hook that loads the signed-in user (if any) for public pages and their header. |
 | `site.js` | `SUPPORT_EMAIL`, contact topics, `LEGAL_LAST_UPDATED` (update when the legal pages change). |
 
 **API (`pages/api/`)**
@@ -90,7 +95,7 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | Folders | `folders` (list, create), `folders/[id]` (rename, delete) |
 | Analytics | `analytics/overview` |
 | Billing | `billing/plans`, `checkout/razorpay/create-subscription`, `checkout/razorpay/verify`, `webhooks/razorpay` |
-| Public | `qr-image/[slug]`, `vcard/[slug]`, `contact` |
+| Public | `r/[slug]/unlock` (password check for protected codes), `qr-image/[slug]`, `vcard/[slug]`, `contact` |
 | Admin | `admin/summary` |
 
 ## Local development
@@ -151,14 +156,15 @@ All are listed with comments in `.env.example`. Values never go into git.
 | Model | Holds |
 |---|---|
 | `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`. |
-| `QRCode` | `slug`, `type`, `targetUrl`, `linkType` (`DYNAMIC` / `STATIC`), `status` (`ACTIVE` / `PAUSED` / `DELETED`), `deactivatedReason` (`MANUAL` / `TRIAL_EXPIRED` / `SUBSCRIPTION_EXPIRED`), `pausedMessage`, `scanCount`, colours, `meta`, folder. |
+| `QRCode` | `slug`, `type`, `targetUrl`, `linkType` (`DYNAMIC` / `STATIC`), `status` (`ACTIVE` / `PAUSED` / `DELETED`), `deactivatedReason` (`MANUAL` / `TRIAL_EXPIRED` / `SUBSCRIPTION_EXPIRED`), `pausedMessage`, `passwordHash` (bcrypt, only for protected codes), `scanCount`, colors, `meta`, folder. |
 | `ScanEvent` | One logged scan: hashed IP, device, OS, browser, referrer, country, region, city. |
 | `Folder` | A user's folder. |
 | `ContactMessage` | Contact-form messages. |
 
-- **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL).
+- **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
 - **Deleting a QR code** sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
 - **Deleting a folder** moves its codes to "no folder".
+- **`passwordHash` is left out of every query by default** (`omit` in `lib/prisma.js`). Code that checks a password asks for it with `omit: { passwordHash: false }`; API responses only ever say `hasPassword: true/false`.
 - `scanCount` is what the dashboard list shows; the analytics pages count `ScanEvent` rows.
 - IDs are CUIDs; date calculations use UTC.
 
@@ -172,7 +178,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 - **Sign-up** refuses addresses from temporary/disposable mail providers (`mailchecker`) and domains that can't receive email, and includes a hidden honeypot field for bots.
 - **Changing the email** needs the current password and passes the same email checks.
 - **Bot checks:** Cloudflare Turnstile (Managed mode) on sign-up, login, forgot-password and contact. `components/Turnstile.js` renders the widget; `lib/turnstile.js` verifies the token.
-- **Rate limits** protect login, sign-up, password reset, password/email change, the contact form and scans. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
+- **Rate limits** protect login, sign-up, password reset, password/email change, the contact form, scans and password guesses on protected QR codes. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
 - **Admin:** users with `role = "admin"` can open `/admin`. Everyone else gets a "not found" page, so the admin area can't be discovered.
 
 ## Plans and the free trial
@@ -198,19 +204,28 @@ All are listed with comments in `.env.example`. Values never go into git.
 **Dynamic vs static**
 - **Dynamic** (default): the code holds the short link `/r/<slug>`. The destination can be changed any time, scans are counted, and the code can be paused.
 - **Static:** the code holds the destination itself (a URL or, for WiFi, the network details). Nothing is tracked and it can't be edited or paused.
+- **WiFi codes are always static**, because a phone's camera can only join a network from the `WIFI:` text inside the code itself, not from a web page. The API enforces this whatever the form sends.
 
-**Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colours must be hex, Instagram usernames and WhatsApp numbers must be valid, names and designs have size limits), then saves the code with a random 6-character slug.
+**Password protection** (dynamic codes except WiFi; offered on the Website form):
+- The password (4–64 characters) is stored only as a bcrypt hash.
+- Scanning a protected code shows a password page instead of redirecting. The browser sends the password to `api/r/[slug]/unlock`, which returns the destination only when it's right; the destination never appears in the page itself.
+- Wrong guesses are rate-limited per visitor and per code.
+- A static code can't be protected (there's no page in between), so the form switches to Dynamic when the password is turned on.
+- The owner can add, change or remove the password on the code's details page; duplicating a code copies its password.
 
-**The form system:** each type's fields are defined in `lib/qrSchemas.js` and drawn by `components/qrFields/DynamicForm.js` with the field components in `components/qrFields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle, colour, file, repeater, icon selector; fields can depend on a toggle).
+**Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colors must be hex, Instagram usernames and WhatsApp numbers must be valid, names have length limits, a logo may be at most 150 KB and the whole request 400 KB), then saves the code with a random 6-character slug.
+
+**The form system:** each type's fields are defined in `lib/qrSchemas.js` and drawn by `components/qrFields/DynamicForm.js` with the field components in `components/qrFields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle).
 
 **Releasing another type:**
 1. Mark it `active` in `qrTypes` in `pages/dashboard/create-qr.js` and check its preview.
 2. Review its fields in `lib/qrSchemas.js`.
 3. Add it to `ENABLED_TYPES` in `api/create-dynamic.js` with input validation like the open types have.
-4. Make sure the page or file it serves escapes everything it shows (follow `pages/pdf/[slug].js` and `api/vcard/[slug].js`).
-5. Update the landing page and pricing copy.
+4. If the type uploads files (PDFs, videos, audio), store them outside the database (e.g. object storage) first; the forms only keep images, and those are capped at 150 KB.
+5. Make sure the page or file it serves escapes everything it shows (follow `pages/pdf/[slug].js` and `api/vcard/[slug].js`), and that a password-protected code can't be opened there directly, bypassing `/r/<slug>`.
+6. Update the landing page and pricing copy.
 
-**Downloads** are made in the browser (`lib/qrDownload.js`) using the address of the page you're on, so download codes from the live site, not from localhost.
+**Downloads** are made in the browser (`lib/qrDownload.js`, and the create page's own export) using the address of the page you're on, so download codes from the live site, not from localhost. On the create page, downloading is only offered after the code is created, so the file always holds the real short link (for dynamic codes) or the final content (for static ones).
 
 ## Scanning and analytics
 
@@ -220,13 +235,14 @@ All are listed with comments in `.env.example`. Values never go into git.
 |---|---|---|
 | Doesn't exist or deleted | "QR not found or removed" | No |
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
-| Active WiFi code | Network information page | Yes |
+| Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
+| Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.
 - **Unique scans** are counted from a hash of the IP address and browser; raw IPs are never stored.
 - **Country and city** come from the bundled `geoip-lite` database (refreshed when the package is updated). Local and private IPs have no location, so scans from localhost show "Unknown".
-- Analytics endpoints: `api/analytics/overview` (whole account) and `api/qrs/[id]/analytics` (one code).
+- Analytics endpoints: `api/analytics/overview` for the Analytics page (`days` up to 365, optional `qrId`, and `tz` — the browser's time-zone offset — so days and hours are counted in the viewer's local time) and `api/qrs/[id]/analytics` for a code's details page. Both only read scans of the signed-in user's own codes.
 
 ## Payments (Razorpay)
 
@@ -253,10 +269,11 @@ Without SMTP settings both are printed to the log. The SMTP connection is create
 - **Check the user and ownership** in every API route that touches user data (`getUserFromRequest`, and `userId: user.id` in every query).
 - **Validate input on the server** even when the form already does: types, lengths, allowed values. Use `lib/redirectValidation.js` for any URL that will be redirected to.
 - **Rate-limit** anything a bot could abuse: ``if (isRateLimited(`name:${ip}`, windowMs, max)) return res.status(429).json({ error: "…" })``.
+- **Never send secrets or hashes to the browser.** Password hashes are omitted by default (see [Data model](#data-model)); if you add another secret field, omit it the same way.
 - **Server-only modules** (`lib/prisma`, `lib/auth`, `lib/email`, `lib/scanUtils`, …) may be used in pages only inside `getServerSideProps`. Don't leave unused imports of them in a page: Next.js can then ship the module to the browser.
 - **Content Security Policy** (`next.config.js`, production only): scripts may come only from the site, Razorpay and Cloudflare Turnstile; inline `<script>` and `eval` are blocked. When adding a third-party script, iframe, font or API, add its domain to the policy and test with `npm run build && npm start`: the dev server doesn't apply the policy.
-- **Pop-ups inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card uses a blur effect that would otherwise confine fixed-position overlays to the card.
-- **Links styled as buttons** need `!text-…` colour classes (e.g. `!text-white`), because the global link style sets link colours.
+- **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.
+- **Links styled as buttons** need `!text-…` color classes (e.g. `!text-white`), because the global link style sets link colors.
 - **Brand look:** indigo→purple gradient (`from-indigo-600 to-purple-600`) for primary actions, white cards with `rounded-2xl` and light borders, `max-w-site` for page width.
 - **Keep the docs current.** Any change that adds, changes or removes a feature, page, API route, environment variable, database field, dependency or deploy step updates the matching part of this guide (and the README if it's affected) **in the same commit**. Delete the docs for anything you remove. Never put secrets or private server details in either file: the repository is public.
 
@@ -299,14 +316,13 @@ Without SMTP settings both are printed to the log. The SMTP connection is create
 | Emails not arriving | `npm run email:test -- you@example.com`; check the SMTP settings and the SES console. |
 | "Please complete the security check" on every form | The Turnstile site key doesn't allow this hostname. Locally, use the test keys. |
 | Browser console shows "Content Security Policy" errors | A new third-party resource isn't in the policy in `next.config.js`. |
+| A visitor can't open a protected QR code | They may have hit the guessing limit ("Too many attempts"): it clears after 15 minutes. The owner can set a new password on the code's details page. |
 | Something changed in `schema.prisma` but the app doesn't see it | Run `npx prisma generate` and restart the app. |
 
 **After a deploy**, a quick check on the live site: log in, create a code, scan it with a phone and see the scan counted, open Analytics. For changes to payments or email, also start a checkout and request a password reset.
 
 ## Not built yet
 
-- **WiFi:** a dynamic WiFi code opens a page with the network name; only a static WiFi code lets a phone join the network directly.
-- **Password-protected QR codes:** the option appears in the website form, but the feature isn't implemented yet.
 - **Self-service cancellation** and handling of Razorpay cancellation/failed-payment events.
 - **Translations:** only English is available, although a language can be chosen in the account settings.
 - **Other QR types** (PDF, vCard, menus, …) are defined but not released.

@@ -1,6 +1,7 @@
 // components/qrFields/FieldComponents.js
 
 import { useState, useEffect, useRef } from "react";
+import { MAX_IMAGE_BYTES, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
 import {
   FaPlus,
   FaTrash,
@@ -163,14 +164,20 @@ export function SelectField({ field, value, onChange, error }) {
 // Toggle/Switch Component
 export function ToggleField({ field, value, onChange }) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="checkbox"
-        checked={value || false}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-      />
-      <span className="text-sm text-slate-700">{field.label}</span>
+    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 py-3">
+      <span className="text-sm font-medium text-gray-700">{field.label}</span>
+      <span className="relative inline-flex flex-none">
+        {/* A real checkbox underneath, drawn as a switch */}
+        <input
+          type="checkbox"
+          role="switch"
+          checked={value || false}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+        />
+        <span className="h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2" />
+        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+      </span>
     </label>
   );
 }
@@ -299,6 +306,14 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
       setPreview(null);
       if (onChange) onChange("");
       if (onFileSelect) onFileSelect(null);
+      return;
+    }
+
+    // Images are saved with the QR code in the database, so they're kept small
+    const tooBigImage = [...(e.target.files || [])].some((f) => f.type?.startsWith("image/") && f.size > MAX_IMAGE_BYTES);
+    if (tooBigImage) {
+      setError(`Images must be ${MAX_IMAGE_LABEL} or smaller.`);
+      e.target.value = "";
       return;
     }
 
@@ -473,7 +488,7 @@ export function FileField({ field, value, onChange, onFileSelect, compact = fals
               {field.multiple ? "Upload files" : "Upload file"}
             </span>
             <span className="text-xs text-slate-400">
-              {field.accept || "Any file"}
+              {isImageField ? `Images up to ${MAX_IMAGE_LABEL}` : field.accept || "Any file"}
             </span>
             <input
               type="file"

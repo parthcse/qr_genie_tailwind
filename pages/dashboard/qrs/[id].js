@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import DashboardLayout from "../../../components/DashboardLayout";
-import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, FaEye, FaEyeSlash } from "react-icons/fa";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export async function getServerSideProps(context) {
@@ -13,6 +13,141 @@ export async function getServerSideProps(context) {
   }
   const { id } = context.params;
   return { props: { qrId: id } };
+}
+
+/** Turn the scan password on, change it, or remove it */
+function PasswordCard({ qr, qrId, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null); // { tone: "success" | "error", text }
+
+  const save = async (body, successText) => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/qrs/${qrId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ tone: "error", text: data.error || "Couldn't save. Please try again." });
+        return;
+      }
+      onChange(!!data.qrCode?.hasPassword);
+      setEditing(false);
+      setPassword("");
+      setMessage({ tone: "success", text: successText });
+    } catch {
+      setMessage({ tone: "error", text: "Couldn't save. Please try again." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex gap-3">
+          <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${qr.hasPassword ? "bg-violet-50 text-violet-600" : "bg-gray-100 text-gray-400"}`}>
+            {qr.hasPassword ? <FaLock className="h-4 w-4" /> : <FaLockOpen className="h-4 w-4" />}
+          </span>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Password protection</h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {qr.hasPassword
+                ? "On. People who scan this code must enter the password before they're sent on."
+                : "Off. Anyone who scans this code goes straight to the destination."}
+            </p>
+          </div>
+        </div>
+        {!editing && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(true);
+                setMessage(null);
+              }}
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+            >
+              {qr.hasPassword ? "Change password" : "Add a password"}
+            </button>
+            {qr.hasPassword && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => save({ removePassword: true }, "Password removed. The code now opens without one.")}
+                className="inline-flex h-9 items-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save({ password }, qr.hasPassword ? "Password changed." : "Password protection is on.");
+          }}
+          className="mt-4 flex flex-wrap items-center gap-2"
+        >
+          <div className="relative min-w-[220px] flex-1">
+            <input
+              type={show ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              autoComplete="new-password"
+              minLength={4}
+              maxLength={64}
+              placeholder={qr.hasPassword ? "New password" : "Password (at least 4 characters)"}
+              aria-label="Password"
+              className="h-10 w-full rounded-xl border border-gray-300 pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+            <button
+              type="button"
+              onClick={() => setShow(!show)}
+              aria-label={show ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-400 hover:text-gray-600"
+            >
+              {show ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+            </button>
+          </div>
+          <button
+            type="submit"
+            disabled={saving || password.length < 4}
+            className="inline-flex h-10 items-center gap-1 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            <FaCheck className="h-3.5 w-3.5" /> Save
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(false);
+              setPassword("");
+            }}
+            className="inline-flex h-10 items-center gap-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        </form>
+      )}
+
+      {message && (
+        <p className={`mt-3 text-sm ${message.tone === "error" ? "text-red-600" : "text-emerald-700"}`} role="status">
+          {message.text}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function QrDetailPage({ qrId }) {
@@ -283,6 +418,11 @@ export default function QrDetailPage({ qrId }) {
               </div>
             )}
           </div>
+        )}
+
+        {/* Password protection (dynamic codes except WiFi) */}
+        {isDynamic && qr.type !== "wifi" && (
+          <PasswordCard qr={qr} qrId={qrId} onChange={(hasPassword) => setQr((prev) => (prev ? { ...prev, hasPassword } : prev))} />
         )}
 
         {/* Paused message (when Paused and Dynamic) */}

@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     // Get the original QR code
     const originalQR = await prisma.qRCode.findUnique({
       where: { id: String(id) },
+      omit: { passwordHash: false },
     });
 
     if (!originalQR || originalQR.status === "DELETED") {
@@ -60,6 +61,7 @@ export default async function handler(req, res) {
         folderId: originalQR.folderId,
         status: "ACTIVE",
         linkType: originalQR.linkType || "DYNAMIC",
+        passwordHash: originalQR.passwordHash, // a copy keeps the same scan password
         deactivatedReason: null,
       },
     });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -41,6 +41,7 @@ import {
   FaExternalLinkAlt,
   FaExclamationTriangle,
   FaExclamationCircle,
+  FaLock,
 } from "react-icons/fa";
 
 export async function getServerSideProps(context) {
@@ -207,23 +208,63 @@ function FolderChip({ icon: Icon, label, count, active, onClick }) {
   );
 }
 
-function MenuItem({ icon: Icon, children, onClick, danger }) {
+function MenuItem({ icon: Icon, children, onClick, danger, disabled, hint }) {
   return (
     <button
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
-        danger ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
+      className={`flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
+        disabled
+          ? "cursor-not-allowed text-gray-400"
+          : danger
+            ? "text-red-600 hover:bg-red-50"
+            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
       }`}
     >
-      <Icon className={`h-3.5 w-3.5 flex-none ${danger ? "" : "text-gray-400"}`} />
-      {children}
+      <Icon className={`mt-0.5 h-3.5 w-3.5 flex-none ${danger && !disabled ? "" : disabled ? "text-gray-300" : "text-gray-400"}`} />
+      <span className="min-w-0">
+        {children}
+        {hint && <span className="mt-0.5 block text-xs leading-snug text-gray-400">{hint}</span>}
+      </span>
     </button>
   );
 }
 
-function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, menuUp, onToggleMenu, canDownload, edit, actions }) {
+const MENU_HEIGHT = 300; // px, enough for every item; used to decide whether the menu opens up or down
+
+/** Places the actions menu next to its button, flipping upwards when there's no room below */
+function useMenuPosition(open, triggerRef) {
+  const [position, setPosition] = useState(null);
+  useLayoutEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
+    }
+    const place = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const right = Math.max(8, window.innerWidth - rect.right);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < MENU_HEIGHT && rect.top > spaceBelow;
+      setPosition(openUp ? { right, bottom: window.innerHeight - rect.top + 8 } : { right, top: rect.bottom + 8 });
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open, triggerRef]);
+  return position;
+}
+
+function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onToggleMenu, canDownload, edit, actions }) {
+  const menuButtonRef = useRef(null);
+  const menuPosition = useMenuPosition(menuOpen, menuButtonRef);
   const type = typeMeta(code.type);
   const TypeIcon = type.icon;
   const isDynamic = (code.linkType || "DYNAMIC") === "DYNAMIC";
@@ -280,6 +321,12 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, menuU
                 {isDynamic ? "Dynamic" : "Static"}
               </span>
               <StatusBadge code={code} />
+              {code.hasPassword && (
+                <span className={`${BADGE} bg-violet-50 text-violet-700 ring-violet-600/20`} title="Scanners must enter a password first">
+                  <FaLock className="h-2.5 w-2.5" />
+                  Protected
+                </span>
+              )}
             </div>
 
             {edit.editingId === code.id ? (
@@ -401,6 +448,7 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, menuU
             </Link>
             <div className="qr-menu relative">
               <button
+                ref={menuButtonRef}
                 type="button"
                 onClick={() => onToggleMenu(code.id)}
                 aria-haspopup="menu"
@@ -412,25 +460,31 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, menuU
               >
                 <FaEllipsisH className="h-3.5 w-3.5" />
               </button>
-              {menuOpen && (
-                <div
-                  role="menu"
-                  className={`absolute right-0 z-30 w-52 rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black/5 ${
-                    menuUp ? "bottom-full mb-2" : "top-full mt-2"
-                  }`}
-                >
-                  <MenuItem icon={FaEye} onClick={() => actions.preview(code)}>Preview</MenuItem>
-                  {isDynamic && <MenuItem icon={FaLink} onClick={() => actions.copyLink(code)}>Copy short link</MenuItem>}
-                  <MenuItem icon={FaRegClone} onClick={() => actions.duplicate(code)}>Duplicate</MenuItem>
-                  <MenuItem icon={FaFolderOpen} onClick={() => actions.move([code])}>Move to folder</MenuItem>
-                  {isPaused ? (
-                    <MenuItem icon={FaPlay} onClick={() => actions.setPaused([code], false)}>Resume</MenuItem>
-                  ) : (
-                    isDynamic && <MenuItem icon={FaPause} onClick={() => actions.setPaused([code], true)}>Pause</MenuItem>
-                  )}
-                  <div className="my-1 border-t border-gray-100" />
-                  <MenuItem icon={FaTrash} danger onClick={() => actions.remove([code])}>Delete</MenuItem>
-                </div>
+              {/* Rendered on <body> so the page card can't cut it off */}
+              {menuOpen && menuPosition && (
+                <Portal>
+                  <div
+                    role="menu"
+                    style={menuPosition}
+                    className="qr-menu fixed z-[55] w-56 rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+                  >
+                    <MenuItem icon={FaEye} onClick={() => actions.preview(code)}>Preview</MenuItem>
+                    {isDynamic && <MenuItem icon={FaLink} onClick={() => actions.copyLink(code)}>Copy short link</MenuItem>}
+                    <MenuItem icon={FaRegClone} onClick={() => actions.duplicate(code)}>Duplicate</MenuItem>
+                    <MenuItem icon={FaFolderOpen} onClick={() => actions.move([code])}>Move to folder</MenuItem>
+                    {isPaused ? (
+                      <MenuItem icon={FaPlay} onClick={() => actions.setPaused([code], false)}>Resume</MenuItem>
+                    ) : isDynamic ? (
+                      <MenuItem icon={FaPause} onClick={() => actions.setPaused([code], true)}>Pause</MenuItem>
+                    ) : (
+                      <MenuItem icon={FaPause} disabled hint="Static codes hold the link itself, so they can't be paused.">
+                        Pause
+                      </MenuItem>
+                    )}
+                    <div className="my-1 border-t border-gray-100" />
+                    <MenuItem icon={FaTrash} danger onClick={() => actions.remove([code])}>Delete</MenuItem>
+                  </div>
+                </Portal>
               )}
             </div>
           </div>
@@ -578,7 +632,10 @@ export default function Dashboard() {
     loadCodes();
     loadFolders();
     request("/api/auth/me").then((res) => {
-      setSubscriptionStatus(res.ok ? res.data.subscriptionStatus || { status: "NONE" } : { status: "NONE" });
+      const subscription = res.ok ? res.data.subscriptionStatus || { status: "NONE" } : { status: "NONE" };
+      setSubscriptionStatus(subscription);
+      // /api/auth/me pauses the codes of an ended plan; reload so the list shows them as paused
+      if (!["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"].includes(subscription.status)) loadCodes();
     });
   }, []);
 
@@ -1026,7 +1083,7 @@ export default function Dashboard() {
           </div>
 
           <ul className="space-y-3">
-            {pageCodes.map((code, index) => (
+            {pageCodes.map((code) => (
               <QrRow
                 key={code.id}
                 code={code}
@@ -1035,8 +1092,6 @@ export default function Dashboard() {
                 selected={selectedIds.has(code.id)}
                 onToggleSelect={toggleSelect}
                 menuOpen={openMenuId === code.id}
-                // The card clips overflow, so the last rows open their menu upwards
-                menuUp={pageCodes.length > 2 && index >= pageCodes.length - 2}
                 onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
                 canDownload={canDownload(code)}
                 edit={edit}

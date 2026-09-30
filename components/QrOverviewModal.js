@@ -234,7 +234,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
         {/* Modal Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <Link
-            href={`/dashboard/analytics?qr=${qrCode.slug}`}
+            href={`/dashboard/qrs/${qrCode.id}`}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <FaInfoCircle className="w-4 h-4" />

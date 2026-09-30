@@ -35,7 +35,7 @@ function Logo({ onClick }) {
  * Site-wide header with a full-height menu that slides in from the right on smaller screens.
  * - isAuthenticated / loading: which account actions to show (icons when signed in, log in / get started otherwise)
  * - onLogout: defaults to logging out and showing the logged-out page
- * - drawerLinks: [{ href, label, active }] for the menu; defaults to the landing page sections
+ * - drawerLinks: [{ href, label, active, icon? }] for the menu; defaults to the landing page sections
  * - drawerFooter: (close) => node pinned to the bottom of the menu; defaults to account buttons
  * - menuBreakpoint: "lg" (default) or "md" — the width from which the menu button is hidden
  */
@@ -239,22 +239,28 @@ export default function SiteHeader({
           </div>
 
           <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Menu">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={close}
-                aria-current={link.active ? "page" : undefined}
-                className={
-                  link.active
-                    ? "mb-1 flex items-center justify-between rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3.5 text-base font-semibold !text-white shadow-md"
-                    : "mb-1 flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium !text-gray-800 transition hover:bg-indigo-50 hover:!text-indigo-700"
-                }
-              >
-                {link.label}
-                <FaChevronRight className={`h-3 w-3 ${link.active ? "text-white/70" : "text-gray-300"}`} />
-              </Link>
-            ))}
+            {links.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={close}
+                  aria-current={link.active ? "page" : undefined}
+                  className={
+                    link.active
+                      ? "mb-1 flex items-center justify-between rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3.5 text-base font-semibold !text-white shadow-md"
+                      : "mb-1 flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium !text-gray-800 transition hover:bg-indigo-50 hover:!text-indigo-700"
+                  }
+                >
+                  <span className="flex items-center gap-3">
+                    {Icon && <Icon className={`h-4 w-4 ${link.active ? "text-white" : "text-indigo-500"}`} />}
+                    {link.label}
+                  </span>
+                  <FaChevronRight className={`h-3 w-3 ${link.active ? "text-white/70" : "text-gray-300"}`} />
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex-none border-t border-gray-100 px-5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">

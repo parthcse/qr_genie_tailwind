@@ -1,10 +1,12 @@
 import prisma from "../../../../lib/prisma";
 import { getUserFromRequest } from "../../../../lib/auth";
 import { validateRedirectUrl } from "../../../../lib/redirectValidation";
+import { qrPasswordProblem, hashQrPassword } from "../../../../lib/qrPassword";
 
 /**
  * GET /api/qrs/[id] - Fetch single QR (owner only). For detail page.
- * PUT /api/qrs/[id] - Update targetUrl and/or pausedMessage (owner only, validate targetUrl).
+ * PUT /api/qrs/[id] - Update targetUrl, pausedMessage and/or the scan password
+ *   (`password` sets or changes it, `removePassword: true` turns protection off). Owner only.
  */
 export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
@@ -16,15 +18,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "QR code ID is required" });
   }
 
-  const qr = await prisma.qRCode.findFirst({
-    where: { id, userId: user.id },
+  const found = await prisma.qRCode.findFirst({
+    where: { id: String(id), userId: user.id, status: { not: "DELETED" } },
     include: {
       folder: { select: { id: true, name: true } },
     },
+    omit: { passwordHash: false },
   });
-  if (!qr) {
+  if (!found) {
     return res.status(404).json({ error: "QR code not found" });
   }
+  const { passwordHash, ...qr } = found;
+  const hasPassword = !!passwordHash;
 
   if (req.method === "GET") {
     return res.status(200).json({
@@ -42,13 +47,27 @@ export default async function handler(req, res) {
         updatedAt: qr.updatedAt,
         folderId: qr.folderId,
         folder: qr.folder,
+        hasPassword,
       },
     });
   }
 
   if (req.method === "PUT" || req.method === "PATCH") {
-    const { targetUrl, pausedMessage } = req.body || {};
+    const { targetUrl, pausedMessage, password, removePassword } = req.body || {};
     const updates = {};
+
+    if (removePassword === true) {
+      updates.passwordHash = null;
+    } else if (password !== undefined) {
+      if (qr.linkType === "STATIC" || qr.type === "wifi") {
+        return res.status(400).json({ error: "Only dynamic QR codes can be password protected." });
+      }
+      const problem = qrPasswordProblem(password);
+      if (problem) {
+        return res.status(400).json({ error: problem });
+      }
+      updates.passwordHash = await hashQrPassword(password);
+    }
 
     if (targetUrl !== undefined) {
       if (qr.linkType === "STATIC") {
@@ -71,11 +90,11 @@ export default async function handler(req, res) {
     }
 
     if (Object.keys(updates).length === 0) {
-      return res.status(200).json({ success: true, qrCode: qr });
+      return res.status(200).json({ success: true, qrCode: { ...qr, hasPassword } });
     }
 
     const updated = await prisma.qRCode.update({
-      where: { id },
+      where: { id: qr.id },
       data: updates,
       select: {
         id: true,
@@ -90,7 +109,8 @@ export default async function handler(req, res) {
         updatedAt: true,
       },
     });
-    return res.status(200).json({ success: true, qrCode: updated });
+    const nowProtected = "passwordHash" in updates ? !!updates.passwordHash : hasPassword;
+    return res.status(200).json({ success: true, qrCode: { ...updated, hasPassword: nowProtected } });
   }
 
   return res.status(405).json({ error: "Method not allowed" });
