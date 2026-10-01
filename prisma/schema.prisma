@@ -37,6 +37,7 @@ model User {
   razorpayCustomerId     String?
   razorpaySubscriptionId String?
   razorpayLastPaymentId  String?
+  lastPlanEmailKey       String?   // subscription ID ("plan active" emails) or payment ID (renewals) last emailed about, so each is sent once
   
   // General Information (Account)
   telephone             String?

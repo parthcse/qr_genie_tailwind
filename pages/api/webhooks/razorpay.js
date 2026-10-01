@@ -1,5 +1,6 @@
 import prisma from "../../../lib/prisma";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../lib/activateBasicSubscription";
+import { sendPlanEmails } from "../../../lib/subscriptionEmails";
 import { verifyWebhookSignature } from "../../../lib/razorpayVerify";
 import { trimEnv } from "../../../lib/razorpayClient";
 
@@ -72,13 +73,18 @@ export default async function handler(req, res) {
     }
 
     // Uses Razorpay's period end, so activated + charged for the same payment, and webhook retries, don't stack
-    await activateBasicSubscriptionForUser({
+    const payment = event.payload?.payment?.entity;
+    const activation = await activateBasicSubscriptionForUser({
       userId,
       periodEnd: getRazorpayPeriodEnd(subscription),
       razorpayCustomerId: subscription.customer_id || undefined,
       razorpaySubscriptionId: subscription.id,
-      razorpayPaymentId: event.payload?.payment?.entity?.id || undefined,
+      razorpayPaymentId: payment?.id || undefined,
     });
+
+    // Not awaited, so Razorpay gets its answer quickly. A new subscription and each renewal payment are emailed once,
+    // whether checkout or this webhook reports them first.
+    sendPlanEmails({ userId, subscription, paymentId: payment?.id, payment, activation, source: "webhook" });
   } catch (err) {
     console.error("Razorpay webhook activate:", err);
     return res.status(500).json({ error: "Processing failed" });

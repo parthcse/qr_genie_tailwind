@@ -1,6 +1,7 @@
 import prisma from "../../../../lib/prisma";
 import { getUserFromRequest } from "../../../../lib/auth";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../../lib/activateBasicSubscription";
+import { sendPlanEmails } from "../../../../lib/subscriptionEmails";
 import { verifySubscriptionPaymentSignature } from "../../../../lib/razorpayVerify";
 import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
 
@@ -72,6 +73,15 @@ export default async function handler(req, res) {
         razorpayPaymentId: razorpay_payment_id,
       });
       reactivatedCount = activation.reactivatedCount;
+
+      // Not awaited: the customer shouldn't wait for email. Sent once per subscription even if a webhook reports it too.
+      sendPlanEmails({
+        userId: subUser.id,
+        subscription,
+        paymentId: razorpay_payment_id,
+        activation,
+        source: "checkout",
+      });
     }
 
     return res.status(200).json({

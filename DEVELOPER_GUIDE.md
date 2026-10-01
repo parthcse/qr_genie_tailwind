@@ -70,11 +70,11 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | `prisma.js` | The shared Prisma client (leaves QR password hashes out of every query). |
 | `subscription.js` | Plan rules: `getUserSubscriptionStatus`, `canCreateQR`, `checkQRCodeLimit`, `getQrPauseReason`, `TRIAL_QR_LIMIT`. No server dependencies, so pages can import it. |
 | `subscriptionSync.js` | Applies plan changes: pauses codes when a plan ends. |
-| `activateBasicSubscription.js` | Turns the Basic plan on after payment and restores plan-paused codes. |
+| `activateBasicSubscription.js` | Turns the Basic plan on after payment and restores plan-paused codes; tells the caller whether it was a renewal. |
 | `plans.js`, `price.js` | Reads the Razorpay plans (prices, currencies), picks a visitor's default currency, formats prices. |
 | `razorpayClient.js`, `razorpayVerify.js`, `razorpayError.js` | Razorpay SDK, signature checks, readable error messages. |
 | `emailCheck.js` | Sign-up email rules (format, no temporary-mail providers, domain can receive mail). |
-| `email.js` | Password-reset and contact emails. |
+| `email.js` | All outgoing email: password reset, contact messages, and the plan emails (shared branded HTML layout). |
 | `turnstile.js` | Checks a Turnstile token with Cloudflare. |
 | `rateLimit.js` | `isRateLimited(key, windowMs, max)`: true when a request should be refused. |
 | `clientIp.js` | The visitor's IP as passed on by Nginx. |
@@ -86,7 +86,8 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | `qrSchemas.js` | Form definitions for each QR type. |
 | `qrDownload.js` | PNG / JPG / SVG / PDF / print export of a designed code, in the browser. |
 | `useCurrentUser.js` | Browser hook that loads the signed-in user (if any) for public pages and their header. |
-| `site.js` | `SUPPORT_EMAIL`, contact topics, `LEGAL_LAST_UPDATED` (update when the legal pages change). |
+| `site.js` | `SUPPORT_EMAIL`, contact topics, `BASIC_PLAN_FEATURES` (pricing card and plan email), `LEGAL_LAST_UPDATED` (update when the legal pages change). |
+| `subscriptionEmails.js` | `sendPlanEmails`: the customer and admin emails for a new subscription or a renewal, each sent once. |
 
 **API (`pages/api/`)**
 
@@ -151,6 +152,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `RAZORPAY_WEBHOOK_SECRET` | Verifies Razorpay webhook calls. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile. The site key is baked in at build time; with the secret empty the check is skipped. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Outgoing email. Empty = emails are printed to the log. |
+| `ADMIN_NOTIFY_EMAIL` | Optional. Where new-subscriber and renewal notices go (comma-separated for several). Empty = the support address. |
 
 ## Data model
 
@@ -158,7 +160,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 | Model | Holds |
 |---|---|
-| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`. |
+| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`, `lastPlanEmailKey` (what the plan emails were last sent for). |
 | `QRCode` | `slug`, `type`, `targetUrl`, `linkType` (`DYNAMIC` / `STATIC`), `status` (`ACTIVE` / `PAUSED` / `DELETED`), `deactivatedReason` (`MANUAL` / `TRIAL_EXPIRED` / `SUBSCRIPTION_EXPIRED`), `pausedMessage`, `passwordHash` (bcrypt, only for protected codes), `scanCount`, colors, `meta`, folder. |
 | `ScanEvent` | One logged scan: hashed IP, device, OS, browser, referrer, country, region, city. |
 | `Folder` | A user's folder. |
@@ -253,6 +255,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 2. **Subscribe** calls `api/checkout/razorpay/create-subscription`, then Razorpay Checkout opens.
 3. After payment the browser calls `api/checkout/razorpay/verify`, which checks the payment signature and activates the plan until Razorpay's current period end.
 4. `api/webhooks/razorpay` receives `subscription.activated` and `subscription.charged` (monthly renewals) and also covers the case where the browser never called verify. A payment is never applied twice.
+5. Both paths then send the plan emails (see [Email](#email)) in the background, so checkout never waits for them.
 
 **Razorpay dashboard setup:** a monthly plan per currency (IDs into `RAZORPAY_PLAN_ID_INR` / `_USD`; to change a price, create a new plan and swap the ID), and a webhook to `<site>/api/webhooks/razorpay` for `subscription.activated` and `subscription.charged` with its secret in `RAZORPAY_WEBHOOK_SECRET`. USD needs Razorpay's international payments to be enabled.
 
@@ -260,11 +263,16 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## Email
 
-`lib/email.js` sends two kinds of email over SMTP (AWS SES):
+`lib/email.js` sends these emails over SMTP (AWS SES):
 - **Password reset** links to the user.
 - **Contact-form messages** to the support address (`SUPPORT_EMAIL` in `lib/site.js`), with Reply-To set to the sender. Every message is also saved in `ContactMessage` first.
+- **Plan emails** (`lib/subscriptionEmails.js`), when someone subscribes or a monthly payment goes through:
+  - to the customer: *Your Basic Package is active* (plan, price, amount paid, payment method, start and next renewal dates, payment and subscription IDs, what's included, links to the dashboard, billing, cancelling and the refund policy; replies go to support), or *Payment received: your plan is renewed* for later payments;
+  - to the admin (`ADMIN_NOTIFY_EMAIL`, else the support address): *New subscriber* (customer name, email, company, phone, country, sign-up date, plan before, payment details, how it was confirmed, the number of paying subscribers, links to the payment and subscription in the Razorpay dashboard; replies go to the customer), or a *Renewal* notice.
 
-Without SMTP settings both are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
+  Checkout and the Razorpay webhooks report the same events in any order, so each is sent once: a new subscription is claimed by its subscription ID (whichever call switches the plan on first, which still knows the plan before and the paused codes it restored; if that call has no payment, the payment is looked up from Razorpay), a renewal by its payment ID, in `User.lastPlanEmailKey`. A mail failure is logged and never undoes the plan.
+
+Without SMTP settings all of them are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
 
 ## Coding conventions
 

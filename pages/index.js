@@ -29,6 +29,7 @@ import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import CurrencySwitch from "../components/CurrencySwitch";
 import { formatPrice, formatPeriod } from "../lib/price";
+import { BASIC_PLAN_FEATURES } from "../lib/site";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
 
@@ -173,14 +174,7 @@ const pricingPlans = [
   {
     name: "Basic Package",
     description: "For individuals and small businesses",
-    features: [
-      "Unlimited QR codes",
-      "All QR code types",
-      "Dynamic link updates",
-      "Basic analytics",
-      "Email support",
-      "Cancel anytime"
-    ],
+    features: BASIC_PLAN_FEATURES,
     cta: "Subscribe Now",
     popular: true,
   }
