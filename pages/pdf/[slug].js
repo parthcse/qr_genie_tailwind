@@ -132,7 +132,7 @@ export default function PdfLandingPage({
         <div className="sticky bottom-0 px-6 pb-6 pt-4 bg-white border-t border-slate-100">
           <button
             onClick={handleViewPdf}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all"
+            className="btn-shine w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all"
             style={{
               backgroundColor: secondaryColor || "#242420",
             }}

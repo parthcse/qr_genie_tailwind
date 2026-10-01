@@ -71,7 +71,7 @@ export default function LegalPage({ path, title, description, intro, sections })
               </p>
               <Link
                 href="/contact"
-                className="mt-5 inline-flex rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-md transition hover:from-indigo-700 hover:to-purple-700"
+                className="btn-shine mt-5 inline-flex rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-md transition hover:from-indigo-700 hover:to-purple-700"
               >
                 Contact us
               </Link>

@@ -239,7 +239,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleRenameStart}
                 disabled={isLoading || showDeleteConfirm}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Rename folder"
               >
                 <FaEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -249,7 +249,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleDeleteClick}
                 disabled={isLoading || showDeleteConfirm}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Delete folder"
               >
                 <FaTrash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -311,7 +311,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleDeleteCancel}
                 disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-shine btn-shine-soft px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -319,7 +319,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                className="btn-shine px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
                 {isLoading ? "Deleting..." : "Delete Folder"}
               </button>

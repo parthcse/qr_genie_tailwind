@@ -954,7 +954,7 @@ export function RepeaterField({ field, value, onChange }) {
       <button
         type="button"
         onClick={addItem}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+        className="btn-shine w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
       >
         <FaPlus className="text-sm" />
         {isSocialRepeater ? "Add Social Network" : "Add Link"}
@@ -1317,7 +1317,7 @@ export function FolderField({ field, value, onChange, error, folders = [], onFol
                   setNewFolderName("");
                   setCreateError("");
                 }}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="btn-shine btn-shine-soft px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 disabled={isCreating}
               >
                 Cancel
@@ -1326,7 +1326,7 @@ export function FolderField({ field, value, onChange, error, folders = [], onFol
                 type="button"
                 onClick={handleCreateFolder}
                 disabled={isCreating || !newFolderName.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-shine px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCreating ? "Creating..." : "Create"}
               </button>

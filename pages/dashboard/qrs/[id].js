@@ -73,7 +73,7 @@ function PasswordCard({ qr, qrId, onChange }) {
                 setEditing(true);
                 setMessage(null);
               }}
-              className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+              className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
             >
               {qr.hasPassword ? "Change password" : "Add a password"}
             </button>
@@ -82,7 +82,7 @@ function PasswordCard({ qr, qrId, onChange }) {
                 type="button"
                 disabled={saving}
                 onClick={() => save({ removePassword: true }, "Password removed. The code now opens without one.")}
-                className="inline-flex h-9 items-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+                className="btn-shine btn-shine-soft inline-flex h-9 items-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
               >
                 Remove
               </button>
@@ -393,7 +393,7 @@ export default function QrDetailPage({ qrId }) {
                   type="button"
                   onClick={handleSaveTargetUrl}
                   disabled={savingUrl}
-                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="btn-shine inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <FaCheck className="w-4 h-4" /> Save
                 </button>
@@ -443,7 +443,7 @@ export default function QrDetailPage({ qrId }) {
                   type="button"
                   onClick={handleSavePausedMessage}
                   disabled={savingPausedMessage}
-                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="btn-shine inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <FaCheck className="w-4 h-4" /> Save
                 </button>
@@ -480,7 +480,7 @@ export default function QrDetailPage({ qrId }) {
                   key={d}
                   type="button"
                   onClick={() => setDays(d)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  className={`btn-shine px-3 py-1.5 rounded-lg text-sm font-medium ${
                     days === d
                       ? "bg-indigo-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"

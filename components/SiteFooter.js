@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { FaQrcode, FaCheck } from "react-icons/fa";
+import { FaQrcode, FaCheck, FaEnvelope, FaLock, FaArrowUp } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
+import { SUPPORT_EMAIL } from "../lib/site";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
 const SIGNUP_URL = `${SITE_URL}/auth/register`;
 
-const footerLink = "!text-gray-500 transition hover:!text-indigo-700";
+// Hover: the colour deepens and a thin gradient underline grows from the left
+const footerLink =
+  "bg-gradient-to-r from-indigo-500 to-purple-500 bg-[length:0%_1px] bg-left-bottom bg-no-repeat pb-0.5 !text-gray-500 transition-all duration-300 hover:bg-[length:100%_1px] hover:!text-indigo-700 motion-reduce:transition-none";
 
 /**
  * Site-wide footer.
@@ -16,7 +19,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
   const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
 
   return (
-    <footer className={`relative bg-white ${showCta ? "" : "border-t border-gray-100"}`} role="contentinfo">
+    <footer className="relative bg-white" role="contentinfo">
       {showCta && (
         <div className={`${container} pt-16 md:pt-20`}>
           <section
@@ -42,13 +45,13 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                 <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Link
                     href={isAuthenticated ? "/dashboard" : "/auth/register"}
-                    className="inline-flex items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-indigo-950 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+                    className="btn-shine btn-shine-soft inline-flex items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-indigo-950 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                   >
                     {isAuthenticated ? "Go to dashboard" : "Start free trial"}
                   </Link>
                   <Link
                     href="/#pricing"
-                    className="inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-base font-semibold !text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+                    className="btn-shine inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-base font-semibold !text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                   >
                     See pricing
                   </Link>
@@ -113,63 +116,96 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
         </div>
       )}
 
-      <div className={`${container} pb-10 ${showCta ? "pt-14" : "pt-12"}`}>
-        <div className="flex flex-col gap-10 md:flex-row md:justify-between">
-          <div className="max-w-xs">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
-                <FaQrcode className="h-5 w-5 text-white" />
-              </span>
-              <span className="font-display text-lg font-bold tracking-tight text-gray-900">QR-Genie</span>
-            </Link>
-            <p className="mt-3 text-sm leading-relaxed text-gray-500">
-              Dynamic QR codes for menus, events and campaigns, editable any time after printing.
-            </p>
+      <div className="relative bg-gradient-to-b from-white to-slate-50/80">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+          aria-hidden="true"
+        />
+        <div className={`${container} pb-8 ${showCta ? "pt-16" : "pt-14"}`}>
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-8">
+            <div className="lg:col-span-4">
+              <Link href="/" className="inline-flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
+                  <FaQrcode className="h-5 w-5 text-white" />
+                </span>
+                <span className="font-display text-lg font-bold tracking-tight text-gray-900">QR-Genie</span>
+              </Link>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-500">
+                Dynamic QR codes for menus, events and campaigns, editable any time after printing.
+              </p>
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="group mt-6 inline-flex items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-5 shadow-sm ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-indigo-200 motion-reduce:transform-none"
+              >
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 transition-colors duration-300 group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:text-white group-hover:ring-transparent">
+                  <FaEnvelope className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-xs text-slate-500">Questions? Email us</span>
+                  <span className="block text-sm font-semibold text-slate-900 transition-colors group-hover:text-indigo-700">{SUPPORT_EMAIL}</span>
+                </span>
+              </a>
+            </div>
+
+            {/* Phones: Product on the left, Account and Support stacked on the right */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-8 lg:pl-16">
+              <nav aria-labelledby="footer-product" className="row-span-2 sm:row-span-1">
+                <h3 id="footer-product" className="text-sm font-semibold text-gray-900">Product</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  <li><Link href="/#qr-types" className={footerLink}>QR code types</Link></li>
+                  <li><Link href="/#features" className={footerLink}>Features</Link></li>
+                  <li><Link href="/#how-it-works" className={footerLink}>How it works</Link></li>
+                  <li><Link href="/#pricing" className={footerLink}>Pricing</Link></li>
+                  <li><Link href="/#testimonials" className={footerLink}>Testimonials</Link></li>
+                </ul>
+              </nav>
+              <nav aria-labelledby="footer-account">
+                <h3 id="footer-account" className="text-sm font-semibold text-gray-900">Account</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  {isAuthenticated ? (
+                    <>
+                      <li><Link href="/dashboard" className={footerLink}>My QR codes</Link></li>
+                      <li><Link href="/dashboard/create-qr" className={footerLink}>Create a QR code</Link></li>
+                      <li><Link href="/dashboard/billing" className={footerLink}>Billing</Link></li>
+                    </>
+                  ) : (
+                    <>
+                      <li><Link href="/auth/login" className={footerLink}>Log in</Link></li>
+                      <li><Link href="/auth/register" className={footerLink}>Start free trial</Link></li>
+                    </>
+                  )}
+                </ul>
+              </nav>
+              <nav aria-labelledby="footer-support">
+                <h3 id="footer-support" className="text-sm font-semibold text-gray-900">Support</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  <li><Link href="/contact" className={footerLink}>Contact us</Link></li>
+                  <li><Link href="/privacy" className={footerLink}>Privacy policy</Link></li>
+                  <li><Link href="/terms" className={footerLink}>Terms of service</Link></li>
+                  <li><Link href="/refund-policy" className={footerLink}>Refund policy</Link></li>
+                </ul>
+              </nav>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 sm:gap-16">
-            <nav aria-labelledby="footer-product">
-              <h3 id="footer-product" className="text-sm font-semibold text-gray-900">Product</h3>
-              <ul className="mt-4 space-y-3 text-sm">
-                <li><Link href="/#qr-types" className={footerLink}>QR code types</Link></li>
-                <li><Link href="/#features" className={footerLink}>Features</Link></li>
-                <li><Link href="/#how-it-works" className={footerLink}>How it works</Link></li>
-                <li><Link href="/#pricing" className={footerLink}>Pricing</Link></li>
-                <li><Link href="/#testimonials" className={footerLink}>Testimonials</Link></li>
-              </ul>
-            </nav>
-            <nav aria-labelledby="footer-account">
-              <h3 id="footer-account" className="text-sm font-semibold text-gray-900">Account</h3>
-              <ul className="mt-4 space-y-3 text-sm">
-                {isAuthenticated ? (
-                  <>
-                    <li><Link href="/dashboard" className={footerLink}>My QR codes</Link></li>
-                    <li><Link href="/dashboard/create-qr" className={footerLink}>Create a QR code</Link></li>
-                    <li><Link href="/dashboard/billing" className={footerLink}>Billing</Link></li>
-                  </>
-                ) : (
-                  <>
-                    <li><Link href="/auth/login" className={footerLink}>Log in</Link></li>
-                    <li><Link href="/auth/register" className={footerLink}>Start free trial</Link></li>
-                  </>
-                )}
-              </ul>
-            </nav>
-            <nav aria-labelledby="footer-support">
-              <h3 id="footer-support" className="text-sm font-semibold text-gray-900">Support</h3>
-              <ul className="mt-4 space-y-3 text-sm">
-                <li><Link href="/contact" className={footerLink}>Contact us</Link></li>
-                <li><Link href="/privacy" className={footerLink}>Privacy policy</Link></li>
-                <li><Link href="/terms" className={footerLink}>Terms of service</Link></li>
-                <li><Link href="/refund-policy" className={footerLink}>Refund policy</Link></li>
-              </ul>
-            </nav>
+          <div className="mt-14 flex flex-col-reverse gap-5 border-t border-slate-200/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} QR-Genie. All rights reserved.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200/80">
+                <FaLock className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+                Payments are processed securely by Razorpay.
+              </p>
+              {/* Glides up with the site's smooth scrolling (instant when motion is reduced) */}
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0 })}
+                className="btn-shine btn-shine-soft group inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              >
+                Back to top
+                <FaArrowUp className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none" aria-hidden="true" />
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-12 flex flex-col gap-2 border-t border-gray-100 pt-6 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} QR-Genie. All rights reserved.</p>
-          <p>Payments are processed securely by Razorpay.</p>
         </div>
       </div>
     </footer>

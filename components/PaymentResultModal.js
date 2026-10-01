@@ -158,13 +158,13 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
                 <Link
                   href="/dashboard/create-qr"
                   ref={primaryRef}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold !text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
+                  className="btn-shine flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold !text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
                 >
                   Create a QR code
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200"
+                  className="btn-shine btn-shine-soft flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200"
                 >
                   Go to dashboard
                 </Link>
@@ -194,7 +194,7 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
                     type="button"
                     ref={primaryRef}
                     onClick={onRetry}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
+                    className="btn-shine flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
                   >
                     <FaRedo className="h-3.5 w-3.5" />
                     Try again
@@ -203,7 +203,7 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200"
+                  className="btn-shine btn-shine-soft flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200"
                 >
                   Close
                 </button>

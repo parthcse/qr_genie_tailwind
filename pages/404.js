@@ -17,13 +17,13 @@ export default function NotFoundPage() {
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/"
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-semibold !text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700"
+            className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-semibold !text-white shadow-lg transition hover:from-indigo-700 hover:to-purple-700"
           >
             Go to the home page
           </Link>
           <Link
             href="/dashboard"
-            className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50"
+            className="btn-shine btn-shine-soft rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50"
           >
             Open your dashboard
           </Link>

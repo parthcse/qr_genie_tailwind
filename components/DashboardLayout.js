@@ -28,7 +28,7 @@ const navItems = [createItem, ...navGroups.flatMap((group) => group.items)];
 const TRIAL_DAYS = 14;
 
 const upgradeLinkClass =
-  "mt-3 block rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 py-2 text-center text-sm font-semibold !text-white shadow-sm transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2";
+  "btn-shine mt-3 block rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 py-2 text-center text-sm font-semibold !text-white shadow-sm transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2";
 
 function initialsOf(user) {
   const source = (user.name || user.email || "").trim();
@@ -199,7 +199,7 @@ export default function DashboardLayout({ children, title, description, actions 
             <Link
               href={createItem.href}
               aria-current={isActive(createItem.href) ? "page" : undefined}
-              className={`group mb-5 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
+              className={`btn-shine group mb-5 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${
                 isActive(createItem.href) ? "ring-2 ring-indigo-200 ring-offset-2" : ""
               }`}
             >

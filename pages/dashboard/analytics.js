@@ -335,7 +335,7 @@ export default function AnalyticsPage({ initialQrId }) {
           type="button"
           onClick={exportCsv}
           disabled={!data || !totals?.scans}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-shine btn-shine-soft inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <FaDownload className="h-3.5 w-3.5" />
           Export CSV
@@ -402,7 +402,7 @@ export default function AnalyticsPage({ initialQrId }) {
           <p className="mx-auto mt-1 max-w-sm text-sm text-gray-600">Create a dynamic QR code and its scans will show up here.</p>
           <Link
             href="/dashboard/create-qr"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25"
+            className="btn-shine mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25"
           >
             <FaPlus className="h-3.5 w-3.5" />
             New QR code

@@ -1039,7 +1039,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
                 {/* View PDF Button */}
                 <div className="flex justify-center">
                   <button 
-                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full text-sm font-medium shadow-md active:opacity-90 transition-opacity"
+                    className="btn-shine inline-flex items-center gap-2 text-white px-6 py-3 rounded-full text-sm font-medium shadow-md active:opacity-90 transition-opacity"
                     style={{ 
                       backgroundColor: primaryColor,
                       fontFamily: bodyFont
@@ -1424,12 +1424,12 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <button
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="btn-shine w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Connect
                   </button>
                   <button
-                    className="w-full bg-white border-2 border-indigo-600 text-indigo-600 font-semibold py-3 px-6 rounded-xl hover:bg-indigo-50 transition-all duration-200"
+                    className="btn-shine btn-shine-soft w-full bg-white border-2 border-indigo-600 text-indigo-600 font-semibold py-3 px-6 rounded-xl hover:bg-indigo-50 transition-all duration-200"
                   >
                     Close
                   </button>
@@ -1643,10 +1643,10 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-4">
-                  <button className="flex-1 bg-[#0095F6] text-white text-sm font-semibold py-2 px-4 rounded-lg">
+                  <button className="btn-shine flex-1 bg-[#0095F6] text-white text-sm font-semibold py-2 px-4 rounded-lg">
                     Follow
                   </button>
-                  <button className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm font-semibold py-2 px-4 rounded-lg">
+                  <button className="btn-shine btn-shine-soft flex-1 bg-white border border-gray-300 text-gray-900 text-sm font-semibold py-2 px-4 rounded-lg">
                     Message
                   </button>
                   <button className="w-10 h-9 flex items-center justify-center border border-gray-300 rounded-lg">
@@ -2331,7 +2331,7 @@ export default function CreateQrPage() {
               {data.current >= data.limit && (
                 <Link
                   href="/dashboard/billing"
-                  className="inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
+                  className="btn-shine inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
                 >
                   Upgrade to Basic Package
                 </Link>
@@ -3188,7 +3188,7 @@ export default function CreateQrPage() {
           </p>
           <Link
             href="/dashboard/billing"
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
+            className="btn-shine mt-6 inline-flex items-center justify-center rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
           >
             View plans
           </Link>
@@ -3229,7 +3229,7 @@ export default function CreateQrPage() {
                   <button
                     type="button"
                     onClick={copyShortLink}
-                    className="inline-flex h-8 flex-none items-center gap-1.5 rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    className="btn-shine btn-shine-soft inline-flex h-8 flex-none items-center gap-1.5 rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
                   >
                     {copiedLink ? <FaCheck className="h-3 w-3" /> : <FaCopy className="h-3 w-3" />}
                     {copiedLink ? "Copied" : "Copy"}
@@ -3248,7 +3248,7 @@ export default function CreateQrPage() {
                 <button
                   type="button"
                   onClick={openDownload}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
+                  className="btn-shine inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
                 >
                   <FaDownload className="h-3.5 w-3.5" />
                   Download
@@ -3256,7 +3256,7 @@ export default function CreateQrPage() {
                 {success.id && (
                   <Link
                     href={`/dashboard/qrs/${success.id}`}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium !text-gray-700 shadow-sm transition hover:border-indigo-300 hover:!text-indigo-700"
+                    className="btn-shine btn-shine-soft inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium !text-gray-700 shadow-sm transition hover:border-indigo-300 hover:!text-indigo-700"
                   >
                     View details
                   </Link>
@@ -3264,7 +3264,7 @@ export default function CreateQrPage() {
                 <button
                   type="button"
                   onClick={resetAll}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+                  className="btn-shine btn-shine-soft inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
                 >
                   <FaPlus className="h-3 w-3" />
                   Create another
@@ -3301,7 +3301,7 @@ export default function CreateQrPage() {
                 <button
                   type="button"
                   onClick={goBack}
-                  className={`inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
+                  className={`btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
                     step === 1 ? "invisible" : ""
                   }`}
                 >
@@ -3318,7 +3318,7 @@ export default function CreateQrPage() {
                       type="button"
                       onClick={goNext}
                       disabled={nextDisabled}
-                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                      className="btn-shine inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                     >
                       {step === 1 ? "Continue" : "Next: style it"}
                       <FaArrowRight className="h-3 w-3" />
@@ -3329,7 +3329,7 @@ export default function CreateQrPage() {
                       type="button"
                       onClick={handleSubmit}
                       disabled={saving || !canContinueFromStep2()}
-                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="btn-shine inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {saving ? "Creating…" : "Create QR code"}
                       {!saving && <FaCheck className="h-3 w-3" />}
@@ -3504,7 +3504,7 @@ export default function CreateQrPage() {
               <button
                 type="button"
                 onClick={() => setShowDownloadModal(false)}
-                className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="btn-shine btn-shine-soft rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -3512,7 +3512,7 @@ export default function CreateQrPage() {
                 type="button"
                 onClick={handleDownloadQR}
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
+                className="btn-shine inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
               >
                 {downloadFormat === "print" ? <FaPrint className="h-3.5 w-3.5" /> : <FaDownload className="h-3.5 w-3.5" />}
                 {downloadFormat === "print" ? "Print" : "Download"}

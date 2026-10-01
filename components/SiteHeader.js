@@ -15,7 +15,7 @@ const SECTION_LINKS = [
 
 // Header account icons share one filled style, signed in or not; log out turns red on hover
 const iconBase =
-  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br !text-white shadow-md shadow-indigo-500/20 transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  "btn-shine flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br !text-white shadow-md shadow-indigo-500/20 transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
 const iconButton = `${iconBase} from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus-visible:ring-indigo-400`;
 const logoutIconButton = `${iconBase} from-indigo-600 to-purple-600 hover:from-rose-500 hover:to-red-600 focus-visible:ring-red-400`;
 
@@ -157,7 +157,7 @@ export default function SiteHeader({
           close();
           handleLogout();
         }}
-        className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+        className="btn-shine btn-shine-soft flex items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
       >
         <FaSignOutAlt className="h-3.5 w-3.5" />
         Log out
@@ -165,7 +165,7 @@ export default function SiteHeader({
       <Link
         href="/dashboard"
         onClick={close}
-        className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-sm font-semibold !text-white shadow-md"
+        className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-sm font-semibold !text-white shadow-md"
       >
         Dashboard
       </Link>
@@ -175,14 +175,14 @@ export default function SiteHeader({
       <Link
         href="/auth/login"
         onClick={close}
-        className="rounded-xl border border-gray-200 py-3 text-center text-sm font-semibold !text-gray-800 transition hover:bg-gray-50"
+        className="btn-shine btn-shine-soft rounded-xl border border-gray-200 py-3 text-center text-sm font-semibold !text-gray-800 transition hover:bg-gray-50"
       >
         Log in
       </Link>
       <Link
         href="/auth/register"
         onClick={close}
-        className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-sm font-semibold !text-white shadow-md"
+        className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-sm font-semibold !text-white shadow-md"
       >
         Get started
       </Link>

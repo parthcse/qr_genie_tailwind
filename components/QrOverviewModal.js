@@ -235,7 +235,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <Link
             href={`/dashboard/qrs/${qrCode.id}`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="btn-shine btn-shine-soft inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <FaInfoCircle className="w-4 h-4" />
             View Details
@@ -243,7 +243,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
           <button
             type="button"
             onClick={() => setShowDownloadModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            className="btn-shine inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <FaDownload className="w-4 h-4" />
             Download
@@ -281,7 +281,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                     setDownloadFormat("png");
                     handleDownload("png");
                   }}
-                  className="px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
+                  className="btn-shine btn-shine-soft px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
                 >
                   PNG
                 </button>
@@ -291,7 +291,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                     setDownloadFormat("jpg");
                     handleDownload("jpg");
                   }}
-                  className="px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
+                  className="btn-shine btn-shine-soft px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
                 >
                   JPG
                 </button>
@@ -301,7 +301,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                     setDownloadFormat("jpeg");
                     handleDownload("jpeg");
                   }}
-                  className="px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
+                  className="btn-shine btn-shine-soft px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
                 >
                   JPEG
                 </button>
@@ -311,7 +311,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                     setDownloadFormat("pdf");
                     handleDownload("pdf");
                   }}
-                  className="px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
+                  className="btn-shine btn-shine-soft px-4 py-3 border-2 border-gray-200 hover:border-gray-300 rounded-lg font-medium text-gray-700 transition-colors"
                 >
                   PDF
                 </button>

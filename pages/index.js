@@ -313,12 +313,12 @@ const qrTypeShowcase = [
 ];
 
 const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
-const sectionSpacing = "py-20 sm:py-24 lg:py-28";
+const sectionSpacing = "py-16 sm:py-24 lg:py-28";
 
 const primaryButton =
-  "group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-7 py-3.5 text-base font-semibold !text-white shadow-lg shadow-indigo-600/25 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 motion-reduce:transform-none sm:w-auto";
+  "btn-shine group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-7 py-3.5 text-base font-semibold !text-white shadow-lg shadow-indigo-600/25 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 motion-reduce:transform-none sm:w-auto";
 const secondaryButton =
-  "inline-flex w-full items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-slate-800 shadow-sm ring-1 ring-inset ring-slate-200 transition duration-200 hover:bg-slate-50 hover:!text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 sm:w-auto";
+  "btn-shine btn-shine-soft inline-flex w-full items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-slate-800 shadow-sm ring-1 ring-inset ring-slate-200 transition duration-200 hover:bg-slate-50 hover:!text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 sm:w-auto";
 
 // Eyebrow, heading and intro shared by the sections below the hero
 function SectionHeading({ eyebrow, title, description, children }) {
@@ -608,17 +608,19 @@ function QrTypesShowcase({ isAuthenticated }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(type.id)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
-              className={`group flex flex-col items-center rounded-2xl px-3 py-5 text-center transition duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 ${
+              className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition sm:flex-col sm:gap-0 sm:py-5 sm:text-center duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 ${
                 selected
                   ? "bg-white shadow-lg shadow-indigo-900/[0.07] ring-2 ring-indigo-500"
                   : "bg-white/70 ring-1 ring-slate-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:ring-indigo-200 motion-reduce:transform-none"
               }`}
             >
-              <span className={`flex h-12 w-12 items-center justify-center rounded-xl ring-1 ring-inset transition-transform duration-300 group-hover:scale-110 motion-reduce:transform-none ${type.accent}`}>
+              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ring-1 ring-inset transition-transform sm:h-12 sm:w-12 duration-300 group-hover:scale-110 motion-reduce:transform-none ${type.accent}`}>
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="mt-3 font-display text-[15px] font-semibold text-slate-900">{type.label}</span>
-              <span className="mt-0.5 text-xs text-slate-500">{type.tagline}</span>
+              <span className="min-w-0 sm:mt-3">
+                <span className="block font-display text-[15px] font-semibold text-slate-900">{type.label}</span>
+                <span className="mt-0.5 hidden text-xs text-slate-500 sm:block">{type.tagline}</span>
+              </span>
             </button>
           );
         })}
@@ -633,7 +635,7 @@ function QrTypesShowcase({ isAuthenticated }) {
         <div className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />
 
-        <div key={current.id} className="grid items-center gap-12 p-6 motion-safe:animate-fade-in sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:p-14">
+        <div key={current.id} className="grid items-center gap-10 p-5 motion-safe:animate-fade-in sm:gap-12 sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:p-14">
           <div>
             <div className="flex items-center gap-3">
               <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${current.accent}`}>
@@ -665,7 +667,7 @@ function QrTypesShowcase({ isAuthenticated }) {
           </div>
 
           {/* Phone showing the result of a scan, with the code beside it */}
-          <div className="relative mx-auto w-full max-w-[16rem] sm:max-w-[17rem]" aria-hidden="true">
+          <div className="relative mx-auto w-full max-w-[13rem] sm:max-w-[16rem] lg:max-w-[17rem]" aria-hidden="true">
             <div className="rounded-[2.5rem] bg-slate-900 p-2 shadow-2xl shadow-indigo-900/25 ring-1 ring-slate-900/10">
               <div className="relative aspect-[9/18] overflow-hidden rounded-[2rem] bg-white">
                 <span className="absolute left-1/2 top-2 z-10 h-5 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
@@ -827,7 +829,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
                 aria-hidden="true"
               />
               <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-indigo-200 to-transparent" aria-hidden="true" />
-              <div className="grid grid-cols-2 gap-y-10 pt-12 sm:grid-cols-4 sm:pt-14">
+              <div className="grid grid-cols-2 gap-y-8 pt-10 sm:grid-cols-4 sm:gap-y-10 sm:pt-14">
                 {stats.map((stat, i) => (
                   <div key={stat.label} className="group relative cursor-pointer px-2 text-center">
                     {i > 0 && (
@@ -874,23 +876,23 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 max-w-5xl mx-auto">
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 max-w-5xl mx-auto">
               {companies.map((company) => (
                 <div key={company.name} className="group relative">
                   {/* Logo Card */}
-                  <div className="relative overflow-hidden rounded-2xl p-6 bg-white border-2 border-gray-200 hover:border-transparent transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-2 motion-reduce:transform-none cursor-pointer">
+                  <div className="relative overflow-hidden rounded-2xl p-3 sm:p-6 bg-white border-2 border-gray-200 hover:border-transparent transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-2 motion-reduce:transform-none cursor-pointer">
                     {/* Gradient Background on Hover */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${company.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
 
                     {/* Logo Circle */}
                     <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${company.gradient} flex items-center justify-center font-display text-white font-bold text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
+                      <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${company.gradient} flex items-center justify-center font-display text-white font-bold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
                         {company.logo}
                       </div>
 
                       {/* Company Name */}
                       <div className="text-center">
-                        <p className={`text-sm font-semibold group-hover:text-white transition-colors duration-300 ${company.textColor}`}>
+                        <p className={`text-xs sm:text-sm font-semibold group-hover:text-white transition-colors duration-300 ${company.textColor}`}>
                           {company.name}
                         </p>
                       </div>
@@ -956,7 +958,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="group relative flex gap-5 overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-slate-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-900/5 hover:ring-indigo-200 motion-reduce:transform-none sm:block sm:p-8"
+                  className="group relative flex cursor-pointer gap-5 overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-slate-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-900/5 hover:ring-indigo-200 motion-reduce:transform-none sm:block sm:p-8"
                 >
                   {/* Hover: a light gradient that keeps drifting, plus a sheen that sweeps across once */}
                   <div
@@ -1049,7 +1051,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
                 return (
                   <div
                     key={plan.name}
-                    className={`relative flex flex-col rounded-3xl p-8 sm:p-10 ${
+                    className={`relative flex flex-col rounded-3xl p-6 sm:p-10 ${
                       featured
                         ? "bg-gradient-to-b from-indigo-950 via-indigo-950 to-indigo-900 text-white shadow-2xl shadow-indigo-900/25 ring-1 ring-indigo-900"
                         : "bg-white shadow-sm ring-1 ring-slate-200"
@@ -1102,16 +1104,26 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
                       ))}
                     </ul>
 
-                    <Link
-                      href={button.href}
-                      className={`relative mt-10 block w-full rounded-xl px-6 py-3.5 text-center font-semibold transition duration-200 focus:outline-none focus-visible:ring-4 ${
-                        featured
-                          ? "bg-white !text-indigo-950 shadow-lg hover:bg-indigo-50 focus-visible:ring-white/40"
-                          : "bg-indigo-50 !text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-100 focus-visible:ring-indigo-200"
-                      }`}
-                    >
-                      {button.text}
-                    </Link>
+                    {/* Glowing gradient on the featured card, a confident dark button on the other (both pass AA with white text) */}
+                    <div className="relative mt-10">
+                      <Link
+                        href={button.href}
+                        className={`btn-shine group flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[15px] font-semibold transition duration-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-4 motion-reduce:transform-none ${
+                          featured
+                            ? "border border-white/15 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 !text-white shadow-lg shadow-fuchsia-600/30 hover:shadow-xl hover:shadow-fuchsia-500/40 focus-visible:ring-fuchsia-300/50"
+                            : "bg-slate-900 !text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/25 focus-visible:ring-slate-300"
+                        }`}
+                      >
+                        {button.text}
+                        <FaArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none" />
+                      </Link>
+                      {!isAuthenticated && (
+                        <p className={`mt-3 flex items-center justify-center gap-1.5 text-xs ${featured ? "text-indigo-200" : "text-slate-500"}`}>
+                          {featured ? <FaLock className="h-2.5 w-2.5" /> : <FaCheck className="h-2.5 w-2.5" />}
+                          {featured ? "Secure checkout with Razorpay" : "No card needed"}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -1132,20 +1144,20 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
               description="See what our customers have to say about QR-Genie"
             />
 
-            <div className="mt-14 grid gap-6 md:grid-cols-2 lg:mt-16 lg:gap-8">
+            <div className="mt-12 grid gap-4 sm:mt-14 sm:gap-6 md:grid-cols-2 lg:mt-16 lg:gap-8">
               {testimonials.map((testimonial) => (
                 <figure
                   key={testimonial.name}
-                  className="relative flex flex-col rounded-3xl bg-white p-7 shadow-sm ring-1 ring-slate-200/80 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 sm:p-9"
+                  className="relative flex flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200/80 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 sm:p-9"
                 >
-                  <FaQuoteLeft className="absolute right-7 top-7 h-8 w-8 text-indigo-100 sm:right-9 sm:top-9" aria-hidden="true" />
+                  <FaQuoteLeft className="absolute right-6 top-6 h-7 w-7 text-indigo-100 sm:right-9 sm:top-9 sm:h-8 sm:w-8" aria-hidden="true" />
                   <div className="flex gap-1" role="img" aria-label={`Rated ${testimonial.rating} out of 5`}>
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <FaStar key={i} className="h-4 w-4 text-amber-400" aria-hidden="true" />
                     ))}
                   </div>
 
-                  <blockquote className="mt-5 flex-1 text-pretty text-[17px] leading-relaxed text-slate-700">
+                  <blockquote className="mt-4 flex-1 text-pretty text-[15px] leading-relaxed sm:mt-5 sm:text-[17px] text-slate-700">
                     <p>&ldquo;{testimonial.content}&rdquo;</p>
                   </blockquote>
 

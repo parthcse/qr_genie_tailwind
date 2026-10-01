@@ -529,7 +529,7 @@ export default function BillingPage() {
                     type="button"
                     onClick={() => handleBuyNow("BASIC")}
                     disabled={!statusLoaded || !shownPlan || buyingPlan !== null}
-                    className="mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="btn-shine mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {buyingPlan === "BASIC" ? "Opening checkout…" : "Subscribe to Basic"}
                   </button>

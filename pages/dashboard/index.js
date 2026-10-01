@@ -434,14 +434,14 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
               onClick={() => actions.download(code)}
               disabled={!canDownload}
               title={canDownload ? "Download" : "Renew your plan to download"}
-              className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-gray-700"
+              className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-gray-700"
             >
               <FaDownload className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
             </button>
             <Link
               href={`/dashboard/qrs/${code.id}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-50 px-3.5 text-sm font-semibold !text-indigo-700 transition hover:bg-indigo-100"
+              className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-50 px-3.5 text-sm font-semibold !text-indigo-700 transition hover:bg-indigo-100"
             >
               Details
               <FaChevronRight className="h-2.5 w-2.5" />
@@ -554,7 +554,7 @@ function BulkButton({ icon: Icon, label, onClick, danger, disabled }) {
       onClick={onClick}
       disabled={disabled}
       title={label}
-      className={`inline-flex h-9 flex-none items-center gap-2 rounded-xl px-3 text-sm font-medium transition disabled:opacity-50 ${
+      className={`btn-shine btn-shine-soft inline-flex h-9 flex-none items-center gap-2 rounded-xl px-3 text-sm font-medium transition disabled:opacity-50 ${
         danger ? "text-rose-300 hover:bg-rose-500/15 hover:text-rose-200" : "text-gray-200 hover:bg-white/10 hover:text-white"
       }`}
     >
@@ -884,7 +884,7 @@ export default function Dashboard() {
       actions={
         <Link
           href="/dashboard/create-qr"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+          className="btn-shine inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
         >
           <FaPlus className="h-3.5 w-3.5" />
           New QR code
@@ -907,7 +907,7 @@ export default function Dashboard() {
           </div>
           <Link
             href="/dashboard/billing"
-            className="inline-flex flex-none items-center justify-center rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
+            className="btn-shine inline-flex flex-none items-center justify-center rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
           >
             View plans
           </Link>
@@ -948,7 +948,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setShowCreateFolder(true)}
-            className="inline-flex flex-none items-center gap-2 whitespace-nowrap rounded-xl border border-dashed border-indigo-300 px-3.5 py-2 text-sm font-medium text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50"
+            className="btn-shine btn-shine-soft inline-flex flex-none items-center gap-2 whitespace-nowrap rounded-xl border border-dashed border-indigo-300 px-3.5 py-2 text-sm font-medium text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50"
           >
             <FaFolderPlus className="h-4 w-4" />
             New folder
@@ -1036,7 +1036,7 @@ export default function Dashboard() {
           </p>
           <Link
             href="/dashboard/create-qr"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
+            className="btn-shine mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
           >
             <FaPlus className="h-3.5 w-3.5" />
             New QR code
@@ -1057,7 +1057,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
+              className="btn-shine btn-shine-soft mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
             >
               <FaTimes className="h-3 w-3" />
               Clear filters
@@ -1211,7 +1211,7 @@ export default function Dashboard() {
                   type="button"
                   disabled={busy}
                   onClick={() => moveTo(folder.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition disabled:opacity-50 ${
+                  className={`btn-shine btn-shine-soft flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition disabled:opacity-50 ${
                     current ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-gray-200 text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/50"
                   }`}
                 >
@@ -1259,14 +1259,14 @@ export default function Dashboard() {
                   setShowCreateFolder(false);
                   setNewFolderName("");
                 }}
-                className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="btn-shine btn-shine-soft rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={creatingFolder || !newFolderName.trim()}
-                className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {creatingFolder ? "Creating…" : "Create folder"}
               </button>
@@ -1298,7 +1298,7 @@ export default function Dashboard() {
               type="button"
               onClick={() => setConfirmDelete(null)}
               disabled={busy}
-              className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              className="btn-shine btn-shine-soft rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1306,7 +1306,7 @@ export default function Dashboard() {
               type="button"
               onClick={deleteCodes}
               disabled={busy}
-              className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+              className="btn-shine rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
             >
               {busy ? "Deleting…" : "Delete"}
             </button>
