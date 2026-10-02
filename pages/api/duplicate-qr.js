@@ -1,6 +1,6 @@
 // pages/api/duplicate-qr.js
 import prisma from "../../lib/prisma";
-import { getUserFromRequest } from "../../lib/auth";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../lib/auth";
 import { checkQRCodeLimit } from "../../lib/subscription";
 import { nanoid } from "nanoid";
 
@@ -13,6 +13,9 @@ export default async function handler(req, res) {
     const user = await getUserFromRequest(req);
     if (!user) {
       return res.status(401).json({ error: "Not authenticated" });
+    }
+    if (!user.emailVerified) {
+      return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
     }
 
     const { id } = req.body;

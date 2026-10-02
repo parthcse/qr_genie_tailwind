@@ -1,5 +1,5 @@
 import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../../../lib/auth";
 import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
 import { normalizeRazorpayApiError } from "../../../../lib/razorpayError";
 import { getUserSubscriptionStatus } from "../../../../lib/subscription";
@@ -17,6 +17,9 @@ export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (!user.emailVerified) {
+    return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
   }
 
   // Razorpay renews automatically; a second subscription would bill the user twice

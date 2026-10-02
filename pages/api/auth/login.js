@@ -49,7 +49,8 @@ export default async function handler(req, res) {
     }
 
     setLoginSession(res, user);
-    return res.status(200).json({ id: user.id, email: user.email, message: "Login successful" });
+    // emailVerified false: the login page sends them to /auth/verify-email instead of the dashboard
+    return res.status(200).json({ id: user.id, email: user.email, emailVerified: !!user.emailVerifiedAt, message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Login is temporarily unavailable. Please try again in a few moments." });

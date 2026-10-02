@@ -14,13 +14,13 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 
 | Page | What's there |
 |---|---|
-| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, "trusted by" companies, **QR code types** (tabs for the released types, each with a phone preview of what a scan does and a button to create one), features, how it works, pricing (INR or USD), testimonials, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
-| `/auth/register`, `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial), login, password reset by email. All protected by a Cloudflare Turnstile check. |
+| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing), **QR code types** (tabs for the released types, each with a phone preview of what a scan does and a button to create one), features, how it works, pricing (INR or USD), testimonials, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
+| `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
 | `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or `wifi`, `whatsapp`, `instagram`) opens straight at step 2 with that type chosen; the landing page links there. |
 | `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
-| `/dashboard/account` | Profile, email change (needs the current password), password change (signs out other devices), language, billing details. |
+| `/dashboard/account` | Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/AuthShell.js`). |
 | `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay, currency switch. |
 | `/contact` | Contact form (saved to the database and emailed to support): name, email, the topic as cards (with a tip for billing, cancellation, refund and "something isn't working" messages), message. `?topic=billing` (or another topic value from `lib/site.js`) preselects a topic. Beside it: the support email with a copy button, billing guidance and policy links. |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
@@ -54,7 +54,7 @@ Prisma 7 and Tailwind 4 are major rewrites and haven't been adopted yet. The `ov
 
 ```
 pages/              routes (see "What the app does"); pages/api/ is the JSON API
-components/         layouts, header/footer, QR rendering, modals, Turnstile widget
+components/         layouts, header/footer, auth page shell (AuthShell), QR rendering, modals, Turnstile widget
 components/qrFields/  the schema-driven form used by create-qr
 lib/                shared and server-side logic
 prisma/             schema.prisma and migrations/
@@ -74,7 +74,8 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | `plans.js`, `price.js` | Reads the Razorpay plans (prices, currencies), picks a visitor's default currency, formats prices. |
 | `razorpayClient.js`, `razorpayVerify.js`, `razorpayError.js` | Razorpay SDK, signature checks, readable error messages. |
 | `emailCheck.js` | Sign-up email rules (format, no temporary-mail providers, domain can receive mail). |
-| `email.js` | All outgoing email: password reset, contact messages, and the plan emails (shared branded HTML layout). |
+| `emailVerification.js` | The 6-digit email codes, for sign-up (`sendVerificationCode`, `checkVerificationCode`) and for changing the email (`sendEmailChangeCode`, `confirmEmailChange`, `cancelEmailChange`): expiry, tries and resend cooldown. |
+| `email.js` | All outgoing email: password reset, email confirmation code, contact messages, and the plan emails (shared branded HTML layout). |
 | `turnstile.js` | Checks a Turnstile token with Cloudflare. |
 | `rateLimit.js` | `isRateLimited(key, windowMs, max)`: true when a request should be refused. |
 | `clientIp.js` | The visitor's IP as passed on by Nginx. |
@@ -93,7 +94,7 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 
 | Area | Routes |
 |---|---|
-| Auth | `auth/register`, `auth/login`, `auth/logout`, `auth/me`, `auth/forgot-password`, `auth/reset-password` |
+| Auth | `auth/register`, `auth/login`, `auth/logout`, `auth/me`, `auth/verify-email`, `auth/resend-verification`, `auth/forgot-password`, `auth/reset-password`, `account/email-change` |
 | Account | `account/update`, `account/password`, `account/billing` |
 | QR codes | `create-dynamic`, `my-qr-codes`, `qrs/[id]` (GET, PUT), `qrs/[id]/pause`, `qrs/[id]/resume`, `qrs/[id]/analytics`, `update-qr-name`, `duplicate-qr`, `delete-qr`, `move-to-folder` |
 | Folders | `folders` (list, create), `folders/[id]` (rename, delete) |
@@ -153,6 +154,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile. The site key is baked in at build time; with the secret empty the check is skipped. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Outgoing email. Empty = emails are printed to the log. |
 | `ADMIN_NOTIFY_EMAIL` | Optional. Where new-subscriber and renewal notices go (comma-separated for several). Empty = the support address. |
+| `CONTACT_NOTIFY_EMAIL` | Optional. Where contact-form messages are emailed (comma-separated for several). Empty = the support address. |
 
 ## Data model
 
@@ -160,7 +162,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 | Model | Holds |
 |---|---|
-| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`, `lastPlanEmailKey` (what the plan emails were last sent for). |
+| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`, `emailVerifiedAt` and the current confirmation code (`emailCodeHash`, expiry, wrong tries, sent time), `pendingEmail` (a new address waiting for its code), `termsAcceptedAt`, `lastPlanEmailKey` (what the plan emails were last sent for). |
 | `QRCode` | `slug`, `type`, `targetUrl`, `linkType` (`DYNAMIC` / `STATIC`), `status` (`ACTIVE` / `PAUSED` / `DELETED`), `deactivatedReason` (`MANUAL` / `TRIAL_EXPIRED` / `SUBSCRIPTION_EXPIRED`), `pausedMessage`, `passwordHash` (bcrypt, only for protected codes), `scanCount`, colors, `meta`, folder. |
 | `ScanEvent` | One logged scan: hashed IP, device, OS, browser, referrer, country, region, city. |
 | `Folder` | A user's folder. |
@@ -176,14 +178,15 @@ All are listed with comments in `.env.example`. Values never go into git.
 ## Accounts and sign-in
 
 - **Session:** an httpOnly, SameSite=Lax cookie (Secure in production) holding a signed JWT with the user ID and `sessionVersion`, valid 7 days. `lib/auth.js`.
-- **Every protected API route** starts with `getUserFromRequest(req)` and returns 401 without a user; dashboard pages redirect to login from `getServerSideProps`. Queries on QR codes and folders always include the user's ID, so nobody can read or change someone else's data.
+- **Every protected API route** starts with `getUserFromRequest(req)` and returns 401 without a user; dashboard pages call `accountRedirect(user)` in `getServerSideProps` (signed out → login, email not confirmed → `/auth/verify-email`). Queries on QR codes and folders always include the user's ID, so nobody can read or change someone else's data.
 - **Signing out other devices:** changing or resetting the password increments `sessionVersion`, which invalidates every older cookie. The device that made the change gets a new cookie.
 - **Passwords** are stored as bcrypt hashes; 8–128 characters.
 - **Password reset:** the email link holds a one-time token that expires after an hour; only a hash of it is stored. The forgot-password form answers the same way whether or not the email has an account.
-- **Sign-up** refuses addresses from temporary/disposable mail providers (`mailchecker`) and domains that can't receive email, and includes a hidden honeypot field for bots.
-- **Changing the email** needs the current password and passes the same email checks.
+- **Sign-up** refuses addresses from temporary/disposable mail providers (`mailchecker`) and domains that can't receive email, and includes a hidden honeypot field for bots. The Terms of Service and Privacy Policy checkbox is required by the form and by `api/auth/register` (`acceptTerms: true`); the time is stored in `termsAcceptedAt`.
+- **Email confirmation:** sign-up signs the person in and emails a 6-digit code (`lib/emailVerification.js`). Until it is entered on `/auth/verify-email`, the dashboard pages redirect there and creating codes, duplicating them and starting a subscription return 403 (`VERIFY_EMAIL_FIRST`). A code lasts 10 minutes and allows 5 wrong tries (each try is counted in one atomic database update, so parallel guesses can't beat it); a new code can be sent once a minute and 5 times an hour, and replaces the old one. Only an HMAC of the code is stored (keyed with `JWT_SECRET`) and it is left out of every query by default. Login tells unconfirmed accounts to go to the verification page. A password reset through the emailed link also confirms the address. Accounts created before this existed were marked confirmed by the migration.
+- **Changing the email** (account page) needs the current password and passes the same email checks. It doesn't switch straight away: the address is kept in `pendingEmail` and a 6-digit code is sent to it; the sign-in email changes only once that code is entered (`api/account/email-change`: GET the pending change, POST the code, PUT to resend, DELETE to cancel), and the old address then gets a notice that it was changed. Saving the form again within a minute doesn't send another code. The code is tied to the new address, follows the same expiry, tries and resend rules as sign-up, and an address taken by another account in the meantime is refused.
 - **Bot checks:** Cloudflare Turnstile (Managed mode) on sign-up, login, forgot-password and contact. `components/Turnstile.js` renders the widget; `lib/turnstile.js` verifies the token.
-- **Rate limits** protect login, sign-up, password reset, password/email change, the contact form, scans and password guesses on protected QR codes. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
+- **Rate limits** protect login, sign-up, email confirmation (checking and resending codes), password reset, password/email change, the contact form, scans and password guesses on protected QR codes. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
 - **Admin:** users with `role = "admin"` can open `/admin`. Everyone else gets a "not found" page, so the admin area can't be discovered.
 
 ## Plans and the free trial
@@ -265,7 +268,8 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 `lib/email.js` sends these emails over SMTP (AWS SES):
 - **Password reset** links to the user.
-- **Contact-form messages** to the support address (`SUPPORT_EMAIL` in `lib/site.js`), with Reply-To set to the sender. Every message is also saved in `ContactMessage` first.
+- **Email confirmation code** after sign-up, to the new address when changing the email, or when a new code is requested; after a change, a **notice to the old address**.
+- **Contact-form messages** to `CONTACT_NOTIFY_EMAIL`, or the support address (`SUPPORT_EMAIL` in `lib/site.js`) when it's empty, with Reply-To set to the sender. Every message is also saved in `ContactMessage` first.
 - **Plan emails** (`lib/subscriptionEmails.js`), when someone subscribes or a monthly payment goes through:
   - to the customer: *Your Basic Package is active* (plan, price, amount paid, payment method, start and next renewal dates, payment and subscription IDs, what's included, links to the dashboard, billing, cancelling and the refund policy; replies go to support), or *Payment received: your plan is renewed* for later payments;
   - to the admin (`ADMIN_NOTIFY_EMAIL`, else the support address): *New subscriber* (customer name, email, company, phone, country, sign-up date, plan before, payment details, how it was confirmed, the number of paying subscribers, links to the payment and subscription in the Razorpay dashboard; replies go to the customer), or a *Renewal* notice.
@@ -280,7 +284,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - **Check the user and ownership** in every API route that touches user data (`getUserFromRequest`, and `userId: user.id` in every query).
 - **Validate input on the server** even when the form already does: types, lengths, allowed values. Use `lib/redirectValidation.js` for any URL that will be redirected to.
 - **Rate-limit** anything a bot could abuse: ``if (isRateLimited(`name:${ip}`, windowMs, max)) return res.status(429).json({ error: "…" })``.
-- **Never send secrets or hashes to the browser.** Password hashes are omitted by default (see [Data model](#data-model)); if you add another secret field, omit it the same way.
+- **Never send secrets or hashes to the browser.** QR password hashes and email confirmation code hashes are omitted by default (see [Data model](#data-model)); if you add another secret field, omit it the same way.
 - **Server-only modules** (`lib/prisma`, `lib/auth`, `lib/email`, `lib/scanUtils`, …) may be used in pages only inside `getServerSideProps`. Don't leave unused imports of them in a page: Next.js can then ship the module to the browser.
 - **Content Security Policy** (`next.config.js`, production only): scripts may come only from the site, Razorpay and Cloudflare Turnstile; inline `<script>` and `eval` are blocked. When adding a third-party script, iframe, font or API, add its domain to the policy and test with `npm run build && npm start`: the dev server doesn't apply the policy.
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.

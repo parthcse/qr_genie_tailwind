@@ -95,6 +95,20 @@ module.exports = {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
         },
+        // Login / register / verify pages
+        'auth-in': {
+          from: { opacity: '0', transform: 'translateY(18px) scale(0.985)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-6px)' },
+          '40%, 80%': { transform: 'translateX(6px)' },
+        },
         // Light sweeping across the "Most Popular" badge, then a pause
         sheen: {
           '0%': { transform: 'translateX(0) skewX(-12deg)' },
@@ -110,6 +124,9 @@ module.exports = {
         float: 'float 6s ease-in-out infinite',
         'gradient-pan': 'gradient-pan 4s ease-in-out infinite',
         sheen: 'sheen 4s ease-in-out infinite',
+        'auth-in': 'auth-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'fade-up': 'fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
+        shake: 'shake 0.4s ease-in-out',
       },
     },
   },

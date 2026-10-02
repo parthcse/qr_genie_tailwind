@@ -15,16 +15,11 @@ import { jsPDF } from "jspdf";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest } = await import('../../lib/auth');
+  const { getUserFromRequest, accountRedirect } = await import('../../lib/auth');
   const user = await getUserFromRequest(context.req);
-  if (!user) {
-    return {
-      redirect: {
-        destination: '/auth/login',
-        permanent: false,
-      },
-    };
-  }
+  // Signed out -> login; email not confirmed yet -> verification page
+  const redirect = accountRedirect(user);
+  if (redirect) return redirect;
   return {
     props: {},
   };

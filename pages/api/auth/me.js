@@ -57,6 +57,7 @@ export default async function handler(req, res) {
         user: {
           id: u.id,
           email: u.email,
+          emailVerified: !!user.emailVerified,
           name: u.name || null,
           subscriptionPlan: u.subscriptionPlan ?? "EXPIRED",
           trialStartedAt: u.trialStartedAt,

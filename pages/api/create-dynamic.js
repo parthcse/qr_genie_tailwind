@@ -2,7 +2,7 @@
 import prisma from "../../lib/prisma";
 import { nanoid } from "nanoid";
 import QRCode from "qrcode";
-import { getUserFromRequest } from "../../lib/auth";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../lib/auth";
 import { validateRedirectUrl } from "../../lib/redirectValidation";
 import { qrPasswordProblem, hashQrPassword } from "../../lib/qrPassword";
 import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
@@ -40,6 +40,9 @@ export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (!user.emailVerified) {
+    return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
   }
 
   // Check if user can create QR codes

@@ -10,8 +10,11 @@ import { SUPPORT_EMAIL, CONTACT_TOPICS } from "../../lib/site";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TEN_MINUTES = 10 * 60 * 1000;
 
+// Where contact-form messages are emailed: CONTACT_NOTIFY_EMAIL (comma-separated for several), else the support inbox
+const contactRecipients = () => (process.env.CONTACT_NOTIFY_EMAIL || "").trim().replace(/^["']|["']$/g, "") || SUPPORT_EMAIL;
+
 /**
- * POST /api/contact — save a contact-form message and forward it to the support inbox.
+ * POST /api/contact — save a contact-form message and forward it to CONTACT_NOTIFY_EMAIL (else the support inbox).
  * Spam protection: hidden honeypot field, per-IP rate limit, and Cloudflare Turnstile once its keys are set.
  * The message is stored first, so it is never lost if email delivery isn't configured or fails.
  */
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
     });
 
     await sendContactNotification({
-      to: SUPPORT_EMAIL,
+      to: contactRecipients(),
       name: cleanName,
       email: cleanEmail,
       topicLabel: topicOption.label,

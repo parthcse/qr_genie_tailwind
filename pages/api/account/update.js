@@ -4,10 +4,12 @@ import bcrypt from "bcryptjs";
 import { getUserFromRequest } from "../../../lib/auth";
 import { checkAccountEmail } from "../../../lib/emailCheck";
 import { isRateLimited } from "../../../lib/rateLimit";
+import { sendEmailChangeCode, resendWaitSeconds, RESEND_COOLDOWN_SECONDS } from "../../../lib/emailVerification";
+import { emailConfigured } from "../../../lib/email";
 
 /**
- * PUT /api/account/update — profile details. Changing the email address needs the current password
- * and a real, non-disposable address.
+ * PUT /api/account/update — profile details. Changing the email address needs the current password and a real,
+ * non-disposable address, and only takes effect once the code emailed to the new address is entered.
  */
 // Optional text field: trimmed, capped in length, empty becomes null
 const clean = (value, max = 200) => (typeof value === "string" ? value.trim().slice(0, max) || null : null);
@@ -38,13 +40,15 @@ export default async function handler(req, res) {
       currentPassword,
     } = req.body || {};
 
-    // Changing the sign-in email: current password, real address, not already taken
-    let newEmail = null;
+    // Changing the sign-in email: current password, real address, not already taken. The address doesn't change
+    // here: it becomes pendingEmail and a code is emailed to it (confirmed through api/account/email-change)
+    let newEmail = null; // a new address to send a code to
+    let keepPending = null; // the same new address saved again within the resend wait: keep the code already sent
     if (typeof email === "string" && email.trim() && email.trim().toLowerCase() !== user.email) {
       if (isRateLimited(`email-change:${user.id}`, 15 * 60 * 1000, 5)) {
         return res.status(429).json({ error: "Too many attempts. Please wait 15 minutes and try again." });
       }
-      const account = await prisma.user.findUnique({ where: { id: user.id }, select: { password: true } });
+      const account = await prisma.user.findUnique({ where: { id: user.id }, select: { password: true, pendingEmail: true, emailCodeSentAt: true } });
       if (!currentPassword || !(await bcrypt.compare(String(currentPassword).slice(0, 128), account.password))) {
         return res.status(400).json({ error: "Enter your current password to change your email address.", field: "currentPassword" });
       }
@@ -56,7 +60,9 @@ export default async function handler(req, res) {
       if (existingUser && existingUser.id !== user.id) {
         return res.status(400).json({ error: "That email address is already in use.", field: "email" });
       }
-      newEmail = check.email;
+      const wait = resendWaitSeconds(account.emailCodeSentAt);
+      if (account.pendingEmail === check.email && wait > 0) keepPending = { email: check.email, resendIn: wait };
+      else newEmail = check.email;
     }
 
     // Build update data object
@@ -69,10 +75,6 @@ export default async function handler(req, res) {
       const newFirstName = firstName !== undefined ? firstName : currentParts[0] || "";
       const newLastName = lastName !== undefined ? lastName : currentParts.slice(1).join(" ") || "";
       updateData.name = clean(`${newFirstName ?? ""} ${newLastName ?? ""}`, 120);
-    }
-
-    if (newEmail) {
-      updateData.email = newEmail;
     }
 
     if (telephone !== undefined) {
@@ -126,10 +128,23 @@ export default async function handler(req, res) {
       },
     });
 
+    // The new address gets its code; the sign-in email stays the same until it's confirmed
+    let emailChange = null;
+    if (keepPending) {
+      emailChange = { pendingEmail: keepPending.email, sent: true, resendIn: keepPending.resendIn };
+    } else if (newEmail) {
+      const sent = await sendEmailChangeCode(updatedUser, newEmail);
+      if (!sent && emailConfigured()) {
+        return res.status(502).json({ error: "Your details were saved, but we couldn't send the code to the new address. Please try again in a minute.", field: "email" });
+      }
+      emailChange = { pendingEmail: newEmail, sent: true, resendIn: RESEND_COOLDOWN_SECONDS };
+    }
+
     return res.status(200).json({
       success: true,
       user: updatedUser,
-      message: "Account information updated successfully",
+      emailChange,
+      message: emailChange ? "Details saved. Enter the code we sent to your new email address to finish changing it." : "Account information updated successfully",
     });
   } catch (error) {
     console.error("Error updating account:", error);

@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   try {
     const user = await prisma.user.findFirst({
       where: { resetToken: hashResetToken(token), resetTokenExpires: { gt: new Date() } },
-      select: { id: true },
+      select: { id: true, emailVerifiedAt: true },
     });
     if (!user) {
       return res.status(401).json({ error: "Invalid or expired reset link. Please request a new password reset link." });
@@ -46,6 +46,8 @@ export default async function handler(req, res) {
         resetToken: null,
         resetTokenExpires: null,
         sessionVersion: { increment: 1 }, // sign out everywhere
+        // The link came by email, so it also proves they own the address
+        ...(user.emailVerifiedAt ? {} : { emailVerifiedAt: new Date(), emailCodeHash: null, emailCodeExpiresAt: null, emailCodeAttempts: 0 }),
       },
     });
 

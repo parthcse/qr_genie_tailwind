@@ -1,20 +1,38 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import DashboardLayout from "../../components/DashboardLayout";
-import { FaUser, FaEnvelope, FaPhone, FaGlobe, FaEye, FaEyeSlash, FaCheckCircle, FaBuilding, FaLock } from "react-icons/fa";
+import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldTick } from "../../components/AuthShell";
+import CodeInput, { emptyCode } from "../../components/CodeInput";
+import {
+  FaUser,
+  FaEnvelope,
+  FaEnvelopeOpenText,
+  FaPhone,
+  FaGlobe,
+  FaEye,
+  FaEyeSlash,
+  FaBuilding,
+  FaLock,
+  FaMapMarkerAlt,
+  FaCity,
+  FaMap,
+  FaHashtag,
+  FaFlag,
+  FaFileInvoice,
+  FaIdCard,
+  FaKey,
+  FaLanguage,
+  FaRedoAlt,
+  FaShieldAlt,
+} from "react-icons/fa";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest } = await import('../../lib/auth');
+  const { getUserFromRequest, accountRedirect } = await import('../../lib/auth');
   const user = await getUserFromRequest(context.req);
-  if (!user) {
-    return {
-      redirect: {
-        destination: '/auth/login',
-        permanent: false,
-      },
-    };
-  }
+  // Signed out -> login; email not confirmed yet -> verification page
+  const redirect = accountRedirect(user);
+  if (redirect) return redirect;
   return {
     props: {
       user: {
@@ -26,9 +44,171 @@ export async function getServerSideProps(context) {
   };
 }
 
-// Sections are open blocks divided by a rule on phones (no card-in-card), cards from sm up
-const sectionClass =
-  "border-t border-gray-100 pt-8 first:border-t-0 first:pt-0 sm:rounded-2xl sm:border sm:border-indigo-100 sm:bg-white sm:p-6 sm:shadow-lg sm:first:border-t sm:first:pt-6";
+const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Arabic"];
+
+// Open blocks divided by a rule on phones (the dashboard card already frames them), cards from sm up
+function Section({ icon: Icon, title, description, children }) {
+  return (
+    <section className="border-t border-slate-100 pt-8 first:border-t-0 first:pt-0 motion-safe:animate-fade-up sm:rounded-2xl sm:border sm:border-slate-200/80 sm:bg-white sm:p-7 sm:shadow-sm sm:first:border-t sm:first:pt-7">
+      <div className="flex items-start gap-4">
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          {description && <p className="mt-0.5 text-sm leading-relaxed text-slate-600">{description}</p>}
+        </div>
+      </div>
+      <div className="mt-6 space-y-5">{children}</div>
+    </section>
+  );
+}
+
+function SaveButton({ busy, children }) {
+  return (
+    <div className="flex pt-2 sm:justify-end">
+      <button
+        type="submit"
+        disabled={busy}
+        className="btn-shine flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-80 motion-reduce:transform-none sm:w-auto"
+      >
+        {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+        {busy ? "Saving…" : children}
+      </button>
+    </div>
+  );
+}
+
+const EyeButton = ({ visible, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={visible ? "Hide password" : "Show password"}
+    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+  >
+    {visible ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+  </button>
+);
+
+/**
+ * Pending email change: the code went to the new address; the sign-in email stays the same until it's entered.
+ * onDone(newEmail) after a successful change, onCancel() after cancelling.
+ */
+function EmailChangePanel({ pending, currentEmail, onDone, onCancel }) {
+  const [digits, setDigits] = useState(emptyCode());
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
+  const [shakeKey, setShakeKey] = useState(0);
+  const [notice, setNotice] = useState("");
+  const [wait, setWait] = useState(pending.resendIn || 0);
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (wait <= 0) return undefined;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const fail = (message) => {
+    setError(message);
+    setShakeKey((n) => n + 1);
+  };
+
+  const confirm = async (code) => {
+    if (checking) return;
+    setChecking(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/account/email-change", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.changed) return onDone(data.email);
+      fail(data.error || "That code didn't work. Please try again.");
+      setDigits(emptyCode());
+      if (data.reason === "taken" || data.reason === "none") onCancel(data.error);
+    } catch {
+      fail("We couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const resend = async () => {
+    setResending(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/account/email-change", { method: "PUT" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNotice(`We've sent a new code to ${pending.pendingEmail}. The old one no longer works.`);
+        setWait(data.resendIn || 60);
+        setDigits(emptyCode());
+      } else {
+        if (data.retryAfter) setWait(data.retryAfter);
+        fail(data.error || "We couldn't send a new code. Please try again.");
+      }
+    } catch {
+      fail("We couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const cancel = async () => {
+    await fetch("/api/account/email-change", { method: "DELETE" }).catch(() => {});
+    onCancel();
+  };
+
+  return (
+    <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/60 p-5 motion-safe:animate-fade-up sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-100">
+          <FaEnvelopeOpenText className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900">Confirm your new email</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
+            We sent a 6-digit code to <span className="font-semibold text-slate-900 [overflow-wrap:anywhere]">{pending.pendingEmail}</span>. Until you enter it, you
+            keep signing in with <span className="font-medium text-slate-800 [overflow-wrap:anywhere]">{currentEmail}</span>.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-4">
+        <AuthAlert shakeKey={shakeKey}>{error}</AuthAlert>
+        <AuthSuccess>{notice}</AuthSuccess>
+        <div key={shakeKey} className={`max-w-md ${shakeKey ? "motion-safe:animate-shake" : ""}`}>
+          <CodeInput digits={digits} setDigits={setDigits} disabled={checking} invalid={!!error} onComplete={confirm} size="sm" />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => (digits.every(Boolean) ? confirm(digits.join("")) : fail("Enter all 6 digits of the code."))}
+            disabled={checking}
+            className="btn-shine inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-wait disabled:opacity-80"
+          >
+            {checking && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+            {checking ? "Checking…" : "Confirm new email"}
+          </button>
+          <button
+            type="button"
+            onClick={resend}
+            disabled={wait > 0 || resending}
+            className="btn-shine btn-shine-soft inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-inset ring-indigo-200 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:ring-slate-200 disabled:hover:bg-white"
+          >
+            <FaRedoAlt className={`h-3 w-3 ${resending ? "animate-spin" : ""}`} aria-hidden="true" />
+            {wait > 0 ? `Send a new code in ${wait}s` : resending ? "Sending…" : "Send a new code"}
+          </button>
+          <button type="button" onClick={cancel} className="text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-red-600">
+            Cancel the change
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">The code expires after 10 minutes. Can&apos;t find it? Check the spam folder of the new address.</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AccountPage({ user: initialUser }) {
   const router = useRouter();
@@ -38,317 +218,237 @@ export default function AccountPage({ user: initialUser }) {
   useEffect(() => {
     if (router.query.tab === "billing") setActiveTab("billing");
   }, [router.query.tab]);
-  const [loading, setLoading] = useState(false);
-  
-  // Personal Information Form
-  const [personalInfo, setPersonalInfo] = useState({
-    firstName: (user?.name || '').split(' ')[0] || '',
-    lastName: (user?.name || '').split(' ').slice(1).join(' ') || '',
-    email: user?.email || '',
-    telephone: user?.telephone || '',
-    company: user?.company || '',
-    address: user?.address || '',
-    city: user?.city || '',
-    state: user?.state || '',
-    zipCode: user?.zipCode || '',
-    country: user?.country || '',
-  });
-  
-  // Password Form
-  const [passwordInfo, setPasswordInfo] = useState({
-    currentPassword: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [passwordError, setPasswordError] = useState('');
-  // Current password, asked for only when the email address is being changed
-  const [emailChangePassword, setEmailChangePassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Language
-  const [language, setLanguage] = useState(user?.language || 'English');
-  
-  // Billing Information Form
-  const [billingInfo, setBillingInfo] = useState({
-    billingName: user?.billingName || '',
-    billingCompany: user?.billingCompany || '',
-    billingAddress: user?.billingAddress || '',
-    billingCity: user?.billingCity || '',
-    billingState: user?.billingState || '',
-    billingZipCode: user?.billingZipCode || '',
-    billingCountry: user?.billingCountry || '',
-    taxId: user?.taxId || '',
-  });
-  
-  // Success/Error Messages
-  const [personalInfoSuccess, setPersonalInfoSuccess] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [languageSuccess, setLanguageSuccess] = useState(false);
-  const [billingSuccess, setBillingSuccess] = useState(false);
-  const [error, setError] = useState('');
 
-  // Fetch user data on mount
+  // Personal information
+  const [personalInfo, setPersonalInfo] = useState({
+    firstName: (initialUser?.name || "").split(" ")[0] || "",
+    lastName: (initialUser?.name || "").split(" ").slice(1).join(" ") || "",
+    email: initialUser?.email || "",
+    telephone: "",
+    company: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
+  });
+  const [emailChangePassword, setEmailChangePassword] = useState("");
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [personal, setPersonal] = useState({ busy: false, error: "", field: "", success: "", shake: 0 });
+  const [pendingEmail, setPendingEmail] = useState(null); // { pendingEmail, resendIn }
+
+  // Password
+  const [passwordInfo, setPasswordInfo] = useState({ currentPassword: "", password: "", confirmPassword: "" });
+  const [show, setShow] = useState({ current: false, next: false, confirm: false });
+  const [pw, setPw] = useState({ busy: false, error: "", field: "", success: "", shake: 0 });
+
+  // Language
+  const [language, setLanguage] = useState("English");
+  const [lang, setLang] = useState({ busy: false, error: "", success: "", shake: 0 });
+
+  // Billing details
+  const [billingInfo, setBillingInfo] = useState({
+    billingName: "",
+    billingCompany: "",
+    billingAddress: "",
+    billingCity: "",
+    billingState: "",
+    billingZipCode: "",
+    billingCountry: "",
+    taxId: "",
+  });
+  const [billing, setBilling] = useState({ busy: false, error: "", success: "", shake: 0 });
+
+  // Load saved details and any email change waiting for its code
   useEffect(() => {
-    const fetchUserData = async () => {
+    (async () => {
       try {
-        const res = await fetch('/api/auth/me', {
-          credentials: 'include',
-        });
+        const res = await fetch("/api/auth/me", { credentials: "include" });
         if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setUser(data.user);
-            const nameParts = (data.user.name || '').split(' ');
+          const { user: u } = await res.json();
+          if (u) {
+            setUser(u);
+            const nameParts = (u.name || "").split(" ");
             setPersonalInfo({
-              firstName: nameParts[0] || '',
-              lastName: nameParts.slice(1).join(' ') || '',
-              email: data.user.email || '',
-              telephone: data.user.telephone || '',
-              company: data.user.company || '',
-              address: data.user.address || '',
-              city: data.user.city || '',
-              state: data.user.state || '',
-              zipCode: data.user.zipCode || '',
-              country: data.user.country || '',
+              firstName: nameParts[0] || "",
+              lastName: nameParts.slice(1).join(" ") || "",
+              email: u.email || "",
+              telephone: u.telephone || "",
+              company: u.company || "",
+              address: u.address || "",
+              city: u.city || "",
+              state: u.state || "",
+              zipCode: u.zipCode || "",
+              country: u.country || "",
             });
-            setLanguage(data.user.language || 'English');
+            setLanguage(u.language || "English");
             setBillingInfo({
-              billingName: data.user.billingName || '',
-              billingCompany: data.user.billingCompany || '',
-              billingAddress: data.user.billingAddress || '',
-              billingCity: data.user.billingCity || '',
-              billingState: data.user.billingState || '',
-              billingZipCode: data.user.billingZipCode || '',
-              billingCountry: data.user.billingCountry || '',
-              taxId: data.user.taxId || '',
+              billingName: u.billingName || "",
+              billingCompany: u.billingCompany || "",
+              billingAddress: u.billingAddress || "",
+              billingCity: u.billingCity || "",
+              billingState: u.billingState || "",
+              billingZipCode: u.billingZipCode || "",
+              billingCountry: u.billingCountry || "",
+              taxId: u.taxId || "",
             });
           }
         }
+        const change = await fetch("/api/account/email-change", { credentials: "include" });
+        if (change.ok) {
+          const data = await change.json();
+          if (data.pendingEmail) setPendingEmail(data);
+        }
       } catch (err) {
-        console.error('Failed to fetch user data:', err);
+        console.error("Failed to load account details:", err);
       }
-    };
-    fetchUserData();
+    })();
   }, []);
 
-  const handlePersonalInfoChange = (e) => {
+  const emailChanged = !!user?.email && personalInfo.email.trim().toLowerCase() !== user.email.toLowerCase();
+
+  const onPersonal = (e) => {
     const { name, value } = e.target;
-    setPersonalInfo(prev => ({ ...prev, [name]: value }));
-    setPersonalInfoSuccess(false);
-    setError('');
+    setPersonalInfo((p) => ({ ...p, [name]: value }));
+    setPersonal((s) => ({ ...s, error: "", field: "", success: "" }));
   };
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordInfo(prev => ({ ...prev, [name]: value }));
-    setPasswordSuccess(false);
-    setPasswordError('');
-  };
-
-  const emailChanged =
-    !!user?.email && personalInfo.email.trim().toLowerCase() !== user.email.toLowerCase();
-
-  const handlePersonalInfoSubmit = async (e) => {
+  const savePersonal = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setPersonalInfoSuccess(false);
-
+    if (emailChanged && !emailChangePassword) {
+      setPersonal((s) => ({ ...s, error: "", field: "currentPassword", fieldMessage: "Enter your current password.", success: "" }));
+      document.getElementById("emailChangePassword")?.focus();
+      return;
+    }
+    setPersonal((s) => ({ ...s, busy: true, error: "", field: "", success: "" }));
     try {
-      const res = await fetch('/api/account/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          firstName: personalInfo.firstName,
-          lastName: personalInfo.lastName,
-          email: personalInfo.email,
-          telephone: personalInfo.telephone,
-          company: personalInfo.company,
-          address: personalInfo.address,
-          city: personalInfo.city,
-          state: personalInfo.state,
-          zipCode: personalInfo.zipCode,
-          country: personalInfo.country,
-          language: language,
-          currentPassword: emailChanged ? emailChangePassword : undefined,
-        }),
+      const res = await fetch("/api/account/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ ...personalInfo, language, currentPassword: emailChanged ? emailChangePassword : undefined }),
       });
-
-      const data = await res.json();
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'Failed to update personal information');
+        const fieldError = data.field === "email" || data.field === "currentPassword";
+        setPersonal((s) => ({ ...s, busy: false, error: fieldError ? "" : data.error || "We couldn't save your details.", field: data.field || "", fieldMessage: data.error, shake: s.shake + 1 }));
+        if (data.field) document.getElementById(data.field === "currentPassword" ? "emailChangePassword" : data.field)?.focus();
         return;
       }
-
-      // Update local user state
-      if (data.user) {
-        setUser(prev => ({ ...prev, ...data.user }));
-        setPersonalInfo(prev => ({ ...prev, email: data.user.email }));
+      if (data.user) setUser((u) => ({ ...u, ...data.user }));
+      setEmailChangePassword("");
+      if (data.emailChange) {
+        // Not switched yet: the field goes back to the current address and the code panel opens
+        setPendingEmail(data.emailChange);
+        setPersonalInfo((p) => ({ ...p, email: data.user?.email || user.email }));
+        setPersonal((s) => ({ ...s, busy: false, success: "Details saved. Enter the code we sent to your new email address to finish changing it." }));
+      } else {
+        setPersonal((s) => ({ ...s, busy: false, success: "Your details are saved." }));
       }
-      setEmailChangePassword('');
-
-      setPersonalInfoSuccess(true);
-      setTimeout(() => setPersonalInfoSuccess(false), 3000);
-    } catch (err) {
-      console.error('Error updating personal information:', err);
-      setError('Failed to update personal information. Please try again.');
-    } finally {
-      setLoading(false);
+    } catch {
+      setPersonal((s) => ({ ...s, busy: false, error: "We couldn't reach the server. Please try again.", shake: s.shake + 1 }));
     }
   };
 
-  const handlePasswordSubmit = async (e) => {
+  const onPassword = (e) => {
+    const { name, value } = e.target;
+    setPasswordInfo((p) => ({ ...p, [name]: value }));
+    setPw((s) => ({ ...s, error: "", field: "", success: "" }));
+  };
+
+  const savePassword = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setPasswordError('');
-    setPasswordSuccess(false);
-
-    if (!passwordInfo.currentPassword) {
-      setPasswordError('Enter your current password.');
-      setLoading(false);
+    const field = !passwordInfo.currentPassword
+      ? ["currentPassword", "Enter your current password."]
+      : passwordInfo.password.length < 8
+        ? ["password", "Use at least 8 characters."]
+        : passwordInfo.password !== passwordInfo.confirmPassword
+          ? ["confirmPassword", "The new passwords don't match."]
+          : null;
+    if (field) {
+      setPw((s) => ({ ...s, field: field[0], fieldMessage: field[1], error: "", success: "" }));
+      document.getElementById(field[0])?.focus();
       return;
     }
-
-    if (passwordInfo.password !== passwordInfo.confirmPassword) {
-      setPasswordError('New passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (passwordInfo.password.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
-      setLoading(false);
-      return;
-    }
-
+    setPw((s) => ({ ...s, busy: true, error: "", field: "", success: "" }));
     try {
-      const res = await fetch('/api/account/password', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          currentPassword: passwordInfo.currentPassword,
-          password: passwordInfo.password,
-          confirmPassword: passwordInfo.confirmPassword,
-        }),
+      const res = await fetch("/api/account/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(passwordInfo),
       });
-
-      const data = await res.json();
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setPasswordError(data.error || 'Failed to update password');
+        setPw((s) => ({ ...s, busy: false, error: data.error || "We couldn't update your password.", shake: s.shake + 1 }));
         return;
       }
-
-      setPasswordSuccess(true);
-      setPasswordInfo({ currentPassword: '', password: '', confirmPassword: '' });
-      setTimeout(() => setPasswordSuccess(false), 5000);
-    } catch (err) {
-      console.error('Error updating password:', err);
-      setPasswordError('Failed to update password. Please try again.');
-    } finally {
-      setLoading(false);
+      setPasswordInfo({ currentPassword: "", password: "", confirmPassword: "" });
+      setPw((s) => ({ ...s, busy: false, success: "Password updated. You've been signed out on your other devices." }));
+    } catch {
+      setPw((s) => ({ ...s, busy: false, error: "We couldn't reach the server. Please try again.", shake: s.shake + 1 }));
     }
   };
 
-  const handleBillingInfoChange = (e) => {
-    const { name, value } = e.target;
-    setBillingInfo(prev => ({ ...prev, [name]: value }));
-    setBillingSuccess(false);
-    setError('');
+  const saveLanguage = async (e) => {
+    e.preventDefault();
+    setLang((s) => ({ ...s, busy: true, error: "", success: "" }));
+    try {
+      const res = await fetch("/api/account/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ language }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLang((s) => ({ ...s, busy: false, error: data.error || "We couldn't save your language.", shake: s.shake + 1 }));
+        return;
+      }
+      setLang((s) => ({ ...s, busy: false, success: "Language saved." }));
+    } catch {
+      setLang((s) => ({ ...s, busy: false, error: "We couldn't reach the server. Please try again.", shake: s.shake + 1 }));
+    }
   };
 
-  const handleBillingInfoSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setBillingSuccess(false);
+  const onBilling = (e) => {
+    const { name, value } = e.target;
+    setBillingInfo((b) => ({ ...b, [name]: value }));
+    setBilling((s) => ({ ...s, error: "", success: "" }));
+  };
 
+  const saveBilling = async (e) => {
+    e.preventDefault();
+    setBilling((s) => ({ ...s, busy: true, error: "", success: "" }));
     try {
-      const res = await fetch('/api/account/billing', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+      const res = await fetch("/api/account/billing", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(billingInfo),
       });
-
-      const data = await res.json();
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'Failed to update billing information');
+        setBilling((s) => ({ ...s, busy: false, error: data.error || "We couldn't save your billing details.", shake: s.shake + 1 }));
         return;
       }
-
-      // Update local user state
-      if (data.user) {
-        setUser(prev => ({ ...prev, ...data.user }));
-      }
-
-      setBillingSuccess(true);
-      setTimeout(() => setBillingSuccess(false), 3000);
-    } catch (err) {
-      console.error('Error updating billing information:', err);
-      setError('Failed to update billing information. Please try again.');
-    } finally {
-      setLoading(false);
+      if (data.user) setUser((u) => ({ ...u, ...data.user }));
+      setBilling((s) => ({ ...s, busy: false, success: "Billing details saved." }));
+    } catch {
+      setBilling((s) => ({ ...s, busy: false, error: "We couldn't reach the server. Please try again.", shake: s.shake + 1 }));
     }
   };
 
-  const handleLanguageSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setLanguageSuccess(false);
-
-    try {
-      const res = await fetch('/api/account/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          language: language,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Failed to update language');
-        return;
-      }
-
-      setLanguageSuccess(true);
-      setTimeout(() => setLanguageSuccess(false), 3000);
-    } catch (err) {
-      console.error('Error updating language:', err);
-      setError('Failed to update language. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const personalField = (name) => (personal.field === name ? personal.fieldMessage || "Please check this field." : "");
+  const pwField = (name) => (pw.field === name ? pw.fieldMessage : "");
 
   return (
-    <DashboardLayout
-      title="My Account"
-      description="Manage your personal details, password and billing information."
-    >
-
+    <DashboardLayout title="My Account" description="Manage your personal details, password and billing information.">
       {/* Tabs: full-width segmented control on phones */}
-      <div role="tablist" aria-label="Account sections" className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 sm:mb-6 sm:w-fit sm:self-start">
+      <div role="tablist" aria-label="Account sections" className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:mb-6 sm:w-fit sm:self-start">
         {[
-          { id: 'general', label: 'General information' },
-          { id: 'billing', label: 'Billing information' },
+          { id: "general", label: "General information" },
+          { id: "billing", label: "Billing information" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -357,9 +457,7 @@ export default function AccountPage({ user: initialUser }) {
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-              activeTab === tab.id
-                ? 'bg-white font-semibold text-indigo-700 shadow-sm'
-                : 'font-medium text-gray-600 hover:text-gray-900'
+              activeTab === tab.id ? "bg-white font-semibold text-indigo-700 shadow-sm" : "font-medium text-slate-600 hover:text-slate-900"
             }`}
           >
             {tab.label}
@@ -367,589 +465,201 @@ export default function AccountPage({ user: initialUser }) {
         ))}
       </div>
 
-      {activeTab === 'general' && (
+      {activeTab === "general" && (
         <div className="space-y-8 sm:space-y-6">
-          {/* Personal Information Section */}
-          <div className={sectionClass}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-5">Personal information</h3>
-            
-            {error && (
-              <div className="mb-3 sm:mb-4 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4 rounded">
-                <p className="text-xs sm:text-sm text-red-700">{error}</p>
-              </div>
+          <Section icon={FaIdCard} title="Personal information" description="Your name, contact details and the email you sign in with.">
+            <AuthAlert shakeKey={personal.shake}>{personal.error}</AuthAlert>
+            <AuthSuccess>{personal.success}</AuthSuccess>
+
+            {pendingEmail && (
+              <EmailChangePanel
+                key={pendingEmail.pendingEmail}
+                pending={pendingEmail}
+                currentEmail={user?.email}
+                onDone={(newEmail) => {
+                  setUser((u) => ({ ...u, email: newEmail }));
+                  setPersonalInfo((p) => ({ ...p, email: newEmail }));
+                  setPendingEmail(null);
+                  setPersonal((s) => ({ ...s, error: "", success: `Done. You now sign in with ${newEmail}. We've let your old address know.` }));
+                }}
+                onCancel={(message) => {
+                  setPendingEmail(null);
+                  setPersonal((s) => ({ ...s, success: message ? "" : "Email change cancelled. Your sign-in email hasn't changed.", error: message || "" }));
+                }}
+              />
             )}
 
-            {personalInfoSuccess && (
-              <div className="mb-3 sm:mb-4 bg-green-50 border-l-4 border-green-400 p-3 sm:p-4 rounded flex items-center">
-                <FaCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 mr-2 sm:mr-3 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-green-700">Personal information updated successfully!</p>
+            <form onSubmit={savePersonal} noValidate className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <AuthInput id="firstName" name="firstName" label="First name" icon={FaUser} autoComplete="given-name" maxLength={60} value={personalInfo.firstName} onChange={onPersonal} />
+                <AuthInput id="lastName" name="lastName" label="Last name" icon={FaUser} autoComplete="family-name" maxLength={60} value={personalInfo.lastName} onChange={onPersonal} />
+                <AuthInput
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email"
+                  icon={FaEnvelope}
+                  autoComplete="email"
+                  value={personalInfo.email}
+                  onChange={onPersonal}
+                  error={personalField("email")}
+                  hint={emailChanged ? "We'll send a code to the new address to confirm it." : "The address you sign in with."}
+                />
+                <AuthInput id="telephone" name="telephone" type="tel" label="Phone" icon={FaPhone} autoComplete="tel" placeholder="+91 98765 43210" value={personalInfo.telephone} onChange={onPersonal} />
+                <div className="md:col-span-2">
+                  <AuthInput id="company" name="company" label="Company" icon={FaBuilding} autoComplete="organization" value={personalInfo.company} onChange={onPersonal} />
+                </div>
+                <div className="md:col-span-2">
+                  <AuthInput id="address" name="address" label="Address" icon={FaMapMarkerAlt} autoComplete="street-address" placeholder="Street and number" value={personalInfo.address} onChange={onPersonal} />
+                </div>
+                <AuthInput id="city" name="city" label="City" icon={FaCity} autoComplete="address-level2" value={personalInfo.city} onChange={onPersonal} />
+                <AuthInput id="state" name="state" label="State / province" icon={FaMap} autoComplete="address-level1" value={personalInfo.state} onChange={onPersonal} />
+                <AuthInput id="zipCode" name="zipCode" label="ZIP / postal code" icon={FaHashtag} autoComplete="postal-code" value={personalInfo.zipCode} onChange={onPersonal} />
+                <AuthInput id="country" name="country" label="Country" icon={FaFlag} autoComplete="country-name" value={personalInfo.country} onChange={onPersonal} />
               </div>
-            )}
 
-            <form onSubmit={handlePersonalInfoSubmit}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-6">
-                {/* First Name */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First name
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={personalInfo.firstName}
-                      onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="First Name"
-                    />
-                  </div>
-                </div>
-
-                {/* Last Name */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last name
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={personalInfo.lastName}
-                      onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Last Name"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaEnvelope className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={personalInfo.email}
-                      onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Email"
-                    />
-                  </div>
-                </div>
-
-                {/* Telephone */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaPhone className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="tel"
-                      id="telephone"
-                      name="telephone"
-                      value={personalInfo.telephone}
-                      onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="E.g. 6555123"
-                    />
-                  </div>
-                </div>
-
-                {/* Company */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                    Company
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaBuilding className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      value={personalInfo.company}
-                      onChange={handlePersonalInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Company Name"
-                    />
-                  </div>
-                </div>
-
-                {/* Address */}
-                <div className="col-span-2">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={personalInfo.address}
-                    onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Street Address"
-                  />
-                </div>
-
-                {/* City */}
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={personalInfo.city}
-                    onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="City"
-                  />
-                </div>
-
-                {/* State */}
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                    State / province
-                  </label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    value={personalInfo.state}
-                    onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="State/Province"
-                  />
-                </div>
-
-                {/* Zip Code */}
-                <div>
-                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    ZIP / postal code
-                  </label>
-                  <input
-                    type="text"
-                    id="zipCode"
-                    name="zipCode"
-                    value={personalInfo.zipCode}
-                    onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Zip/Postal Code"
-                  />
-                </div>
-
-                {/* Country */}
-                <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    id="country"
-                    name="country"
-                    value={personalInfo.country}
-                    onChange={handlePersonalInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Country"
-                  />
-                </div>
-
-                {/* Changing the sign-in email needs the current password */}
-                {emailChanged && (
-                  <div className="col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <label htmlFor="emailChangePassword" className="block text-sm font-medium text-amber-900 mb-2">
-                      Current password
-                    </label>
-                    <p className="mb-3 text-xs text-amber-800">
-                      You're changing the email you sign in with. Enter your current password to confirm.
+              {/* Changing the sign-in email needs the current password */}
+              {emailChanged && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 motion-safe:animate-fade-up sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <FaShieldAlt className="mt-0.5 h-4 w-4 flex-none text-amber-600" aria-hidden="true" />
+                    <p className="text-sm text-amber-900">
+                      You&apos;re changing the email you sign in with. Enter your current password; then we&apos;ll email a code to the new address.
                     </p>
-                    <div className="relative md:max-w-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaLock className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <input
-                        type="password"
-                        id="emailChangePassword"
-                        name="emailChangePassword"
-                        autoComplete="current-password"
-                        value={emailChangePassword}
-                        onChange={(e) => { setEmailChangePassword(e.target.value); setError(''); }}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Current password"
-                      />
-                    </div>
                   </div>
-                )}
-              </div>
+                  <div className="mt-4 md:max-w-sm">
+                    <AuthInput
+                      id="emailChangePassword"
+                      name="emailChangePassword"
+                      type={showEmailPassword ? "text" : "password"}
+                      label="Current password"
+                      icon={FaLock}
+                      autoComplete="current-password"
+                      value={emailChangePassword}
+                      onChange={(e) => {
+                        setEmailChangePassword(e.target.value);
+                        setPersonal((s) => ({ ...s, field: "", error: "" }));
+                      }}
+                      error={personalField("currentPassword")}
+                      right={<EyeButton visible={showEmailPassword} onClick={() => setShowEmailPassword((v) => !v)} />}
+                    />
+                  </div>
+                </div>
+              )}
 
-              <div className="mt-8 flex sm:justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-shine w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Saving…' : 'Save changes'}
-                </button>
-              </div>
+              <SaveButton busy={personal.busy}>{emailChanged ? "Save and send code" : "Save changes"}</SaveButton>
             </form>
-          </div>
+          </Section>
 
-          {/* Change Password Section */}
-          <div className={sectionClass}>
-            <h3 className="text-lg font-semibold text-gray-900">Change password</h3>
-            <p className="mt-1 mb-5 text-sm text-gray-500">
-              Use at least 8 characters. Changing it signs you out on your other devices.
-            </p>
-
-            {passwordError && (
-              <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded">
-                <p className="text-sm text-red-700">{passwordError}</p>
+          <Section icon={FaKey} title="Change password" description="Use at least 8 characters. Changing it signs you out on your other devices.">
+            <AuthAlert shakeKey={pw.shake}>{pw.error}</AuthAlert>
+            <AuthSuccess>{pw.success}</AuthSuccess>
+            <form onSubmit={savePassword} noValidate className="space-y-5">
+              <div className="md:max-w-[calc(50%-0.625rem)]">
+                <AuthInput
+                  id="currentPassword"
+                  name="currentPassword"
+                  type={show.current ? "text" : "password"}
+                  label="Current password"
+                  icon={FaLock}
+                  autoComplete="current-password"
+                  value={passwordInfo.currentPassword}
+                  onChange={onPassword}
+                  error={pwField("currentPassword")}
+                  right={<EyeButton visible={show.current} onClick={() => setShow((v) => ({ ...v, current: !v.current }))} />}
+                />
               </div>
-            )}
-
-            {passwordSuccess && (
-              <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded flex items-center">
-                <FaCheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                <p className="text-sm text-green-700">Password updated. You've been signed out on your other devices.</p>
-              </div>
-            )}
-
-            <form onSubmit={handlePasswordSubmit}>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 sm:gap-6">
-                {/* Current Password */}
-                <div className="md:col-span-2 md:max-w-[calc(50%-0.75rem)]">
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Current password
-                  </label>
-                  <input
-                    type="password"
-                    id="currentPassword"
-                    name="currentPassword"
-                    autoComplete="current-password"
-                    value={passwordInfo.currentPassword}
-                    onChange={handlePasswordChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Enter current password"
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <AuthInput
+                    id="password"
+                    name="password"
+                    type={show.next ? "text" : "password"}
+                    label="New password"
+                    icon={FaLock}
+                    autoComplete="new-password"
+                    maxLength={128}
+                    value={passwordInfo.password}
+                    onChange={onPassword}
+                    error={pwField("password")}
+                    right={<EyeButton visible={show.next} onClick={() => setShow((v) => ({ ...v, next: !v.next }))} />}
                   />
+                  <PasswordStrength password={passwordInfo.password} />
                 </div>
-
-                {/* Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    New password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="password"
-                      name="password"
-                      autoComplete="new-password"
-                      value={passwordInfo.password}
-                      onChange={handlePasswordChange}
-                      className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Enter new password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                      ) : (
-                        <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm new password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      autoComplete="new-password"
-                      value={passwordInfo.confirmPassword}
-                      onChange={handlePasswordChange}
-                      className="block w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Confirm new password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? (
-                        <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                      ) : (
-                        <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                <AuthInput
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={show.confirm ? "text" : "password"}
+                  label="Confirm new password"
+                  icon={FaLock}
+                  autoComplete="new-password"
+                  maxLength={128}
+                  value={passwordInfo.confirmPassword}
+                  onChange={onPassword}
+                  error={pwField("confirmPassword")}
+                  right={
+                    <span className="flex items-center gap-1">
+                      <FieldTick show={!!passwordInfo.confirmPassword && passwordInfo.confirmPassword === passwordInfo.password} />
+                      <EyeButton visible={show.confirm} onClick={() => setShow((v) => ({ ...v, confirm: !v.confirm }))} />
+                    </span>
+                  }
+                />
               </div>
-
-              <div className="mt-8 flex sm:justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-shine w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Saving…' : 'Update password'}
-                </button>
-              </div>
+              <SaveButton busy={pw.busy}>Update password</SaveButton>
             </form>
-          </div>
+          </Section>
 
-          {/* Language Section */}
-          <div className={sectionClass}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-5">Language</h3>
-
-            {languageSuccess && (
-              <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded flex items-center">
-                <FaCheckCircle className="h-5 w-5 text-green-400 mr-3" />
-                <p className="text-sm text-green-700">Language preference updated successfully!</p>
-              </div>
-            )}
-
-            <form onSubmit={handleLanguageSubmit}>
-              <div className="max-w-md">
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                  Display language
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaGlobe className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    id="language"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
-                  >
-                    <option value="English">English</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="French">French</option>
-                    <option value="German">German</option>
-                    <option value="Italian">Italian</option>
-                    <option value="Portuguese">Portuguese</option>
-                    <option value="Chinese">Chinese</option>
-                    <option value="Japanese">Japanese</option>
-                    <option value="Korean">Korean</option>
-                    <option value="Arabic">Arabic</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-8 flex sm:justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-shine w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          <Section icon={FaLanguage} title="Language" description="The language for your account.">
+            <AuthAlert shakeKey={lang.shake}>{lang.error}</AuthAlert>
+            <AuthSuccess>{lang.success}</AuthSuccess>
+            <form onSubmit={saveLanguage} className="space-y-5">
+              <div className="md:max-w-sm">
+                <AuthSelect
+                  id="language"
+                  label="Display language"
+                  icon={FaGlobe}
+                  value={language}
+                  onChange={(e) => {
+                    setLanguage(e.target.value);
+                    setLang((s) => ({ ...s, success: "", error: "" }));
+                  }}
                 >
-                  {loading ? 'Saving…' : 'Save language'}
-                </button>
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </AuthSelect>
               </div>
+              <SaveButton busy={lang.busy}>Save language</SaveButton>
             </form>
-          </div>
+          </Section>
         </div>
       )}
 
-      {activeTab === 'billing' && (
+      {activeTab === "billing" && (
         <div className="space-y-8 sm:space-y-6">
-          {/* Billing Information Section */}
-          <div className={sectionClass}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-5">Billing information</h3>
-            
-            {error && (
-              <div className="mb-3 sm:mb-4 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4 rounded">
-                <p className="text-xs sm:text-sm text-red-700">{error}</p>
-              </div>
-            )}
-
-            {billingSuccess && (
-              <div className="mb-3 sm:mb-4 bg-green-50 border-l-4 border-green-400 p-3 sm:p-4 rounded flex items-center">
-                <FaCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 mr-2 sm:mr-3 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-green-700">Billing information updated successfully!</p>
-              </div>
-            )}
-
-            <form onSubmit={handleBillingInfoSubmit}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-6">
-                {/* Billing Name */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="billingName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing name
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="billingName"
-                      name="billingName"
-                      value={billingInfo.billingName}
-                      onChange={handleBillingInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Billing Name"
-                    />
-                  </div>
+          <Section icon={FaFileInvoice} title="Billing information" description="The name and address you'd like us to use for billing.">
+            <AuthAlert shakeKey={billing.shake}>{billing.error}</AuthAlert>
+            <AuthSuccess>{billing.success}</AuthSuccess>
+            <form onSubmit={saveBilling} className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <AuthInput id="billingName" name="billingName" label="Billing name" icon={FaUser} autoComplete="name" value={billingInfo.billingName} onChange={onBilling} />
+                <AuthInput id="billingCompany" name="billingCompany" label="Billing company" icon={FaBuilding} autoComplete="organization" value={billingInfo.billingCompany} onChange={onBilling} />
+                <div className="md:col-span-2">
+                  <AuthInput id="billingAddress" name="billingAddress" label="Billing address" icon={FaMapMarkerAlt} autoComplete="street-address" placeholder="Street and number" value={billingInfo.billingAddress} onChange={onBilling} />
                 </div>
-
-                {/* Billing Company */}
-                <div className="col-span-2 md:col-span-1">
-                  <label htmlFor="billingCompany" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing company
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaBuilding className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="billingCompany"
-                      name="billingCompany"
-                      value={billingInfo.billingCompany}
-                      onChange={handleBillingInfoChange}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Billing Company"
-                    />
-                  </div>
-                </div>
-
-                {/* Billing Address */}
-                <div className="col-span-2">
-                  <label htmlFor="billingAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                    Billing address
-                  </label>
-                  <input
-                    type="text"
-                    id="billingAddress"
-                    name="billingAddress"
-                    value={billingInfo.billingAddress}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Street Address"
-                  />
-                </div>
-
-                {/* Billing City */}
-                <div>
-                  <label htmlFor="billingCity" className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="billingCity"
-                    name="billingCity"
-                    value={billingInfo.billingCity}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="City"
-                  />
-                </div>
-
-                {/* Billing State */}
-                <div>
-                  <label htmlFor="billingState" className="block text-sm font-medium text-gray-700 mb-2">
-                    State / province
-                  </label>
-                  <input
-                    type="text"
-                    id="billingState"
-                    name="billingState"
-                    value={billingInfo.billingState}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="State/Province"
-                  />
-                </div>
-
-                {/* Billing Zip Code */}
-                <div>
-                  <label htmlFor="billingZipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    ZIP / postal code
-                  </label>
-                  <input
-                    type="text"
-                    id="billingZipCode"
-                    name="billingZipCode"
-                    value={billingInfo.billingZipCode}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Zip/Postal Code"
-                  />
-                </div>
-
-                {/* Billing Country */}
-                <div>
-                  <label htmlFor="billingCountry" className="block text-sm font-medium text-gray-700 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    id="billingCountry"
-                    name="billingCountry"
-                    value={billingInfo.billingCountry}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Country"
-                  />
-                </div>
-
-                {/* Tax ID */}
-                <div className="col-span-2">
-                  <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tax ID / VAT number
-                  </label>
-                  <input
-                    type="text"
-                    id="taxId"
-                    name="taxId"
-                    value={billingInfo.taxId}
-                    onChange={handleBillingInfoChange}
-                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Tax ID / VAT Number (Optional)"
-                  />
+                <AuthInput id="billingCity" name="billingCity" label="City" icon={FaCity} autoComplete="address-level2" value={billingInfo.billingCity} onChange={onBilling} />
+                <AuthInput id="billingState" name="billingState" label="State / province" icon={FaMap} autoComplete="address-level1" value={billingInfo.billingState} onChange={onBilling} />
+                <AuthInput id="billingZipCode" name="billingZipCode" label="ZIP / postal code" icon={FaHashtag} autoComplete="postal-code" value={billingInfo.billingZipCode} onChange={onBilling} />
+                <AuthInput id="billingCountry" name="billingCountry" label="Country" icon={FaFlag} autoComplete="country-name" value={billingInfo.billingCountry} onChange={onBilling} />
+                <div className="md:col-span-2">
+                  <AuthInput id="taxId" name="taxId" label="Tax ID / VAT number" icon={FaFileInvoice} placeholder="Optional, e.g. GSTIN" value={billingInfo.taxId} onChange={onBilling} />
                 </div>
               </div>
-
-              <div className="mt-8 flex sm:justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-shine w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Saving…' : 'Save billing details'}
-                </button>
-              </div>
+              <SaveButton busy={billing.busy}>Save billing details</SaveButton>
             </form>
-          </div>
+          </Section>
         </div>
       )}
     </DashboardLayout>

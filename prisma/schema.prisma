@@ -27,6 +27,13 @@ model User {
   trialEndsAt           DateTime?
   resetToken            String?   // SHA-256 of the emailed token, never the token itself
   resetTokenExpires     DateTime?
+  emailVerifiedAt       DateTime? // set once the emailed 6-digit code is entered; the dashboard needs it
+  emailCodeHash         String?   // HMAC of the current verification code (never the code itself)
+  emailCodeExpiresAt    DateTime?
+  emailCodeAttempts     Int       @default(0) // wrong tries for the current code
+  emailCodeSentAt       DateTime? // for the resend cooldown
+  pendingEmail          String?   // new address waiting for its code (account page); `email` changes only once confirmed
+  termsAcceptedAt       DateTime? // when they ticked "I agree to the Terms of Service and Privacy Policy"
   sessionVersion        Int       @default(0) // bumped on password change/reset to sign out every existing session
   subscriptionPlan      String    @default("EXPIRED") // TRIAL | BASIC | EXPIRED
   trialStartedAt        DateTime?

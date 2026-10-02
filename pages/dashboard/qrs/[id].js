@@ -6,11 +6,11 @@ import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, Fa
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export async function getServerSideProps(context) {
-  const { getUserFromRequest } = await import("../../../lib/auth");
+  const { getUserFromRequest, accountRedirect } = await import("../../../lib/auth");
   const user = await getUserFromRequest(context.req);
-  if (!user) {
-    return { redirect: { destination: "/auth/login", permanent: false } };
-  }
+  // Signed out -> login; email not confirmed yet -> verification page
+  const redirect = accountRedirect(user);
+  if (redirect) return redirect;
   const { id } = context.params;
   return { props: { qrId: id } };
 }

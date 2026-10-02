@@ -1,617 +1,293 @@
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/router';
-
-import Link from 'next/link';
-import PublicLayout from '../../components/PublicLayout';
-import Turnstile from '../../components/Turnstile';
-import { FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
+import { useEffect, useRef, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck, FaArrowRight, FaExclamationCircle } from "react-icons/fa";
+import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch, PasswordStrength, FieldTick, passwordChecksPassed } from "../../components/AuthShell";
+import Turnstile from "../../components/Turnstile";
 
 // Cloudflare Turnstile bot check; skipped when no site key is configured
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
-// Custom hook for form state management
-const useFormState = (initialState) => {
-  const [state, setState] = useState(initialState);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const valueToSet = type === 'checkbox' ? checked : value.trim();
-    setState(prev => ({ ...prev, [name]: valueToSet }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-  };
-
+function validate(form) {
+  const password = form.password.trim();
+  const passed = passwordChecksPassed(password);
   return {
-    state,
-    errors,
-    touched,
-    isSubmitting,
-    submitError,
-    setErrors,
-    setTouched,
-    setIsSubmitting,
-    setSubmitError,
-    handleChange,
-    handleBlur,
+    name: form.name.trim().length < 2 ? "Enter your name (at least 2 characters)." : "",
+    email: !form.email.trim() ? "Enter your email address." : !EMAIL_RE.test(form.email.trim()) ? "Enter a valid email address." : "",
+    password: !password
+      ? "Choose a password."
+      : password.length < 8
+        ? "Use at least 8 characters."
+        : passed < 3
+          ? "Mix letters, numbers and symbols (at least 3 of the 4 below)."
+          : "",
+    confirmPassword: !form.confirmPassword ? "Type your password again." : form.confirmPassword !== form.password ? "The passwords don't match." : "",
+    terms: form.terms ? "" : "Please accept the Terms of Service and Privacy Policy to continue.",
   };
-};
-
-// Password strength checker
-const checkPasswordStrength = (password) => {
-  const hasMinLength = password.length >= 8;
-  const hasNumber = /\d/.test(password);
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  
-  let strength = 0;
-  if (hasMinLength) strength++;
-  if (hasNumber) strength++;
-  if (hasLetter) strength++;
-  if (hasSpecialChar) strength++;
-
-  return {
-    strength,
-    feedback: {
-      minLength: hasMinLength,
-      hasNumber,
-      hasLetter,
-      hasSpecialChar,
-    }
-  };
-};
+}
 
 export default function Register() {
   const router = useRouter();
-  const firstErrorRef = useRef(null);
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", terms: false });
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [serverErrors, setServerErrors] = useState({});
+  const [error, setError] = useState("");
+  const [shakeKey, setShakeKey] = useState(0);
+  const [termsShake, setTermsShake] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
-  const [honeypot, setHoneypot] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
 
-  const { 
-    state, 
-    errors, 
-    touched, 
-    isSubmitting, 
-    submitError,
-    setErrors, 
-    setTouched,
-    setIsSubmitting,
-    setSubmitError,
-    handleChange, 
-    handleBlur 
-  } = useFormState({ 
-    email: '', 
-    name: '', 
-    password: '',
-    confirmPassword: '',
-    terms: false
-  });
-
-  // Validate form fields
+  // The shake re-creates the checkbox (new key), so focus it once it's back when it's the field to fix next
+  const focusTerms = useRef(false);
   useEffect(() => {
-    const newErrors = {};
-    
-    // Email validation
-    if (state.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    if (termsShake && focusTerms.current) {
+      focusTerms.current = false;
+      document.getElementById("terms")?.focus();
     }
-    
-    // Name validation
-    if (state.name && state.name.length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    }
-    
-    // Password validation
-    if (state.password) {
-      const { strength } = checkPasswordStrength(state.password);
-      if (state.password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters';
-      } else if (strength < 3) {
-        newErrors.password = 'Password is too weak';
-      }
-    }
-    
-    // Confirm password
-    if (state.password && state.confirmPassword && state.password !== state.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-  }, [state, setErrors]);
+  }, [termsShake]);
 
-  // Focus first error on validation
-  useEffect(() => {
-    if (isMounted && Object.keys(errors).length > 0) {
-      const firstError = Object.keys(errors)[0];
-      const element = document.querySelector(`[name="${firstError}"]`);
-      if (element) {
-        element.focus();
-      }
-    }
-    setIsMounted(true);
-  }, [errors]);
+  const errors = validate(form);
+  const show = (field) => serverErrors[field] || (touched[field] || submitted ? errors[field] : "");
+
+  const update = (field) => (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setForm((f) => ({ ...f, [field]: value }));
+    if (serverErrors[field]) setServerErrors((s) => ({ ...s, [field]: "" }));
+    if (error) setError("");
+  };
+  const blur = (field) => () => setTouched((t) => ({ ...t, [field]: true }));
+
+  const password = form.password.trim();
+  const matches = form.confirmPassword && form.confirmPassword === form.password;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitError('');
-    
-    // Mark all fields as touched to show validation messages
-    const allTouched = Object.keys(state).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {});
-    setTouched(allTouched);
-    
-    // Check for any validation errors
-    const hasErrors = Object.keys(errors).some(key => errors[key]);
-    if (hasErrors) return;
+    setSubmitted(true);
+    const firstInvalid = ["name", "email", "password", "confirmPassword", "terms"].find((f) => errors[f]);
+    if (firstInvalid) {
+      // The terms box always shakes when unticked; the cursor goes to the first field to fix
+      if (errors.terms) {
+        focusTerms.current = firstInvalid === "terms";
+        setTermsShake((n) => n + 1);
+      }
+      if (firstInvalid !== "terms") document.getElementById(firstInvalid)?.focus();
+      return;
+    }
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
-      setSubmitError('Please complete the security check above the Create account button.');
+      setError("Please complete the security check above the Create account button.");
+      setShakeKey((n) => n + 1);
       return;
     }
 
-    setIsSubmitting(true);
-
+    setSubmitting(true);
+    setError("");
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: state.email.trim(),
-          name: state.name.trim(),
-          password: state.password.trim(),
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password.trim(),
+          acceptTerms: form.terms === true,
           website: honeypot,
           turnstileToken,
         }),
       });
-      
-      // CRITICAL: Clone response to read it multiple times if needed
-      // This prevents "body already consumed" errors
-      const responseClone = res.clone();
-      
-      // CRITICAL: Check Content-Type BEFORE attempting to parse JSON
-      // This prevents "Unexpected token 'I'" error when server returns HTML
-      const contentType = res.headers.get("content-type") || "";
-      const isJson = contentType.includes("application/json");
-      
-      // Helper function to safely extract error message
-      const getErrorMessage = async (response, isJsonResponse) => {
-        try {
-          if (isJsonResponse) {
-            // Try to parse as JSON first
-            const data = await response.json();
-            return data.error || data.message || 'Registration failed. Please try again.';
-          } else {
-            // Not JSON - read as text (but don't show HTML to user)
-            const text = await response.text();
-            console.error('Non-JSON error response:', text.substring(0, 200));
-            // Return user-friendly message instead of HTML
-            return `Server error (${response.status}). Please try again later.`;
-          }
-        } catch (error) {
-          // If parsing fails completely, return generic error
-          console.error('Failed to parse error response:', error);
-          return `Server error (${response.status}). Please try again later.`;
-        }
-      };
-      
-
-      // If response is not OK, handle error (set state and return — do not throw, to avoid error overlay)
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        let errorMessage = 'Registration failed. Please try again.';
-        
-        try {
-
-          errorMessage = await getErrorMessage(responseClone, isJson);
-          if (res.status === 400 && (errorMessage.includes('already exists') || errorMessage.includes('User already exists'))) {
-            setErrors(prev => ({ ...prev, email: 'Email already in use' }));
-            return;
-          }
-        } catch (error) {
-
-          console.error('Error handling failed:', error);
-          errorMessage = `Server error (${res.status}). Please try again later.`;
-        }
-        
-
-        setSubmitError(errorMessage);
-        return;
-      }
-      
-      // Response is OK - parse success response
-      let responseData = null;
-      
-      try {
-        if (isJson) {
-          // Try to parse as JSON
-          responseData = await res.json();
+        const message = data.error || "We couldn't create your account. Please try again.";
+        if (/already exists/i.test(message)) {
+          setServerErrors({ email: "An account with this email already exists." });
+          document.getElementById("email")?.focus();
+        } else if (data.field === "terms") {
+          setServerErrors({ terms: message });
+          focusTerms.current = true;
+          setTermsShake((n) => n + 1);
         } else {
-          // Not JSON - try to read as text (shouldn't happen, but handle gracefully)
-          const text = await res.text();
-          console.warn('Received non-JSON success response:', text.substring(0, 100));
-          // If status is 201, assume success
-          if (res.status === 201) {
-            router.push('/dashboard');
-            return;
-          } else {
-            throw new Error('Unexpected response format');
-          }
+          setError(message);
+          setShakeKey((n) => n + 1);
         }
-        
-        // Check if registration was successful
-        if (responseData && responseData.success !== false) {
-
-          router.push('/dashboard');
-          return;
-        }
-        setSubmitError(responseData?.error || responseData?.message || 'Registration failed');
-        return;
-      } catch (parseError) {
-        if (parseError instanceof SyntaxError || parseError.message.includes('JSON')) {
-          console.error('JSON parsing error - server may have returned HTML:', parseError);
-          setSubmitError('Server returned invalid response. Please try again later.');
-          return;
-        }
-        if (res.status === 201) {
-          router.push('/dashboard');
-          return;
-        }
-        setSubmitError(parseError?.message || 'Registration failed. Please try again.');
+        if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
+        setSubmitting(false);
         return;
       }
-      
-    } catch (err) {
-      console.error('Registration error:', err);
-      
-      // Extract user-friendly error message
-      let userMessage = 'An error occurred during registration. Please try again.';
-      
-      if (err.message) {
-        // Check if it's a JSON parsing error
-        if (err.message.includes('Unexpected token') || err.message.includes('JSON')) {
-          userMessage = 'Server returned an invalid response. Please try again later.';
-        } else {
-          // Use the error message if it's user-friendly
-          userMessage = err.message;
-        }
-      }
-      
-      // Show user-friendly error message
-      setSubmitError(userMessage);
-    } finally {
-      setIsSubmitting(false);
-      // Each Turnstile token works once; get a fresh one in case the user needs to try again
+      // Next: the 6-digit code we just emailed
+      router.push("/auth/verify-email");
+    } catch {
+      setError("We couldn't reach the server. Check your connection and try again.");
+      setShakeKey((n) => n + 1);
       if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
+      setSubmitting(false);
     }
   };
 
-  const { strength, feedback } = checkPasswordStrength(state.password);
-  const isFormValid = 
-    state.email && 
-    state.name && 
-    state.password && 
-    state.password === state.confirmPassword && 
-    strength >= 3 &&
-    state.terms === true &&
-    !isSubmitting;
+  const eyeButton = (visible, toggle) => (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={visible ? "Hide password" : "Show password"}
+      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+    >
+      {visible ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+    </button>
+  );
+  const termsError = show("terms");
 
   return (
+    <AuthShell
+      panel={{
+        eyebrow: "Free for 14 days",
+        title: "Make QR codes you can change any time",
+        text: "No card needed. Three quick steps and your first code is ready.",
+        steps: ["Create your account", "Confirm your email", "Make your first QR code"],
+        activeStep: 0,
+      }}
+    >
+      <Head>
+        <title>Create your account | QR-Genie</title>
+      </Head>
+      <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-5">
+        <AuthHeading title="Create your account">Start your free 14-day trial. No card needed.</AuthHeading>
 
-    <PublicLayout>
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      </div>
+        <AuthAlert shakeKey={shakeKey}>{error}</AuthAlert>
 
-      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
-            <a href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-700">
-              sign in to your account
-            </a>
-          </p>
+        <AuthInput
+          id="name"
+          name="name"
+          type="text"
+          label="Full name"
+          required
+          icon={FaUser}
+          autoComplete="name"
+          maxLength={100}
+          placeholder="Your full name"
+          value={form.name}
+          onChange={update("name")}
+          onBlur={blur("name")}
+          error={show("name")}
+        />
+
+        <AuthInput
+          id="email"
+          name="email"
+          type="email"
+          label="Email address"
+          required
+          icon={FaEnvelope}
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={update("email")}
+          onBlur={blur("email")}
+          error={show("email")}
+          hint="We'll send a 6-digit code to confirm it."
+        />
+
+        <div>
+          <AuthInput
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            label="Password"
+            required
+            icon={FaLock}
+            autoComplete="new-password"
+            maxLength={128}
+            value={form.password}
+            onChange={update("password")}
+            onBlur={blur("password")}
+            error={show("password")}
+            right={eyeButton(showPassword, () => setShowPassword((v) => !v))}
+          />
+          <PasswordStrength password={password} />
         </div>
 
-        <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-indigo-100">
-          {submitError && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{submitError}</p>
-                </div>
-              </div>
-            </div>
-          )}
+        <AuthInput
+          id="confirmPassword"
+          name="confirmPassword"
+          type={showConfirm ? "text" : "password"}
+          label="Confirm password"
+          required
+          icon={FaLock}
+          autoComplete="new-password"
+          maxLength={128}
+          value={form.confirmPassword}
+          onChange={update("confirmPassword")}
+          onBlur={blur("confirmPassword")}
+          error={show("confirmPassword")}
+          right={
+            <span className="flex items-center gap-1">
+              <FieldTick show={!!matches} />
+              {eyeButton(showConfirm, () => setShowConfirm((v) => !v))}
+            </span>
+          }
+        />
 
-          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={state.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.name ? 'border-red-300' : 'border-gray-300'
-
-                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  aria-required="true"
-                  aria-invalid={!!errors.name}
-                  aria-describedby={errors.name ? "name-error" : undefined}
-                />
-              </div>
-              {errors.name && touched.name && (
-                <p className="mt-2 text-sm text-red-600" id="name-error">
-                  {errors.name}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={state.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-
-                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  aria-required="true"
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                />
-              </div>
-              {errors.email && touched.email && (
-                <p className="mt-2 text-sm text-red-600" id="email-error">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  value={state.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-
-                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
-                  aria-required="true"
-                  aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                  ) : (
-                    <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                  )}
-                </button>
-              </div>
-              
-              {/* Password strength indicator */}
-              {state.password && (
-                <div className="mt-2">
-                  <div className="grid grid-cols-4 gap-2 mb-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 rounded-full ${
-                          i <= strength
-                            ? strength < 2
-                              ? 'bg-red-500'
-                              : strength < 4
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                            : 'bg-gray-200'
-                        }`}
-                      ></div>
-                    ))}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {strength < 2 && 'Weak - '}
-                    {strength === 2 && 'Fair - '}
-                    {strength === 3 && 'Good - '}
-                    {strength === 4 && 'Strong - '}
-                    {!state.password
-                      ? 'Enter a password'
-                      : strength < 2
-                      ? 'Add more characters, numbers, or symbols'
-                      : strength < 4
-                      ? 'Good, but could be stronger'
-                      : 'Great password!'}
-                  </div>
-                </div>
-              )}
-
-              {errors.password && touched.password && (
-                <p className="mt-2 text-sm text-red-600" id="password-error">
-                  {errors.password}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  value={state.confirmPassword}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-
-                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-10`}
-                  aria-required="true"
-                  aria-invalid={!!errors.confirmPassword}
-                  aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? (
-                    <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                  ) : (
-                    <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                  )}
-                </button>
-              </div>
-              {errors.confirmPassword && touched.confirmPassword && (
-                <p className="mt-2 text-sm text-red-600" id="confirm-password-error">
-                  {errors.confirmPassword}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center">
+        {/* Terms: required; shakes and explains itself if skipped */}
+        <div key={termsShake} className={termsShake ? "motion-safe:animate-shake" : ""}>
+          <label
+            htmlFor="terms"
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 ${
+              termsError ? "border-red-300 bg-red-50/60" : form.terms ? "border-indigo-200 bg-indigo-50/50" : "border-slate-200 hover:border-slate-300"
+            }`}
+          >
+            <span className="relative mt-0.5 flex h-5 w-5 flex-none">
               <input
                 id="terms"
                 name="terms"
                 type="checkbox"
                 required
-                checked={state.terms === true}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                aria-required="true"
+                checked={form.terms}
+                onChange={update("terms")}
+                onBlur={blur("terms")}
+                aria-invalid={!!termsError}
+                aria-describedby={termsError ? "terms-error" : undefined}
+                className="peer absolute inset-0 h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 bg-white transition checked:border-indigo-600 checked:bg-indigo-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I agree to the{' '}
-                <a href="/terms" className="text-indigo-600 hover:text-indigo-500">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="/privacy" className="text-indigo-600 hover:text-indigo-500">
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
-
-            {/* Hidden from people; bots that fill it in are refused */}
-            <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
-              <label htmlFor="register-website">Website</label>
-              <input id="register-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
-            </div>
-
-            {TURNSTILE_SITE_KEY && (
-              <Turnstile siteKey={TURNSTILE_SITE_KEY} action="register" onToken={setTurnstileToken} resetKey={turnstileReset} />
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={!isFormValid || isSubmitting}
-
-                className={`btn-shine w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-200 ${
-                  isFormValid && !isSubmitting
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl'
-                    : 'bg-indigo-400 cursor-not-allowed'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating account...
-                  </>
-                ) : (
-                  'Create account'
-                )}
-              </button>
-            </div>
-          </form>
+              <FaCheck className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 scale-0 text-white transition-transform duration-200 peer-checked:scale-100" aria-hidden="true" />
+            </span>
+            <span className="text-sm leading-relaxed text-slate-700">
+              I agree to the{" "}
+              <Link href="/terms" target="_blank" className="font-medium !text-indigo-600 underline decoration-indigo-200 underline-offset-2 hover:!text-indigo-700">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" className="font-medium !text-indigo-600 underline decoration-indigo-200 underline-offset-2 hover:!text-indigo-700">
+                Privacy Policy
+              </Link>
+              <span className="ml-0.5 text-red-600" aria-hidden="true">*</span>
+            </span>
+          </label>
+          {termsError && (
+            <p id="terms-error" className="mt-1.5 flex items-center gap-1.5 text-sm text-red-600 motion-safe:animate-fade-up">
+              <FaExclamationCircle className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+              {termsError}
+            </p>
+          )}
         </div>
-      </div>
 
+        {/* Hidden from people; bots that fill it in are refused */}
+        <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+          <label htmlFor="register-website">Website</label>
+          <input id="register-website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+        </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
-    </PublicLayout>
+        {TURNSTILE_SITE_KEY && <Turnstile siteKey={TURNSTILE_SITE_KEY} action="register" onToken={setTurnstileToken} resetKey={turnstileReset} />}
+
+        <AuthSubmit busy={submitting} busyLabel="Creating your account…" icon={FaArrowRight}>
+          Create account
+        </AuthSubmit>
+
+        <AuthSwitch text="Already have an account?" href="/auth/login" linkText="Log in" />
+      </form>
+    </AuthShell>
   );
 }

@@ -24,6 +24,12 @@ import {
   FaInstagram,
   FaLock,
   FaPaperPlane,
+  FaUtensils,
+  FaStore,
+  FaTicketAlt,
+  FaHotel,
+  FaHome,
+  FaBullhorn,
 } from "react-icons/fa";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -187,42 +193,43 @@ const stats = [
   { number: "99.9%", label: "Uptime" }
 ];
 
-const companies = [
+// The kinds of business QR-Genie is made for (shown in the band under the hero)
+const businessTypes = [
   {
-    name: "TechCorp",
-    logo: "TC",
-    gradient: "from-blue-500 to-cyan-500",
-    textColor: "text-blue-700"
-  },
-  {
-    name: "ShopSmart",
-    logo: "SS",
-    gradient: "from-purple-500 to-pink-500",
-    textColor: "text-purple-700"
-  },
-  {
-    name: "EventPro",
-    logo: "EP",
-    gradient: "from-green-500 to-emerald-500",
-    textColor: "text-green-700"
-  },
-  {
-    name: "Bella Vista",
-    logo: "BV",
+    name: "Restaurants",
+    icon: FaUtensils,
     gradient: "from-orange-500 to-red-500",
     textColor: "text-orange-700"
   },
   {
-    name: "GlobalBiz",
-    logo: "GB",
+    name: "Retail",
+    icon: FaStore,
+    gradient: "from-purple-500 to-pink-500",
+    textColor: "text-purple-700"
+  },
+  {
+    name: "Events",
+    icon: FaTicketAlt,
+    gradient: "from-green-500 to-emerald-500",
+    textColor: "text-green-700"
+  },
+  {
+    name: "Hotels",
+    icon: FaHotel,
+    gradient: "from-blue-500 to-cyan-500",
+    textColor: "text-blue-700"
+  },
+  {
+    name: "Real estate",
+    icon: FaHome,
     gradient: "from-indigo-500 to-purple-500",
     textColor: "text-indigo-700"
   },
   {
-    name: "CloudSync",
-    logo: "CS",
-    gradient: "from-indigo-500 to-purple-500",
-    textColor: "text-indigo-700"
+    name: "Marketing",
+    icon: FaBullhorn,
+    gradient: "from-fuchsia-500 to-pink-500",
+    textColor: "text-fuchsia-700"
   }
 ];
 
@@ -235,6 +242,16 @@ const qrTypeShowcase = [
     icon: FaGlobe,
     accent: "bg-indigo-50 text-indigo-600 ring-indigo-100",
     qrColor: "#4338ca",
+    tab: {
+      hover: "hover:ring-indigo-300 hover:shadow-indigo-500/15",
+      selected: "ring-2 ring-indigo-500 shadow-indigo-500/20",
+      tint: "from-indigo-50",
+      chipHover: "group-hover:from-indigo-500 group-hover:to-violet-600 group-hover:shadow-indigo-500/30",
+      chipSelected: "from-indigo-500 to-violet-600 shadow-indigo-500/30",
+      label: "text-indigo-700",
+      labelHover: "group-hover:text-indigo-700",
+      bar: "from-indigo-500 to-violet-500",
+    },
     kind: "Dynamic",
     title: "Website QR code",
     description:
@@ -254,6 +271,16 @@ const qrTypeShowcase = [
     icon: FaWifi,
     accent: "bg-cyan-50 text-cyan-700 ring-cyan-100",
     qrColor: "#0e7490",
+    tab: {
+      hover: "hover:ring-cyan-300 hover:shadow-cyan-500/15",
+      selected: "ring-2 ring-cyan-500 shadow-cyan-500/20",
+      tint: "from-cyan-50",
+      chipHover: "group-hover:from-cyan-500 group-hover:to-sky-600 group-hover:shadow-cyan-500/30",
+      chipSelected: "from-cyan-500 to-sky-600 shadow-cyan-500/30",
+      label: "text-cyan-700",
+      labelHover: "group-hover:text-cyan-700",
+      bar: "from-cyan-500 to-sky-500",
+    },
     kind: "Static",
     title: "Wi-Fi QR code",
     description:
@@ -273,6 +300,16 @@ const qrTypeShowcase = [
     icon: FaWhatsapp,
     accent: "bg-emerald-50 text-emerald-700 ring-emerald-100",
     qrColor: "#047857",
+    tab: {
+      hover: "hover:ring-emerald-300 hover:shadow-emerald-500/15",
+      selected: "ring-2 ring-emerald-500 shadow-emerald-500/20",
+      tint: "from-emerald-50",
+      chipHover: "group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/30",
+      chipSelected: "from-emerald-500 to-green-600 shadow-emerald-500/30",
+      label: "text-emerald-700",
+      labelHover: "group-hover:text-emerald-700",
+      bar: "from-emerald-500 to-green-500",
+    },
     kind: "Dynamic",
     title: "WhatsApp QR code",
     description:
@@ -292,6 +329,16 @@ const qrTypeShowcase = [
     icon: FaInstagram,
     accent: "bg-pink-50 text-pink-600 ring-pink-100",
     qrColor: "#be185d",
+    tab: {
+      hover: "hover:ring-pink-300 hover:shadow-pink-500/15",
+      selected: "ring-2 ring-pink-500 shadow-pink-500/20",
+      tint: "from-pink-50",
+      chipHover: "group-hover:from-amber-400 group-hover:via-pink-500 group-hover:to-purple-600 group-hover:shadow-pink-500/30",
+      chipSelected: "from-amber-400 via-pink-500 to-purple-600 shadow-pink-500/30",
+      label: "text-pink-700",
+      labelHover: "group-hover:text-pink-700",
+      bar: "from-pink-500 to-purple-500",
+    },
     kind: "Dynamic",
     title: "Instagram QR code",
     description:
@@ -602,18 +649,47 @@ function QrTypesShowcase({ isAuthenticated }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(type.id)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
-              className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition sm:flex-col sm:gap-0 sm:py-5 sm:text-center duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 ${
+              className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-3 py-3 text-left shadow-lg transition duration-300 ease-out focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:flex-col sm:gap-0 sm:py-5 sm:text-center ${
                 selected
-                  ? "bg-white shadow-lg shadow-indigo-900/[0.07] ring-2 ring-indigo-500"
-                  : "bg-white/70 ring-1 ring-slate-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:ring-indigo-200 motion-reduce:transform-none"
+                  ? type.tab.selected
+                  : `shadow-transparent ring-1 ring-slate-200 hover:-translate-y-1 ${type.tab.hover}`
               }`}
             >
-              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ring-1 ring-inset transition-transform sm:h-12 sm:w-12 duration-300 group-hover:scale-110 motion-reduce:transform-none ${type.accent}`}>
+              {/* Hover (and selected): a tint in the type's colour fades in from the top, and a sheen sweeps across once */}
+              <span
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${type.tab.tint} to-transparent transition-opacity duration-300 ${
+                  selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
+                aria-hidden="true"
+              />
+              <span
+                className="pointer-events-none absolute inset-0 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
+                aria-hidden="true"
+              />
+              {/* The icon tile fills with the type's gradient and pops with a slight tilt */}
+              <span
+                className={`relative flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br ring-1 ring-inset transition-all duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-white group-hover:shadow-md group-hover:ring-transparent motion-reduce:transform-none sm:h-12 sm:w-12 ${
+                  selected ? `${type.tab.chipSelected} text-white shadow-md ring-transparent` : `${type.accent} ${type.tab.chipHover}`
+                }`}
+              >
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="min-w-0 sm:mt-3">
-                <span className="block font-display text-[15px] font-semibold text-slate-900">{type.label}</span>
+              <span className="relative min-w-0 sm:mt-3">
+                <span
+                  className={`block font-display text-[15px] font-semibold transition-colors duration-300 ${
+                    selected ? type.tab.label : `text-slate-900 ${type.tab.labelHover}`
+                  }`}
+                >
+                  {type.label}
+                </span>
                 <span className="mt-0.5 hidden text-xs text-slate-500 sm:block">{type.tagline}</span>
+                {/* Underline in the type's colours that grows on hover and stays on the selected tab */}
+                <span
+                  className={`mx-auto mt-2.5 hidden h-0.5 rounded-full bg-gradient-to-r ${type.tab.bar} transition-all duration-300 ease-out sm:block ${
+                    selected ? "w-8 opacity-100" : "w-0 opacity-0 group-hover:w-8 group-hover:opacity-100"
+                  }`}
+                  aria-hidden="true"
+                />
               </span>
             </button>
           );
@@ -847,10 +923,10 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
           </div>
         </section>
 
-        {/* Trust Indicators */}
-        {/* The company cards are kept exactly as originally designed (gradient fill, shine on hover) at the
-            owner's request; only the band around them is styled. Its own tinted band so it doesn't run into
-            the stats above. No z-index or isolate here: that would change how the cards' hover layers stack. */}
+        {/* Business types */}
+        {/* The cards keep their original design (gradient fill, shine on hover) at the owner's request; only the
+            band around them is styled. Its own tinted band so it doesn't run into the stats above. No z-index or
+            isolate here: that would change how the cards' hover layers stack. */}
         <section className="relative border-y border-gray-200/70 bg-gray-50 py-16 sm:py-20">
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgb(99_102_241/0.14)_1px,transparent_1px)] bg-[size:22px_22px] [mask-image:radial-gradient(ellipse_65%_75%_at_50%_50%,#000_10%,transparent_100%)]"
@@ -861,33 +937,33 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
               <div className="flex items-center justify-center gap-4">
                 <span className="hidden h-px w-16 bg-gradient-to-r from-transparent to-indigo-300 sm:block" aria-hidden="true" />
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700 sm:text-sm">
-                  Trusted by innovative companies
+                  Made for every kind of business
                 </p>
                 <span className="hidden h-px w-16 bg-gradient-to-l from-transparent to-indigo-300 sm:block" aria-hidden="true" />
               </div>
               <p className="mt-3 text-balance font-display text-xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-2xl">
-                Join thousands of businesses using QR-Genie
+                From café menus to property signs, change the link any time without reprinting
               </p>
             </div>
 
             <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 max-w-5xl mx-auto">
-              {companies.map((company) => (
-                <div key={company.name} className="group relative">
+              {businessTypes.map((business) => (
+                <div key={business.name} className="group relative">
                   {/* Logo Card */}
                   <div className="relative overflow-hidden rounded-2xl p-3 sm:p-6 bg-white border-2 border-gray-200 hover:border-transparent transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-2 motion-reduce:transform-none cursor-pointer">
                     {/* Gradient Background on Hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${company.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
 
-                    {/* Logo Circle */}
+                    {/* Icon */}
                     <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${company.gradient} flex items-center justify-center font-display text-white font-bold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
-                        {company.logo}
+                      <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${business.gradient} flex items-center justify-center font-display text-white font-bold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
+                        <business.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
                       </div>
 
-                      {/* Company Name */}
+                      {/* Business type */}
                       <div className="text-center">
-                        <p className={`text-xs sm:text-sm font-semibold group-hover:text-white transition-colors duration-300 ${company.textColor}`}>
-                          {company.name}
+                        <p className={`text-xs sm:text-sm font-semibold group-hover:text-white transition-colors duration-300 ${business.textColor}`}>
+                          {business.name}
                         </p>
                       </div>
                     </div>
@@ -908,7 +984,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
                   </div>
 
                   {/* Glow Effect */}
-                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${company.gradient} opacity-0 group-hover:opacity-20 blur-xl -z-10 transition-opacity duration-300`}></div>
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-20 blur-xl -z-10 transition-opacity duration-300`}></div>
                 </div>
               ))}
             </div>
@@ -920,7 +996,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
                   <FaCheck className="h-3 w-3" />
                 </span>
                 <span className="text-sm font-medium text-slate-700">
-                  Used by <span className="font-semibold text-slate-900">50,000+</span> businesses worldwide
+                  Free for <span className="font-semibold text-slate-900">14 days</span>, no card needed
                 </span>
               </div>
             </div>
