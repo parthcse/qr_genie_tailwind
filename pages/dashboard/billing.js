@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import DashboardLayout from "../../components/DashboardLayout";
 import PaymentResultModal from "../../components/PaymentResultModal";
-import CurrencySwitch from "../../components/CurrencySwitch";
 import { FaCheck, FaPlus } from "react-icons/fa";
 import { formatPrice, formatPeriod, formatPlanPrice } from "../../lib/price";
 
@@ -61,7 +60,7 @@ const buildFaqItems = (priceText) => [
   {
     id: 2,
     question: "Which payment methods can I use?",
-    answer: "Payments are processed securely by Razorpay. If you pay in Indian rupees, you can use the Indian cards and other methods Razorpay offers at checkout. If you pay in US dollars, you need a card that allows international payments; if it's declined, check that setting with your bank.",
+    answer: "Payments are processed securely by Razorpay. In India you pay in rupees and can use the Indian cards and other methods Razorpay offers at checkout. Outside India you pay in US dollars with a card that allows international payments; if it's declined, check that setting with your bank.",
   },
   {
     id: 3,
@@ -293,7 +292,7 @@ export default function BillingPage() {
     fetchMe();
   }, []);
 
-  // Basic Package prices per currency, straight from the Razorpay plans
+  // Basic Package price straight from the Razorpay plans, in the currency set by location (rupees in India, dollars elsewhere)
   const [plans, setPlans] = useState(null);
   const [currentCurrency, setCurrentCurrency] = useState(null);
   const [currency, setCurrency] = useState(null);
@@ -305,7 +304,7 @@ export default function BillingPage() {
       const data = await res.json();
       setPlans(data.plans || {});
       setCurrentCurrency(data.currentCurrency || null);
-      setCurrency((c) => c || data.defaultCurrency || Object.keys(data.plans || {})[0] || null);
+      setCurrency(data.currency || null);
     } catch (e) {
       console.error("Failed to load prices:", e);
     }
@@ -347,6 +346,8 @@ export default function BillingPage() {
       });
       const checkout = await createRes.json().catch(() => ({}));
       if (!createRes.ok) {
+        // 409: the price shown is for another location (e.g. a VPN was switched on); show the right one
+        if (createRes.status === 409) loadPlans();
         setPaymentResult({
           type: "error",
           title: "Couldn't start checkout",
@@ -451,8 +452,7 @@ export default function BillingPage() {
   const daysLeft = subscriptionStatus?.daysLeft ?? 0;
   const renewsOn = formatDate(subscriptionEndsAt);
 
-  // Prices: the currency picked on this page, or for subscribers the one they pay in
-  const availableCurrencies = plans ? ["INR", "USD"].filter((c) => plans[c]) : [];
+  // Prices: the currency for this location, or for subscribers the one they pay in
   const shownCurrency = (isSubscribed && currentCurrency) || currency;
   const shownPlan = plans && shownCurrency ? plans[shownCurrency] : null;
   const shownPriceText = formatPlanPrice(shownPlan);
@@ -486,10 +486,7 @@ export default function BillingPage() {
 
         {/* Plans */}
         <section aria-labelledby="plans-heading">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
-            {!isSubscribed && <CurrencySwitch currencies={availableCurrencies} value={currency} onChange={setCurrency} />}
-          </div>
+          <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="flex flex-col rounded-2xl border border-gray-200 bg-white/70 p-6 sm:p-7">
               <h3 className="text-base font-semibold text-gray-900">{trialPlan.name}</h3>

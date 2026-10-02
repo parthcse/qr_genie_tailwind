@@ -1,12 +1,12 @@
 import prisma from "../../../lib/prisma";
 import { getUserFromRequest } from "../../../lib/auth";
 import { getClientIp } from "../../../lib/clientIp";
-import { getBasicPlans, publicPlans, pickDefaultCurrency, getSubscriptionCurrency } from "../../../lib/plans";
+import { getBasicPlans, publicPlans, currencyForIp, getSubscriptionCurrency } from "../../../lib/plans";
 
 /**
  * GET /api/billing/plans
- * Basic Package prices per currency (from Razorpay), the currency to show by default,
- * and for subscribers the currency of their current subscription.
+ * The Basic Package price (from Razorpay) in the currency this visitor pays in (rupees in India, dollars elsewhere),
+ * and for subscribers the currency of their current subscription, whose price is included too.
  */
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -22,13 +22,15 @@ export default async function handler(req, res) {
     const plans = await getBasicPlans();
     const account = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { country: true, billingCountry: true, razorpaySubscriptionId: true },
+      select: { razorpaySubscriptionId: true },
     });
     const currentCurrency = await getSubscriptionCurrency(account?.razorpaySubscriptionId, plans);
+    const currency = currencyForIp(plans, getClientIp(req));
+    const shown = Object.entries(publicPlans(plans)).filter(([c]) => c === currency || c === currentCurrency);
 
     return res.status(200).json({
-      plans: publicPlans(plans),
-      defaultCurrency: currentCurrency || pickDefaultCurrency(plans, { ip: getClientIp(req), user: account }),
+      plans: Object.fromEntries(shown),
+      currency,
       currentCurrency,
     });
   } catch (err) {

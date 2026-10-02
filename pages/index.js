@@ -33,7 +33,6 @@ import {
 } from "react-icons/fa";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
-import CurrencySwitch from "../components/CurrencySwitch";
 import { formatPrice, formatPeriod } from "../lib/price";
 import { BASIC_PLAN_FEATURES } from "../lib/site";
 
@@ -44,15 +43,13 @@ export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import('../lib/auth');
   const user = await getUserFromRequest(context.req);
 
-  // Basic Package prices from Razorpay (cached), shown in rupees to visitors in India and dollars elsewhere
-  let plans = {};
-  let defaultCurrency = null;
+  // Basic Package price from Razorpay (cached): rupees for visitors in India, dollars everywhere else
+  let basicPlan = null;
   try {
-    const { getBasicPlans, publicPlans, pickDefaultCurrency } = await import('../lib/plans');
+    const { getBasicPlans, publicPlans, currencyForIp } = await import('../lib/plans');
     const { getClientIp } = await import('../lib/clientIp');
     const all = await getBasicPlans();
-    plans = publicPlans(all);
-    defaultCurrency = pickDefaultCurrency(all, { ip: getClientIp(context.req) });
+    basicPlan = publicPlans(all)[currencyForIp(all, getClientIp(context.req))] || null;
   } catch (err) {
     console.error('Landing prices:', err.message);
   }
@@ -60,8 +57,7 @@ export async function getServerSideProps(context) {
   return {
     props: {
       initialUser: user ? JSON.parse(JSON.stringify(user)) : null,
-      plans,
-      defaultCurrency,
+      basicPlan,
     },
   };
 }
@@ -755,13 +751,10 @@ function QrTypesShowcase({ isAuthenticated }) {
   );
 }
 
-export default function Landing({ initialUser, plans = {}, defaultCurrency = null }) {
+export default function Landing({ initialUser, basicPlan = null }) {
   const router = useRouter();
 
-  // Pricing: real Razorpay prices in the visitor's currency, switchable when both are offered
-  const [currency, setCurrency] = useState(defaultCurrency);
-  const availableCurrencies = ["INR", "USD"].filter((c) => plans[c]);
-  const basicPlan = currency ? plans[currency] : null;
+  // Pricing: the real Razorpay price in the visitor's currency (picked on the server by location)
   const displayPlans = pricingPlans.map((plan) =>
     plan.name === "Basic Package"
       ? {
@@ -769,7 +762,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
           price: basicPlan ? formatPrice(basicPlan.amount, basicPlan.currency) : "—",
           period: basicPlan ? formatPeriod(basicPlan.period, basicPlan.interval) : "",
         }
-      : { ...plan, price: formatPrice(0, currency || "USD") }
+      : { ...plan, price: formatPrice(0, basicPlan?.currency || "USD") }
   );
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   // The server already knows who is signed in, so the right buttons are in the first HTML (no placeholder flash)
@@ -1110,9 +1103,7 @@ export default function Landing({ initialUser, plans = {}, defaultCurrency = nul
               eyebrow="Pricing"
               title="Simple, transparent pricing"
               description="Start free for 14 days, no card needed. Cancel anytime."
-            >
-              <CurrencySwitch currencies={availableCurrencies} value={currency} onChange={setCurrency} className="mt-8" />
-            </SectionHeading>
+            />
 
             <div className="mx-auto mt-14 grid max-w-4xl items-stretch gap-8 md:grid-cols-2 lg:mt-16">
               {displayPlans.map((plan) => {

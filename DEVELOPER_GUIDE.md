@@ -14,14 +14,14 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 
 | Page | What's there |
 |---|---|
-| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing), **QR code types** (tabs for the released types, each with a phone preview of what a scan does and a button to create one), features, how it works, pricing (INR or USD), testimonials, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
+| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing), **QR code types** (tabs for the released types, each with a phone preview of what a scan does and a button to create one), features, how it works, pricing (in rupees for visitors in India, US dollars everywhere else), testimonials, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
 | `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or `wifi`, `whatsapp`, `instagram`) opens straight at step 2 with that type chosen; the landing page links there. |
 | `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
 | `/dashboard/account` | Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/AuthShell.js`). |
-| `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay, currency switch. |
+| `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay in the visitor's currency. |
 | `/contact` | Contact form (saved to the database and emailed to support): name, email, the topic as cards (with a tip for billing, cancellation, refund and "something isn't working" messages), message. `?topic=billing` (or another topic value from `lib/site.js`) preselects a topic. Beside it: the support email with a copy button, billing guidance and policy links. |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
 | `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects (after asking for the password when the code is protected). |
@@ -58,7 +58,7 @@ components/         layouts, header/footer, auth page shell (AuthShell), QR rend
 components/qrFields/  the schema-driven form used by create-qr
 lib/                shared and server-side logic
 prisma/             schema.prisma and migrations/
-scripts/            deploy.sh (production deploy), test-email.mjs
+scripts/            deploy.sh (production deploy), backup-db.sh (database backup), test-email.mjs
 .github/workflows/  deploy.yml (deploys on every push to main)
 ```
 
@@ -71,7 +71,7 @@ scripts/            deploy.sh (production deploy), test-email.mjs
 | `subscription.js` | Plan rules: `getUserSubscriptionStatus`, `canCreateQR`, `checkQRCodeLimit`, `getQrPauseReason`, `TRIAL_QR_LIMIT`. No server dependencies, so pages can import it. |
 | `subscriptionSync.js` | Applies plan changes: pauses codes when a plan ends. |
 | `activateBasicSubscription.js` | Turns the Basic plan on after payment and restores plan-paused codes; tells the caller whether it was a renewal. |
-| `plans.js`, `price.js` | Reads the Razorpay plans (prices, currencies), picks a visitor's default currency, formats prices. |
+| `plans.js`, `price.js` | Reads the Razorpay plans (prices, currencies), picks the currency by the visitor's location (`currencyForIp`: India → INR, elsewhere USD), formats prices. |
 | `razorpayClient.js`, `razorpayVerify.js`, `razorpayError.js` | Razorpay SDK, signature checks, readable error messages. |
 | `emailCheck.js` | Sign-up email rules (format, no temporary-mail providers, domain can receive mail). |
 | `emailVerification.js` | The 6-digit email codes, for sign-up (`sendVerificationCode`, `checkVerificationCode`) and for changing the email (`sendEmailChangeCode`, `confirmEmailChange`, `cancelEmailChange`): expiry, tries and resend cooldown. |
@@ -254,8 +254,8 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## Payments (Razorpay)
 
-1. `/dashboard/billing` loads the plans from `api/billing/plans`. Prices come from the Razorpay plans; visitors in India see INR by default, others USD, with a switch when both are set up.
-2. **Subscribe** calls `api/checkout/razorpay/create-subscription`, then Razorpay Checkout opens.
+1. `/dashboard/billing` loads the price from `api/billing/plans`. Prices come from the Razorpay plans. **The currency is set by location, not chosen:** visitors connecting from India pay in INR, everyone else in USD (by IP, so a foreign VPN means USD). The landing page and billing page show only that price; subscribers also see the currency they already pay in.
+2. **Subscribe** calls `api/checkout/razorpay/create-subscription`, which works out the currency again on the server. If the page showed a different one (say a VPN was switched on after loading), it answers 409 and the page reloads the price, so nobody is charged an amount they weren't shown. Then Razorpay Checkout opens.
 3. After payment the browser calls `api/checkout/razorpay/verify`, which checks the payment signature and activates the plan until Razorpay's current period end.
 4. `api/webhooks/razorpay` receives `subscription.activated` and `subscription.charged` (monthly renewals) and also covers the case where the browser never called verify. A payment is never applied twice.
 5. Both paths then send the plan emails (see [Email](#email)) in the background, so checkout never waits for them.
@@ -321,6 +321,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - Production secrets live in the `.env` file in the app folder on the server.
 - The app sends its own security headers in production (see `next.config.js`).
 - Useful commands on the server: `pm2 list`, `pm2 logs qr-genie-next`, `pm2 restart qr-genie-next`, `sudo nginx -t && sudo systemctl reload nginx`.
+- **Database backups:** `scripts/backup-db.sh` runs every night from cron as the `postgres` system user. It writes a compressed `pg_dump`, checks the file can be read back, keeps every backup for 14 days and Sunday's for 12 weeks, and logs one line per run to `backup.log` in the backup folder. Cron runs an installed copy of the script, so after changing it, install it on the server again. How to restore is in the script's header; to check a backup, restore it into a new, empty database rather than the live one. For copies off the server, keep the hosting provider's automatic snapshots of the whole server turned on (they include the backup folder).
 
 ## Troubleshooting
 

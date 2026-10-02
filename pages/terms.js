@@ -51,10 +51,10 @@ const sections = [
     body: (
       <>
         <p>
-          The Basic Package is a monthly subscription, billed through Razorpay in Indian rupees or US dollars. The current
-          price in each currency is shown on our pricing and billing pages, and the currency you choose at checkout is the
-          one you&apos;re charged in. You pay when you subscribe, and the same amount is charged automatically every month on
-          that date until you cancel.
+          The Basic Package is a monthly subscription, billed through Razorpay: in Indian rupees if you subscribe from
+          India, and in US dollars from anywhere else (we go by the location of your internet connection). The price shown
+          on our pricing and billing pages is the amount you&apos;re charged. You pay when you subscribe, and the same amount
+          is charged automatically every month on that date until you cancel.
         </p>
         <p>
           If a renewal payment fails, your QR codes keep working for 3 days while it&apos;s retried; after that they&apos;re paused

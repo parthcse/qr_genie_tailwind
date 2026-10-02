@@ -3,10 +3,14 @@ import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../../../lib/auth";
 import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
 import { normalizeRazorpayApiError } from "../../../../lib/razorpayError";
 import { getUserSubscriptionStatus } from "../../../../lib/subscription";
-import { getBasicPlans } from "../../../../lib/plans";
+import { getBasicPlans, currencyForIp } from "../../../../lib/plans";
+import { getClientIp } from "../../../../lib/clientIp";
+import { CURRENCY_NAMES } from "../../../../lib/price";
 
 /**
- * Creates a Razorpay subscription for the Basic plan in the currency the user picked ({ currency: "INR" | "USD" }).
+ * Creates a Razorpay subscription for the Basic plan: in rupees when the user connects from India, in dollars from
+ * anywhere else. The browser sends the currency it showed ({ currency: "INR" | "USD" }); if that isn't the one for
+ * this location, nothing is created, so nobody is charged a price they weren't shown.
  * Plans come from RAZORPAY_PLAN_ID_INR / RAZORPAY_PLAN_ID_USD (Razorpay Dashboard → Subscriptions → Plans).
  */
 export default async function handler(req, res) {
@@ -32,10 +36,17 @@ export default async function handler(req, res) {
   let planId;
   try {
     const plans = await getBasicPlans();
-    const plan = plans[body.currency] || Object.values(plans)[0];
+    const currency = currencyForIp(plans, getClientIp(req));
+    const plan = currency ? plans[currency] : null;
     if (!plan) {
       console.error("No Razorpay plan could be loaded; set RAZORPAY_PLAN_ID_INR and/or RAZORPAY_PLAN_ID_USD");
       return res.status(500).json({ error: "Payment is not configured yet. Please try again later." });
+    }
+    if (body.currency && body.currency !== currency) {
+      return res.status(409).json({
+        error: `Your price is in ${CURRENCY_NAMES[currency] || currency}. Please refresh the page to see it, then subscribe again.`,
+        currency,
+      });
     }
     planId = plan.planId;
   } catch (err) {
