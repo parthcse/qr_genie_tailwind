@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Please complete the security check and try again.", turnstile: true });
     }
 
-    let user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    let user = await prisma.user.findUnique({ where: { email: cleanEmail }, omit: { password: false } });
     const valid = await bcrypt.compare(password.slice(0, 128), user?.password || DUMMY_HASH);
     if (!user || !valid) {
       return res.status(401).json({ error: "Invalid email or password." });

@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rateLimit";
 import { getRazorpayClient, trimEnv } from "@/lib/billing/razorpayClient";
 import { normalizeRazorpayApiError } from "@/lib/billing/razorpayError";
 import { getUserSubscriptionStatus } from "@/lib/billing/subscription";
@@ -25,6 +26,10 @@ export default async function handler(req, res) {
   }
   if (!user.emailVerified) {
     return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
+  }
+  // Every attempt creates a subscription at Razorpay
+  if (isRateLimited(`checkout:${user.id}`, 60 * 60 * 1000, 10)) {
+    return res.status(429).json({ error: "Too many checkout attempts. Please wait a while and try again, or contact us." });
   }
 
   // Razorpay renews automatically; a second subscription would bill the user twice. A cancelled plan still runs to the

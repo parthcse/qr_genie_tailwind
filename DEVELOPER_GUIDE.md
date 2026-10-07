@@ -49,7 +49,9 @@ All dashboard pages share `components/layout/DashboardLayout.js`: the sidebar ha
 | Location | `geoip-lite` (bundled IP database) |
 | Runtime | Node 24 LTS in production, Node 22 or newer locally |
 
-Prisma 7 and Tailwind 4 are major rewrites and haven't been adopted yet. The `overrides` entry in `package.json` patches a Prisma CLI dependency; drop it once Prisma ships the fix.
+**Next.js is pinned to 16.3.7 on purpose:** 16.4.0 adds an inline loader script to every page, which the Content Security Policy blocks (inline scripts aren't allowed). Before upgrading Next.js, build it and check the browser console for "Content Security Policy" errors; if there are any, the policy needs nonces before the upgrade can go ahead.
+
+`npm audit` reports issues only in Tailwind 3's build-time tooling (file watching and CSS parsing); they never see visitor input, and the fix is the Tailwind 4 upgrade. Prisma 7 and Tailwind 4 are major rewrites and haven't been adopted yet. The `overrides` entry in `package.json` patches a Prisma CLI dependency; drop it once Prisma ships the fix.
 
 ## Project layout
 
@@ -71,6 +73,7 @@ scripts/               deploy.sh (production deploy), backup-db.sh (database bac
 assets/fonts/          Inter and Plus Jakarta Sans TTF files for invoice PDFs (SIL Open Font License, texts alongside)
 .github/workflows/     deploy.yml (deploys on every push to main)
 jsconfig.json          the "@/" import alias (see Coding conventions)
+proxy.js               runs before every /api request: blocks cross-site requests (see Coding conventions)
 ```
 
 **`lib/`**
@@ -192,7 +195,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 - **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
 - **Deleting a QR code** sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
 - **Deleting a folder** moves its codes to "no folder".
-- **`passwordHash` is left out of every query by default** (`omit` in `lib/prisma.js`). Code that checks a password asks for it with `omit: { passwordHash: false }`; API responses only ever say `hasPassword: true/false`.
+- **Secrets are left out of every query by default** (`omit` in `lib/prisma.js`): `QRCode.passwordHash`, and `User.password`, `resetToken` and `emailCodeHash`. Login asks for the password hash with `omit: { password: false }`; password and email changes `select` it. For `passwordHash`: code that checks a password asks for it with `omit: { passwordHash: false }`; API responses only ever say `hasPassword: true/false`.
 - `scanCount` is what the dashboard list shows; the analytics pages count `ScanEvent` rows.
 - IDs are CUIDs; date calculations use UTC.
 
@@ -318,8 +321,12 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - **API responses:** JSON. On failure `{ error: "message for the user" }` with a matching status code (400, 401, 403, 404, 405, 429, 500). Never send internal error details (`error.message`, stack traces) to the browser; log them with `console.error`.
 - **Check the user and ownership** in every API route that touches user data (`getUserFromRequest`, and `userId: user.id` in every query).
 - **Validate input on the server** even when the form already does: types, lengths, allowed values. Use `lib/qr/redirectValidation.js` for any URL that will be redirected to.
-- **Rate-limit** anything a bot could abuse: ``if (isRateLimited(`name:${ip}`, windowMs, max)) return res.status(429).json({ error: "…" })``.
-- **Never send secrets or hashes to the browser.** QR password hashes and email confirmation code hashes are omitted by default (see [Data model](#data-model)); if you add another secret field, omit it the same way.
+- **Rate-limit** anything a bot could abuse: ``if (isRateLimited(`name:${ip}`, windowMs, max)) return res.status(429).json({ error: "…" })``. Signed-in actions that create things are limited per user too (QR codes 60 an hour, checkouts 10, payment confirmations 30, cancellations 10).
+- **Never send secrets or hashes to the browser.** Users' password hashes, reset-token hashes and email confirmation code hashes, and QR password hashes, are left out of every query by default (`omit` in `lib/prisma.js`); code that needs one asks for it (`select: { password: true }` or `omit: { password: false }`). If you add another secret field, omit it the same way. Page props are visible in the HTML, so pass a page only the fields it uses.
+- **Cross-site requests:** `proxy.js` refuses any POST/PUT/PATCH/DELETE to `/api` that comes from another website (by `Origin`, else `Referer`) or has a body a plain HTML form could send (`text/plain`, form-encoded, multipart). Browser code must send JSON (`Content-Type: application/json`). Razorpay webhooks are exempt; they're checked by signature. This is on top of the `SameSite=Lax` login cookie.
+- **Database lookups by id:** pass ids as plain strings (`String(id)` or a `typeof` check). An object from a JSON body would be read by Prisma as a filter.
+- **Saved designs** go through `sanitizeDesign` (`lib/qr/qrConfig.js`): colour fields must be colours, text is capped, only flat values are kept. When building HTML or CSS by hand (print windows, SVG export), escape text with `escapeHtml` and pass colours through `safeColor`.
+- **Logs:** never log passwords, tokens, codes or full email bodies. In production, `lib/email.js` logs only the recipient and subject if SMTP isn't set up.
 - **Server-only modules** (`lib/prisma`, `lib/auth`, `lib/email`, `lib/scanUtils`, …) may be used in pages only inside `getServerSideProps`. Don't leave unused imports of them in a page: Next.js can then ship the module to the browser.
 - **Content Security Policy** (`next.config.js`, production only): scripts may come only from the site, Razorpay and Cloudflare Turnstile; inline `<script>` and `eval` are blocked. When adding a third-party script, iframe, font or API, add its domain to the policy and test with `npm run build && npm start`: the dev server doesn't apply the policy.
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.

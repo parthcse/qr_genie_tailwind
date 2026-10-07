@@ -3,9 +3,11 @@ import prisma from "@/lib/prisma";
 import { nanoid } from "nanoid";
 import QRCode from "qrcode";
 import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rateLimit";
 import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
 import { qrPasswordProblem, hashQrPassword } from "@/lib/qr/qrPassword";
 import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
+import { sanitizeDesign } from "@/lib/qr/qrConfig";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "@/lib/billing/subscription";
 // QR types open for new codes; the others stay in the code for a later launch
@@ -43,6 +45,10 @@ export default async function handler(req, res) {
   }
   if (!user.emailVerified) {
     return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
+  }
+  // Generous for people, a stop for scripts: creating and duplicating codes share 60 an hour
+  if (isRateLimited(`create-qr:${user.id}`, 60 * 60 * 1000, 60)) {
+    return res.status(429).json({ error: "You're creating codes very quickly. Please wait a few minutes and try again." });
   }
 
   // Check if user can create QR codes
@@ -226,8 +232,9 @@ export default async function handler(req, res) {
 
   // Add design config to metaObj if provided
   if (design && typeof design === "object" && !Array.isArray(design)) {
-    // A logo is only ever an uploaded image (data URL); drop anything else
-    const safeDesign = { ...design };
+    // Only flat values, real colours and short text are kept (lib/qr/qrConfig.js); a logo is only ever an
+    // uploaded image (data URL), anything else is dropped
+    const safeDesign = sanitizeDesign(design);
     if (safeDesign.logo && !(typeof safeDesign.logo === "string" && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/i.test(safeDesign.logo))) {
       safeDesign.logo = null;
     }

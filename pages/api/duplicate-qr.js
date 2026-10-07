@@ -1,6 +1,7 @@
 // pages/api/duplicate-qr.js
 import prisma from "@/lib/prisma";
 import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rateLimit";
 import { checkQRCodeLimit } from "@/lib/billing/subscription";
 import { nanoid } from "nanoid";
 
@@ -16,6 +17,10 @@ export default async function handler(req, res) {
     }
     if (!user.emailVerified) {
       return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
+    }
+    // Shares the creation limit with api/create-dynamic
+    if (isRateLimited(`create-qr:${user.id}`, 60 * 60 * 1000, 60)) {
+      return res.status(429).json({ error: "You're creating codes very quickly. Please wait a few minutes and try again." });
     }
 
     const { id } = req.body;

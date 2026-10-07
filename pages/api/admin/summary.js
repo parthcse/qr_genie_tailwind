@@ -3,6 +3,9 @@ import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 
 export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
   const user = await getUserFromRequest(req);
   // Same answer as a missing route, so the admin API isn't discoverable
   if (!user || user.role !== "admin") {

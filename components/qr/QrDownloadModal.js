@@ -50,18 +50,6 @@ export default function QrDownloadModal({ qrCode, onClose }) {
     setDownloading(true);
     try {
       const filename = qrCode.name || "qr-code";
-      
-      // Debug logging
-      console.log("QrDownloadModal - Downloading:", {
-        qrCodeSlug: qrCode.slug,
-        qrValue,
-        designData,
-        hasFrame: designData?.frameStyle && designData.frameStyle !== "none" && designData?.frameText,
-        frameStyle: designData?.frameStyle,
-        frameText: designData?.frameText,
-        frameColor: designData?.frameColor,
-      });
-      
       await downloadDesignedQR(qrValue, designData, selectedFormat, selectedSize, filename);
       onClose();
     } catch (error) {

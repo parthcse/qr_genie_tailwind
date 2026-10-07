@@ -54,7 +54,8 @@ export async function getServerSideProps(context) {
 
   return {
     props: {
-      initialUser: user ? JSON.parse(JSON.stringify(user)) : null,
+      // Only what this page uses: page data is visible in the HTML
+      initialUser: user ? { id: user.id, name: user.name || null, subscriptionPlan: user.subscriptionPlan } : null,
       basicPlan,
     },
   };

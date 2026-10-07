@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
-import { getQrPauseReason } from "@/lib/billing/subscription";
+import { getQrPauseReason, PLAN_STATUS_FIELDS } from "@/lib/billing/subscription";
 import { checkQrPassword } from "@/lib/qr/qrPassword";
 import { getClientIp } from "@/lib/clientIp";
 import { isRateLimited } from "@/lib/rateLimit";
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   try {
     const qr = await prisma.qRCode.findUnique({
       where: { slug },
-      include: { user: true },
+      include: { user: { select: PLAN_STATUS_FIELDS } }, // only what the plan check needs
       omit: { passwordHash: false },
     });
     if (!qr || qr.status !== "ACTIVE" || !qr.passwordHash || getQrPauseReason(qr.user)) {

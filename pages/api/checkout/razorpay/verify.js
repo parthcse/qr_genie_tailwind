@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rateLimit";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
 import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
 import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
@@ -14,6 +15,9 @@ export default async function handler(req, res) {
   const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (isRateLimited(`verify-payment:${user.id}`, 60 * 60 * 1000, 30)) {
+    return res.status(429).json({ error: "Too many attempts. Please wait a while and try again, or contact us." });
   }
 
   const secret = trimEnv("RAZORPAY_KEY_SECRET");

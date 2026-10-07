@@ -2,6 +2,8 @@
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 
+const MAX_NAME_LENGTH = 100; // same limit as when a code is created
+
 export default async function handler(req, res) {
   // Set Content-Type header to ensure JSON response
   res.setHeader('Content-Type', 'application/json');
@@ -16,10 +18,18 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const { id, name } = req.body;
+    const { id: rawId, name } = req.body || {};
+    // Plain text only: an object here would be read as a database filter
+    const id = typeof rawId === "string" ? rawId : "";
 
     if (!id) {
       return res.status(400).json({ error: "QR code ID is required" });
+    }
+    if (name !== undefined && name !== null && typeof name !== "string") {
+      return res.status(400).json({ error: "Name must be text" });
+    }
+    if (typeof name === "string" && name.trim().length > MAX_NAME_LENGTH) {
+      return res.status(400).json({ error: `Keep the name under ${MAX_NAME_LENGTH} characters` });
     }
 
     // Verify QR code belongs to user
