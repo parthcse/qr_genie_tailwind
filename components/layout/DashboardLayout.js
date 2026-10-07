@@ -55,7 +55,9 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-gray-900">Basic Package</span>
-          <span className="block truncate text-xs text-gray-500">{renews ? `Renews ${renews}` : "Active"}</span>
+          <span className="block truncate text-xs text-gray-500">
+            {renews ? `${user.subscriptionCancelledAt ? "Ends" : "Renews"} ${renews}` : "Active"}
+          </span>
         </span>
         <FaChevronRight className="h-3 w-3 flex-none text-gray-400 transition group-hover:text-indigo-600" />
       </Link>

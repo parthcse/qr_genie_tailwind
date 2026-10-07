@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PaymentResultModal from "@/components/billing/PaymentResultModal";
+import CancelSubscriptionModal from "@/components/billing/CancelSubscriptionModal";
 import { FaCheck, FaPlus } from "react-icons/fa";
 import { formatPrice, formatPeriod, formatPlanPrice } from "@/lib/billing/price";
 import { TRIAL_PLAN_FEATURES, BASIC_PLAN_FEATURES } from "@/lib/site";
@@ -54,9 +55,10 @@ const buildFaqItems = (priceText) => [
     question: "How do I cancel?",
     answer: (
       <>
-        <Link href="/contact?topic=cancel" className="font-medium !text-indigo-600 hover:!text-indigo-700">Contact us</Link> and
-        we&apos;ll cancel your subscription. You keep the Basic Package until the end of the month you&apos;ve already paid for,
-        and you won&apos;t be charged again.
+        Choose <strong className="font-semibold text-gray-900">Cancel subscription</strong> on your plan card at the top of
+        this page. You keep the Basic Package until the end of the month you&apos;ve already paid for, and you won&apos;t be
+        charged again. If you&apos;d rather we do it,{" "}
+        <Link href="/contact?topic=cancel" className="font-medium !text-indigo-600 hover:!text-indigo-700">contact us</Link>.
       </>
     ),
   },
@@ -114,7 +116,7 @@ function QrMotif({ className }) {
   );
 }
 
-function MembershipPass({ planName, priceText, renewsOn }) {
+function MembershipPass({ planName, priceText, renewsOn, cancelled, onCancel }) {
   return (
     <section
       aria-label="Your subscription"
@@ -122,17 +124,26 @@ function MembershipPass({ planName, priceText, renewsOn }) {
     >
       <QrMotif className="pointer-events-none absolute -right-8 -top-8 h-60 w-60 text-white/[0.13] [mask-image:linear-gradient(to_bottom_left,black_30%,transparent_80%)] sm:h-72 sm:w-72" />
       <div className="relative">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-400/30">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          Active
-        </span>
+        {cancelled ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-medium text-amber-200 ring-1 ring-inset ring-amber-300/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+            Cancelled
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-400/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Active
+          </span>
+        )}
         <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{planName}</h2>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-indigo-200">
-          Create as many QR codes as you need. Your printed codes keep working while your plan is active.
+          {cancelled
+            ? "Your plan is cancelled and won't renew. Everything keeps working until the end date; after that your QR codes are paused."
+            : "Create as many QR codes as you need. Your printed codes keep working while your plan is active."}
         </p>
         <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-white/10 pt-6 sm:grid-cols-3">
           <div>
-            <dt className="text-xs text-indigo-300">Renews on</dt>
+            <dt className="text-xs text-indigo-300">{cancelled ? "Ends on" : "Renews on"}</dt>
             <dd className="mt-1 text-lg font-semibold tabular-nums">{renewsOn || "—"}</dd>
           </div>
           <div>
@@ -144,12 +155,24 @@ function MembershipPass({ planName, priceText, renewsOn }) {
             <dd className="mt-1 text-lg font-semibold">Unlimited</dd>
           </div>
         </dl>
-        <p className="mt-6 text-sm text-indigo-200">
-          Want to cancel or have a billing question?{" "}
-          <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
-            Contact us
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-indigo-200">
+          <p>
+            {cancelled && renewsOn ? `Changed your mind? You can subscribe again from ${renewsOn}. ` : ""}
+            Billing question?{" "}
+            <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+              Contact us
+            </Link>
+          </p>
+          {!cancelled && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md text-sm font-medium text-indigo-200 underline decoration-indigo-300/40 underline-offset-4 transition hover:text-white hover:decoration-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              Cancel subscription
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -234,6 +257,9 @@ export default function BillingPage() {
   const [buyingPlan, setBuyingPlan] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
+  // When the subscription was cancelled (it then runs to subscriptionEndsAt and won't renew)
+  const [cancelledAt, setCancelledAt] = useState(null);
+  const [showCancel, setShowCancel] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   // Razorpay shows its own failure screen with a retry; we only report the failure once the user closes checkout
   const lastPaymentFailure = useRef(null);
@@ -258,6 +284,7 @@ export default function BillingPage() {
           setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
           if (data.user) {
             setSubscriptionEndsAt(data.user.subscriptionEndsAt || null);
+            setCancelledAt(data.user.subscriptionCancelledAt || null);
             setBillingInfo({
               billingName: data.user.billingName || "",
               billingCompany: data.user.billingCompany || "",
@@ -467,7 +494,15 @@ export default function BillingPage() {
 
         {/* Plan status */}
         {!statusLoaded && <div className="h-40 animate-pulse rounded-3xl bg-indigo-50" />}
-        {isSubscribed && <MembershipPass planName={basicPlan.name} priceText={shownPriceText} renewsOn={renewsOn} />}
+        {isSubscribed && (
+          <MembershipPass
+            planName={basicPlan.name}
+            priceText={shownPriceText}
+            renewsOn={renewsOn}
+            cancelled={!!cancelledAt}
+            onCancel={() => setShowCancel(true)}
+          />
+        )}
         {isTrial && <TrialProgress daysLeft={daysLeft} />}
         {statusLoaded && !isSubscribed && !isTrial && <PlanEndedNotice status={status} />}
 
@@ -626,6 +661,12 @@ export default function BillingPage() {
         </section>
       </div>
 
+      <CancelSubscriptionModal
+        open={showCancel}
+        endsOn={renewsOn || "the end of your paid period"}
+        onClose={() => setShowCancel(false)}
+        onCancelled={() => setCancelledAt(new Date().toISOString())}
+      />
       <PaymentResultModal
         result={paymentResult}
         planName={basicPlan.name}

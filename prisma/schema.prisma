@@ -39,6 +39,8 @@ model User {
   trialStartedAt        DateTime?
   subscriptionStartedAt DateTime?
   subscriptionEndsAt    DateTime?
+  subscriptionCancelledAt DateTime? // set when the Basic subscription was cancelled; it runs to subscriptionEndsAt and won't renew
+  cancellationReason    String?   // what the customer said when cancelling (optional)
 
   // Razorpay subscription linkage (optional)
   razorpayCustomerId     String?

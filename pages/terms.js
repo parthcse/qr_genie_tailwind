@@ -77,8 +77,9 @@ const sections = [
     heading: "Cancelling",
     body: (
       <p>
-        You can cancel at any time by <Link href="/contact?topic=cancel">contacting us</Link>. Your plan stays active until
-        the end of the period you&apos;ve paid for, and you won&apos;t be charged again. When it ends, your QR codes are paused.
+        You can cancel at any time with <strong>Cancel subscription</strong> on the Billing page of your dashboard, or by{" "}
+        <Link href="/contact?topic=cancel">contacting us</Link>. Your plan stays active until the end of the period
+        you&apos;ve paid for, and you won&apos;t be charged again. When it ends, your QR codes are paused.
       </p>
     ),
   },

@@ -21,7 +21,7 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 | `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
 | `/dashboard/account` | Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/auth/AuthShell.js`). |
-| `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay in the visitor's currency. |
+| `/dashboard/billing` | Current plan, trial countdown, Basic plan checkout with Razorpay in the visitor's currency, and **Cancel subscription** on the plan card (a confirmation window with an optional reason; the card then shows *Cancelled* and the end date). |
 | `/contact` | Contact form (saved to the database and emailed to support): name, email, the topic as cards (with a tip for billing, cancellation, refund and "something isn't working" messages), message. `?topic=billing` (or another topic value from `lib/site.js`) preselects a topic. Beside it: the support email with a copy button, billing guidance and policy links. |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
 | `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects (after asking for the password when the code is protected). |
@@ -95,6 +95,7 @@ jsconfig.json          the "@/" import alias (see Coding conventions)
 | `billing/plans.js`, `billing/price.js` | Reads the Razorpay plans (prices, currencies), picks the currency by the visitor's location (`currencyForIp`: India → INR, elsewhere USD), formats prices. |
 | `billing/razorpayClient.js`, `razorpayVerify.js`, `razorpayError.js` | Razorpay SDK, signature checks, readable error messages. |
 | `billing/subscriptionEmails.js` | `sendPlanEmails`: the customer and admin emails for a new subscription or a renewal, each sent once. |
+| `billing/cancelSubscription.js` | `cancelSubscriptionForUser`: cancels the Basic subscription in Razorpay (at the end of the billing cycle), records it and sends the cancellation emails; `recordRazorpayCancellation` for the `subscription.cancelled` webhook. |
 | `invoices/invoices.js` | `issueInvoiceForPayment`: creates the GST invoice for a payment (once, numbered) and emails it with the PDF; `sellerDetails` reads the `INVOICE_*` settings. |
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
@@ -114,7 +115,7 @@ jsconfig.json          the "@/" import alias (see Coding conventions)
 | QR codes | `create-dynamic`, `my-qr-codes`, `qrs/[id]` (GET, PUT), `qrs/[id]/pause`, `qrs/[id]/resume`, `qrs/[id]/analytics`, `update-qr-name`, `duplicate-qr`, `delete-qr`, `move-to-folder` |
 | Folders | `folders` (list, create), `folders/[id]` (rename, delete) |
 | Analytics | `analytics/overview` |
-| Billing | `billing/plans`, `checkout/razorpay/create-subscription`, `checkout/razorpay/verify`, `webhooks/razorpay` |
+| Billing | `billing/plans`, `billing/cancel`, `checkout/razorpay/create-subscription`, `checkout/razorpay/verify`, `webhooks/razorpay` |
 | Public | `r/[slug]/unlock` (password check for protected codes), `contact` |
 | Admin | `admin/summary` |
 
@@ -180,7 +181,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 | Model | Holds |
 |---|---|
-| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`, `emailVerifiedAt` and the current confirmation code (`emailCodeHash`, expiry, wrong tries, sent time), `pendingEmail` (a new address waiting for its code), `termsAcceptedAt`, `lastPlanEmailKey` (what the plan emails were last sent for). |
+| `User` | Email, password hash, profile and billing details, `role`, plan dates, Razorpay IDs, password-reset token hash, `sessionVersion`, `emailVerifiedAt` and the current confirmation code (`emailCodeHash`, expiry, wrong tries, sent time), `pendingEmail` (a new address waiting for its code), `termsAcceptedAt`, `lastPlanEmailKey` (what the plan emails were last sent for), `subscriptionCancelledAt` and `cancellationReason` (set when the Basic subscription is cancelled; cleared when a new subscription starts). |
 | `QRCode` | `slug`, `type`, `targetUrl`, `linkType` (`DYNAMIC` / `STATIC`), `status` (`ACTIVE` / `PAUSED` / `DELETED`), `deactivatedReason` (`MANUAL` / `TRIAL_EXPIRED` / `SUBSCRIPTION_EXPIRED`), `pausedMessage`, `passwordHash` (bcrypt, only for protected codes), `scanCount`, colors, `meta`, folder. |
 | `ScanEvent` | One logged scan: hashed IP, device, OS, browser, referrer, country, region, city. |
 | `Folder` | A user's folder. |
@@ -221,7 +222,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 - Status is calculated from the plan dates every time.
 - A plan ending is applied the next time the user signs in or opens the dashboard, or when one of their codes is scanned; their active codes are then paused with a plan reason.
-- Paid codes keep working for 3 days after the paid-until date, so a late renewal doesn't take printed codes offline.
+- Paid codes keep working for 3 days after the paid-until date, so a late renewal doesn't take printed codes offline. A cancelled subscription gets no extra days: nothing is going to renew it, so its codes pause on the end date.
 - Paying restores codes paused for plan reasons; codes the user paused or deleted stay as they are.
 - The trial length (14) and code limit (2) appear in several files and in the site copy (landing, billing, terms, refund policy). Search for them when changing either.
 
@@ -277,7 +278,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 1. `/dashboard/billing` loads the price from `api/billing/plans`. Prices come from the Razorpay plans. **The currency is set by location, not chosen:** visitors connecting from India pay in INR, everyone else in USD (by IP, so a foreign VPN means USD). The landing page and billing page show only that price; subscribers also see the currency they already pay in.
 2. **Subscribe** calls `api/checkout/razorpay/create-subscription`, which works out the currency again on the server. If the page showed a different one (say a VPN was switched on after loading), it answers 409 and the page reloads the price, so nobody is charged an amount they weren't shown. Then Razorpay Checkout opens.
 3. After payment the browser calls `api/checkout/razorpay/verify`, which checks the payment signature and activates the plan until Razorpay's current period end.
-4. `api/webhooks/razorpay` receives `subscription.activated` and `subscription.charged` (monthly renewals) and also covers the case where the browser never called verify. A payment is never applied twice.
+4. `api/webhooks/razorpay` receives `subscription.activated` and `subscription.charged` (monthly renewals) and also covers the case where the browser never called verify. A payment is never applied twice. `subscription.cancelled` marks the customer's current subscription as cancelled when that happens outside the billing page (Razorpay dashboard, failed payments).
 5. Both paths then send the plan emails (see [Email](#email)) in the background, so checkout never waits for them.
 6. Both paths also issue the **GST invoice** for the payment in the background (`lib/invoices/invoices.js`), for the first payment and every renewal.
 
@@ -287,9 +288,14 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 Invoices are numbered `QG/<financial year>/<sequence>` (e.g. `QG/2026-27/0001`), restarting each April in India time. The number is taken in the same database transaction that saves the invoice, so the series has no gaps or repeats, and `razorpayPaymentId` is unique, so each payment gets one invoice however often checkout and the webhooks report it. Seller and customer details are copied into the invoice when it's issued, so an invoice never changes later. Nothing is issued until the `INVOICE_SELLER_*` settings are complete; a warning is logged instead and the plan still activates. Refunds don't create credit notes yet.
 
-**Razorpay dashboard setup:** a monthly plan per currency (IDs into `RAZORPAY_PLAN_ID_INR` / `_USD`; to change a price, create a new plan and swap the ID), and a webhook to `<site>/api/webhooks/razorpay` for `subscription.activated` and `subscription.charged` with its secret in `RAZORPAY_WEBHOOK_SECRET`. USD needs Razorpay's international payments to be enabled.
+**Razorpay dashboard setup:** a monthly plan per currency (IDs into `RAZORPAY_PLAN_ID_INR` / `_USD`; to change a price, create a new plan and swap the ID), and a webhook to `<site>/api/webhooks/razorpay` for `subscription.activated`, `subscription.charged` and `subscription.cancelled` with its secret in `RAZORPAY_WEBHOOK_SECRET`. USD needs Razorpay's international payments to be enabled.
 
-**Cancelling** is handled by the team: customers ask through the contact form ("Cancel my subscription"), and the subscription is cancelled in the Razorpay dashboard. Access continues until the end of the paid period.
+**Cancelling** is self-service: **Cancel subscription** on the billing page's plan card calls `api/billing/cancel` (`lib/billing/cancelSubscription.js`).
+- Razorpay cancels the subscription at the end of the current billing cycle, so the customer keeps the month they paid for and is never charged again. A subscription with no cycle running (not charged yet, or retrying a failed payment) is cancelled straight away, because Razorpay refuses an end-of-cycle cancel then.
+- `User.subscriptionCancelledAt` is set (with the optional reason in `cancellationReason`); the plan runs to `subscriptionEndsAt`, then ends without the renewal grace days. The billing card and the sidebar show *Ends on* instead of *Renews on*.
+- The customer gets a confirmation email and the admin a notice with the reason. Asking again is harmless: it returns the same answer and sends nothing.
+- There's no "undo" (Razorpay can't revive a cancelled subscription). The customer can subscribe again once the period ends; until then `create-subscription` explains that, because a new subscription would charge for days already paid. A new subscription clears the cancellation.
+- Refunds for unused days stay on request through the contact form (see the refund policy). Customers who can't sign in can still ask through the contact form and be cancelled from the Razorpay dashboard; the webhook then records it.
 
 ## Email
 
@@ -303,6 +309,7 @@ Invoices are numbered `QG/<financial year>/<sequence>` (e.g. `QG/2026-27/0001`),
 
   Checkout and the Razorpay webhooks report the same events in any order, so each plan email is sent once: a new subscription is claimed by its subscription ID (whichever call switches the plan on first, which still knows the plan before and the paused codes it restored; if that call has no payment, the payment is looked up from Razorpay), a renewal by its payment ID, in `User.lastPlanEmailKey`. A mail failure is logged and never undoes the plan.
 - **GST invoice** to the customer after every payment (`sendInvoiceEmail` from `lib/invoices/invoices.js`): amount paid, invoice number, service period, payment method, the price breakdown (taxable value, CGST/SGST or IGST, total), a link to the billing page, and the invoice PDF attached (`lib/invoices/invoicePdf.js`, about 30 KB). See [GST invoices](#payments-razorpay). The email is claimed in `Invoice.emailedAt` before sending; if SMTP fails three times (over about two minutes) the claim is released, so the next checkout or webhook call for that payment sends it.
+- **Cancellation** (`lib/billing/cancelSubscription.js`), when a customer cancels on the billing page: to the customer, *Your QR-Genie subscription is cancelled* (the date the plan stays active until, that QR codes pause after it and nothing is deleted, links to billing and the refund policy); to the admin, *Cancelled* with the customer, end date, reason given and a link to the subscription in Razorpay (replies go to the customer).
 
 Without SMTP settings all of them are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
 
@@ -382,7 +389,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 
 ## Not built yet
 
-- **Self-service cancellation** and handling of Razorpay cancellation/failed-payment events.
+- **Failed renewals:** Razorpay's `subscription.halted` / `pending` events aren't handled; an unpaid plan simply ends at `subscriptionEndsAt` (after the grace days).
 - **Credit notes** for refunds, and a list of past invoices to download on the billing page (invoices are only emailed for now).
 - **Translations:** only English is available, although a language can be chosen in the account settings.
 - **Other QR types** (links, menus, video, …) are defined but not released. **PDF and vCard** codes were removed and will be rebuilt from scratch.

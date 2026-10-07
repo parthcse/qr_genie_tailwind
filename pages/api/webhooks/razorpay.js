@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
 import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
 import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
+import { recordRazorpayCancellation } from "@/lib/billing/cancelSubscription";
 import { verifyWebhookSignature } from "@/lib/billing/razorpayVerify";
 import { trimEnv } from "@/lib/billing/razorpayClient";
 
@@ -56,6 +57,18 @@ export default async function handler(req, res) {
   }
 
   const eventName = event.event;
+
+  // Cancelled outside the billing page (Razorpay dashboard, failed payments) or at the end of a cycle we scheduled
+  if (eventName === "subscription.cancelled") {
+    try {
+      await recordRazorpayCancellation(event.payload?.subscription?.entity);
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("Razorpay webhook cancelled:", err);
+      return res.status(500).json({ error: "Processing failed" });
+    }
+  }
+
   if (eventName !== "subscription.activated" && eventName !== "subscription.charged") {
     return res.status(200).json({ ok: true, ignored: true });
   }

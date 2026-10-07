@@ -3,6 +3,7 @@ import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
 import { getRazorpayClient, trimEnv } from "@/lib/billing/razorpayClient";
 import { normalizeRazorpayApiError } from "@/lib/billing/razorpayError";
 import { getUserSubscriptionStatus } from "@/lib/billing/subscription";
+import { formatDate } from "@/lib/billing/subscriptionEmails";
 import { getBasicPlans, currencyForIp } from "@/lib/billing/plans";
 import { getClientIp } from "@/lib/clientIp";
 import { CURRENCY_NAMES } from "@/lib/billing/price";
@@ -26,9 +27,14 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: VERIFY_EMAIL_FIRST, verifyEmail: true });
   }
 
-  // Razorpay renews automatically; a second subscription would bill the user twice
+  // Razorpay renews automatically; a second subscription would bill the user twice. A cancelled plan still runs to the
+  // end of its paid period, and a new subscription would charge for days already paid for, so it waits until then.
   if (getUserSubscriptionStatus(user).status === "SUBSCRIPTION_ACTIVE") {
-    return res.status(400).json({ error: "You already have an active Basic Package. It renews automatically." });
+    return res.status(400).json({
+      error: user.subscriptionCancelledAt
+        ? `Your Basic Package is active until ${formatDate(user.subscriptionEndsAt)} and won't renew. You can subscribe again from that date.`
+        : "You already have an active Basic Package. It renews automatically.",
+    });
   }
 
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};

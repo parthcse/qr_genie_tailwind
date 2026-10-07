@@ -40,7 +40,7 @@ const TOPIC_ICONS = {
 const PAYMENT_TIP = "Write from the email you signed up with, and include the payment ID if you have one.";
 const TOPIC_TIPS = {
   billing: PAYMENT_TIP,
-  cancel: PAYMENT_TIP,
+  cancel: "You can cancel yourself any time: Billing, then Cancel subscription on your plan card. If you can't sign in, write from the email you signed up with.",
   refund: PAYMENT_TIP,
   technical: "Tell us which QR code it is (its name or short link) and what happened.",
 };
