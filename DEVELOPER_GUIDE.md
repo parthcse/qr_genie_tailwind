@@ -42,6 +42,7 @@ All dashboard pages share `components/DashboardLayout.js`: the sidebar has a **C
 | Auth | JWT in an httpOnly cookie (`jsonwebtoken`, `cookie`, `bcryptjs`) |
 | Payments | Razorpay subscriptions |
 | Email | nodemailer over SMTP (AWS SES) |
+| Invoice PDFs | `pdfkit`, on the server, with the font files in `assets/fonts` |
 | Bot protection | Cloudflare Turnstile |
 | QR rendering | `qr-code-styling` (designed codes in the browser), `qrcode` (server PNGs) |
 | Charts | `recharts` |
@@ -59,6 +60,7 @@ components/qrFields/  the schema-driven form used by create-qr
 lib/                shared and server-side logic
 prisma/             schema.prisma and migrations/
 scripts/            deploy.sh (production deploy), backup-db.sh (database backup), test-email.mjs
+assets/fonts/       Inter and Plus Jakarta Sans TTF files for invoice PDFs (SIL Open Font License, texts alongside)
 .github/workflows/  deploy.yml (deploys on every push to main)
 ```
 
@@ -89,6 +91,9 @@ scripts/            deploy.sh (production deploy), backup-db.sh (database backup
 | `useCurrentUser.js` | Browser hook that loads the signed-in user (if any) for public pages and their header. |
 | `site.js` | `SUPPORT_EMAIL`, contact topics, `BASIC_PLAN_FEATURES` (pricing card and plan email), `LEGAL_LAST_UPDATED` (update when the legal pages change). |
 | `subscriptionEmails.js` | `sendPlanEmails`: the customer and admin emails for a new subscription or a renewal, each sent once. |
+| `invoices.js` | `issueInvoiceForPayment`: creates the GST invoice for a payment (once, numbered) and emails it with the PDF; `sellerDetails` reads the `INVOICE_*` settings. |
+| `gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
+| `invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
 
 **API (`pages/api/`)**
 
@@ -155,6 +160,9 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Outgoing email. Empty = emails are printed to the log. |
 | `ADMIN_NOTIFY_EMAIL` | Optional. Where new-subscriber and renewal notices go (comma-separated for several). Empty = the support address. |
 | `CONTACT_NOTIFY_EMAIL` | Optional. Where contact-form messages are emailed (comma-separated for several). Empty = the support address. |
+| `INVOICE_SELLER_NAME`, `INVOICE_SELLER_ADDRESS`, `INVOICE_SELLER_GSTIN` | The business printed on GST invoices (address lines separated by `\|`). All three, with a valid GSTIN, are needed before any invoice is issued. |
+| `INVOICE_SAC` | Optional. SAC code shown on invoices. |
+| `INVOICE_LUT_ARN` | Optional. With a Letter of Undertaking, dollar payments are invoiced as exports without GST; without it they include IGST. |
 
 ## Data model
 
@@ -167,6 +175,8 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `ScanEvent` | One logged scan: hashed IP, device, OS, browser, referrer, country, region, city. |
 | `Folder` | A user's folder. |
 | `ContactMessage` | Contact-form messages. |
+| `Invoice` | One GST invoice per Razorpay payment (`razorpayPaymentId` is unique): number, financial year and sequence, amounts in paise / cents (`total`, `taxableValue`, `cgst`, `sgst`, `igst`), `supplyType`, place of supply, service period, `seller` and `customer` as printed (JSON), `emailedAt`. Kept when the account is deleted (`userId` becomes empty). |
+| `InvoiceCounter` | The last invoice number used in each financial year. |
 
 - **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
 - **Deleting a QR code** sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
@@ -259,6 +269,13 @@ All are listed with comments in `.env.example`. Values never go into git.
 3. After payment the browser calls `api/checkout/razorpay/verify`, which checks the payment signature and activates the plan until Razorpay's current period end.
 4. `api/webhooks/razorpay` receives `subscription.activated` and `subscription.charged` (monthly renewals) and also covers the case where the browser never called verify. A payment is never applied twice.
 5. Both paths then send the plan emails (see [Email](#email)) in the background, so checkout never waits for them.
+6. Both paths also issue the **GST invoice** for the payment in the background (`lib/invoices.js`), for the first payment and every renewal.
+
+**GST invoices.** Prices include 18% GST, so the tax is worked out backwards from the amount paid: ₹499 = ₹422.88 taxable value + ₹76.12 GST. Which GST applies:
+- **Paid in INR** (customers in India): CGST 9% + SGST 9% when the customer is in the seller's state, IGST 18% when they're in another one. The customer's state comes from their GSTIN (if they entered a valid one as the tax ID on the account page), otherwise from the state in their billing or general details; if it's unknown, the seller's state is used.
+- **Paid in USD** (customers outside India): an export. With `INVOICE_LUT_ARN` set it carries no GST ("export under LUT"); without it, IGST 18% is included.
+
+Invoices are numbered `QG/<financial year>/<sequence>` (e.g. `QG/2026-27/0001`), restarting each April in India time. The number is taken in the same database transaction that saves the invoice, so the series has no gaps or repeats, and `razorpayPaymentId` is unique, so each payment gets one invoice however often checkout and the webhooks report it. Seller and customer details are copied into the invoice when it's issued, so an invoice never changes later. Nothing is issued until the `INVOICE_SELLER_*` settings are complete; a warning is logged instead and the plan still activates. Refunds don't create credit notes yet.
 
 **Razorpay dashboard setup:** a monthly plan per currency (IDs into `RAZORPAY_PLAN_ID_INR` / `_USD`; to change a price, create a new plan and swap the ID), and a webhook to `<site>/api/webhooks/razorpay` for `subscription.activated` and `subscription.charged` with its secret in `RAZORPAY_WEBHOOK_SECRET`. USD needs Razorpay's international payments to be enabled.
 
@@ -274,7 +291,8 @@ All are listed with comments in `.env.example`. Values never go into git.
   - to the customer: *Your Basic Package is active* (plan, price, amount paid, payment method, start and next renewal dates, payment and subscription IDs, what's included, links to the dashboard, billing, cancelling and the refund policy; replies go to support), or *Payment received: your plan is renewed* for later payments;
   - to the admin (`ADMIN_NOTIFY_EMAIL`, else the support address): *New subscriber* (customer name, email, company, phone, country, sign-up date, plan before, payment details, how it was confirmed, the number of paying subscribers, links to the payment and subscription in the Razorpay dashboard; replies go to the customer), or a *Renewal* notice.
 
-  Checkout and the Razorpay webhooks report the same events in any order, so each is sent once: a new subscription is claimed by its subscription ID (whichever call switches the plan on first, which still knows the plan before and the paused codes it restored; if that call has no payment, the payment is looked up from Razorpay), a renewal by its payment ID, in `User.lastPlanEmailKey`. A mail failure is logged and never undoes the plan.
+  Checkout and the Razorpay webhooks report the same events in any order, so each plan email is sent once: a new subscription is claimed by its subscription ID (whichever call switches the plan on first, which still knows the plan before and the paused codes it restored; if that call has no payment, the payment is looked up from Razorpay), a renewal by its payment ID, in `User.lastPlanEmailKey`. A mail failure is logged and never undoes the plan.
+- **GST invoice** to the customer after every payment (`sendInvoiceEmail` from `lib/invoices.js`): amount paid, invoice number, service period, payment method, the price breakdown (taxable value, CGST/SGST or IGST, total), a link to the billing page, and the invoice PDF attached (`lib/invoicePdf.js`, about 30 KB). See [GST invoices](#payments-razorpay). The email is claimed in `Invoice.emailedAt` before sending; if SMTP fails three times (over about two minutes) the claim is released, so the next checkout or webhook call for that payment sends it.
 
 Without SMTP settings all of them are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
 
@@ -334,6 +352,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 | Prisma `P1001` | The database can't be reached; check that PostgreSQL is running and `DATABASE_URL`. |
 | Prisma `P2002` | A unique value already exists (e.g. an email that's already registered). |
 | Emails not arriving | `npm run email:test -- you@example.com`; check the SMTP settings and the SES console. |
+| No invoice after a payment | The log says "Invoices are off" until `INVOICE_SELLER_NAME`, `INVOICE_SELLER_ADDRESS` and a valid `INVOICE_SELLER_GSTIN` are set (then restart the app). "Invoice email failed" means SMTP refused it. |
 | "Please complete the security check" on every form | The Turnstile site key doesn't allow this hostname. Locally, use the test keys. |
 | Browser console shows "Content Security Policy" errors | A new third-party resource isn't in the policy in `next.config.js`. |
 | A visitor can't open a protected QR code | They may have hit the guessing limit ("Too many attempts"): it clears after 15 minutes. The owner can set a new password on the code's details page. |
@@ -344,5 +363,6 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 ## Not built yet
 
 - **Self-service cancellation** and handling of Razorpay cancellation/failed-payment events.
+- **Credit notes** for refunds, and a list of past invoices to download on the billing page (invoices are only emailed for now).
 - **Translations:** only English is available, although a language can be chosen in the account settings.
 - **Other QR types** (PDF, vCard, menus, …) are defined but not released.

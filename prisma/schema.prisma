@@ -68,6 +68,7 @@ model User {
   
   qrCodes               QRCode[]
   folders               Folder[]
+  invoices              Invoice[]
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
@@ -128,6 +129,45 @@ model ContactMessage {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// GST tax invoice for one Razorpay payment (lib/invoices.js). Seller and customer details are copied in as printed,
+// so an invoice never changes afterwards. Kept if the account is deleted: tax records must be retained.
+model Invoice {
+  id                     String    @id @default(cuid())
+  number                 String    @unique // QG/2026-27/0001
+  financialYear          String    // 2026-27 (April to March); numbers restart each year
+  sequence               Int
+  issuedAt               DateTime  @default(now())
+  user                   User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId                 String?
+  razorpayPaymentId      String    @unique // one invoice per payment, however often checkout or webhooks report it
+  razorpaySubscriptionId String?
+  paidAt                 DateTime
+  paymentMethod          String?
+  currency               String    // INR | USD
+  total                  Int       // amount paid, GST included, in paise / cents
+  taxableValue           Int
+  cgst                   Int       @default(0)
+  sgst                   Int       @default(0)
+  igst                   Int       @default(0)
+  supplyType             String    // INTRA_STATE | INTER_STATE | EXPORT_WITH_IGST | EXPORT_LUT
+  placeOfSupply          String    // "Gujarat (24)", "Outside India (96)"
+  description            String
+  periodStart            DateTime?
+  periodEnd              DateTime?
+  seller                 Json      // { name, address[], gstin, sac, lutArn }
+  customer               Json      // { name, company, email, address[], gstin, taxId }
+  emailedAt              DateTime? // set when the invoice email went out (claimed before sending)
+
+  @@unique([financialYear, sequence])
+  @@index([userId])
+}
+
+// Last invoice number used in each financial year
+model InvoiceCounter {
+  financialYear String @id
+  last          Int    @default(0)
 }
 
 model Folder {

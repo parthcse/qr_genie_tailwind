@@ -2,6 +2,7 @@ import prisma from "../../../../lib/prisma";
 import { getUserFromRequest } from "../../../../lib/auth";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../../lib/activateBasicSubscription";
 import { sendPlanEmails } from "../../../../lib/subscriptionEmails";
+import { issueInvoiceForPayment } from "../../../../lib/invoices";
 import { verifySubscriptionPaymentSignature } from "../../../../lib/razorpayVerify";
 import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
 
@@ -83,6 +84,9 @@ export default async function handler(req, res) {
         source: "checkout",
       });
     }
+
+    // Not awaited either. One invoice per payment, even if the webhook got here first or this request is repeated.
+    issueInvoiceForPayment({ userId: subUser.id, paymentId: razorpay_payment_id, subscription });
 
     return res.status(200).json({
       success: true,

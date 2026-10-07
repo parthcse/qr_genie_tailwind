@@ -1,6 +1,7 @@
 import prisma from "../../../lib/prisma";
 import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../lib/activateBasicSubscription";
 import { sendPlanEmails } from "../../../lib/subscriptionEmails";
+import { issueInvoiceForPayment } from "../../../lib/invoices";
 import { verifyWebhookSignature } from "../../../lib/razorpayVerify";
 import { trimEnv } from "../../../lib/razorpayClient";
 
@@ -85,6 +86,8 @@ export default async function handler(req, res) {
     // Not awaited, so Razorpay gets its answer quickly. A new subscription and each renewal payment are emailed once,
     // whether checkout or this webhook reports them first.
     sendPlanEmails({ userId, subscription, paymentId: payment?.id, payment, activation, source: "webhook" });
+    // Every charge (the first payment and each renewal) gets a GST invoice, once per payment
+    if (payment?.id) issueInvoiceForPayment({ userId, payment, subscription });
   } catch (err) {
     console.error("Razorpay webhook activate:", err);
     return res.status(500).json({ error: "Processing failed" });

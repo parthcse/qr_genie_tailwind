@@ -34,6 +34,9 @@ const nextConfig = {
   // scripts/deploy.sh builds into a side folder while the live site keeps running, then swaps it in
   distDir: process.env.NEXT_DIST_DIR || ".next",
 
+  // pdfkit (invoice PDFs) reads its own data files at run time, so load it from node_modules instead of bundling it
+  serverExternalPackages: ["pdfkit"],
+
   // Production optimizations
   compress: true,
   poweredByHeader: false,
