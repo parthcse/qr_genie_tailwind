@@ -1,9 +1,9 @@
-import prisma from "../../../lib/prisma";
-import { sendPasswordResetEmail } from "../../../lib/email";
-import { createResetToken } from "../../../lib/resetToken";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { verifyTurnstile } from "../../../lib/turnstile";
+import prisma from "@/lib/prisma";
+import { sendPasswordResetEmail } from "@/lib/email";
+import { createResetToken } from "@/lib/resetToken";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const HOUR = 60 * 60 * 1000;
 // Same answer whether or not the account exists, so this can't be used to discover accounts

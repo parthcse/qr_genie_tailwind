@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { FaLock, FaHome, FaSignInAlt } from 'react-icons/fa';
-import PublicLayout from '../../components/PublicLayout';
+import PublicLayout from '@/components/layout/PublicLayout';
 
 export default function LogoutPage() {
   // Clear any remaining client-side auth state

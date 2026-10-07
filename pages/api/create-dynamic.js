@@ -1,13 +1,13 @@
 // pages/api/create-dynamic.js
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { nanoid } from "nanoid";
 import QRCode from "qrcode";
-import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../lib/auth";
-import { validateRedirectUrl } from "../../lib/redirectValidation";
-import { qrPasswordProblem, hashQrPassword } from "../../lib/qrPassword";
-import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
+import { qrPasswordProblem, hashQrPassword } from "@/lib/qr/qrPassword";
+import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 
-import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "../../lib/subscription";
+import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "@/lib/billing/subscription";
 // QR types open for new codes; the others stay in the code for a later launch
 const ENABLED_TYPES = new Set(["website", "wifi", "whatsapp", "instagram"]);
 const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
@@ -69,27 +69,15 @@ export default async function handler(req, res) {
   const {
     qrType = "website",
     url,
-    pdfUrl,
     name,
     linkType: requestedLinkType, // "STATIC" | "DYNAMIC" – Static = encode final URL only, no tracking; Dynamic = /r/slug + tracking
     folder, // Folder ID
-    vcard,
     wifi,
     instagram, // Instagram form data
     whatsapp, // WhatsApp form data
     qrColor,
     bgColor,
     design, // Full design configuration object
-    // PDF specific fields
-    title,
-    description,
-    company,
-    website,
-    buttonText,
-    thumbnail,
-    primaryColor,
-    secondaryColor,
-    directShow, // If true, QR code points directly to PDF URL
     passwordEnabled, // Website form: ask scanners for a password before redirecting
     password,
   } = req.body || {};
@@ -137,70 +125,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Please enter a valid website URL." });
     }
     targetUrl = checked.url;
-  } else if (type === "pdf") {
-    const link = normalizeUrl(pdfUrl || url);
-    if (!link) {
-      return res.status(400).json({ error: "PDF URL is required." });
-    }
-
-    
-    // If directShow is true, point QR code directly to PDF URL
-    if (directShow === true || directShow === "true") {
-      targetUrl = link;
-      // Still store meta for potential future use
-      metaObj = {
-        kind: "pdf",
-        pdfUrl: link,
-        directShow: true,
-        title: title || name || "PDF Document",
-        description: description || "",
-        company: company || "",
-        website: website ? normalizeUrl(website) : "",
-        buttonText: buttonText || "View PDF",
-        thumbnail: thumbnail || "",
-        primaryColor: primaryColor || "#B69EDF",
-        secondaryColor: secondaryColor || "#242420",
-      };
-    } else {
-      // For PDF, redirect to custom landing page instead of direct PDF
-      targetUrl = `${baseNoSlash}/pdf/${slug}`;
-      metaObj = {
-        kind: "pdf",
-        pdfUrl: link,
-        directShow: false,
-        title: title || name || "PDF Document",
-        description: description || "",
-        company: company || "",
-        website: website ? normalizeUrl(website) : "",
-        buttonText: buttonText || "View PDF",
-        thumbnail: thumbnail || "",
-        primaryColor: primaryColor || "#B69EDF",
-        secondaryColor: secondaryColor || "#242420",
-      };
-    }
-    
-    // Note: pdfFile uploads would need to be handled separately via file upload API
-    // For now, we use pdfUrl
-  } else if (type === "vcard") {
-    const v = vcard || {};
-    if (!v.firstName || !v.phone) {
-      return res.status(400).json({
-        error: "vCard requires at least first name and phone.",
-      });
-    }
-
-    // Redirect to vCard download API
-    targetUrl = `${baseNoSlash}/api/vcard/${slug}`;
-    metaObj = {
-      firstName: v.firstName || "",
-      lastName: v.lastName || "",
-      phone: v.phone || "",
-      email: v.email || "",
-      company: v.company || "",
-      jobTitle: v.jobTitle || "",
-      website: v.website ? normalizeUrl(v.website) : "",
-    };
-
   } else if (type === "wifi") {
     const w = wifi || {};
     const ssid = typeof w.ssid === "string" ? w.ssid.trim() : "";

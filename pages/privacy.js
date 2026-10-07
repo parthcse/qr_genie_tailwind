@@ -1,6 +1,6 @@
 import Link from "next/link";
-import LegalPage from "../components/LegalPage";
-import { SUPPORT_EMAIL } from "../lib/site";
+import LegalPage from "@/components/layout/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 const sections = [
   {
@@ -21,7 +21,7 @@ const sections = [
       <ul>
         <li><strong>Account details:</strong> your name, email address and password. Passwords are stored only as a secure hash, never in readable form.</li>
         <li><strong>Profile and billing details you choose to add:</strong> phone number, company, address and tax ID.</li>
-        <li><strong>The content of your QR codes:</strong> destination links and anything else you enter, such as contact card details, Wi-Fi network details or PDF links.</li>
+        <li><strong>The content of your QR codes:</strong> destination links and anything else you enter, such as Wi-Fi network details, a WhatsApp number and message, an Instagram username or a logo image.</li>
         <li><strong>Messages you send us</strong> through the contact form or by email.</li>
       </ul>
     ),

@@ -1,7 +1,7 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
-import { validateRedirectUrl } from "../../../../lib/redirectValidation";
-import { qrPasswordProblem, hashQrPassword } from "../../../../lib/qrPassword";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
+import { qrPasswordProblem, hashQrPassword } from "@/lib/qr/qrPassword";
 
 /**
  * GET /api/qrs/[id] - Fetch single QR (owner only). For detail page.

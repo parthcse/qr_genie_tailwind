@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import PublicLayout from '../../components/PublicLayout';
-import Turnstile from '../../components/Turnstile';
+import PublicLayout from '@/components/layout/PublicLayout';
+import Turnstile from '@/components/auth/Turnstile';
 
 import { FaEnvelope, FaCheckCircle } from 'react-icons/fa';
 

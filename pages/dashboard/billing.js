@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import DashboardLayout from "../../components/DashboardLayout";
-import PaymentResultModal from "../../components/PaymentResultModal";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import PaymentResultModal from "@/components/billing/PaymentResultModal";
 import { FaCheck, FaPlus } from "react-icons/fa";
-import { formatPrice, formatPeriod, formatPlanPrice } from "../../lib/price";
+import { formatPrice, formatPeriod, formatPlanPrice } from "@/lib/billing/price";
+import { TRIAL_PLAN_FEATURES, BASIC_PLAN_FEATURES } from "@/lib/site";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import('../../lib/auth');
+  const { getUserFromRequest, accountRedirect } = await import('@/lib/auth');
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);
@@ -26,27 +27,13 @@ const pricingPlans = [
     name: "Free Trial",
     description: "Try every feature before you pay.",
     period: "for 14 days",
-    features: [
-      "14-day full access",
-      "Create up to 2 QR codes",
-      "All QR code types",
-      "Dynamic link updates",
-      "Basic analytics",
-      "Email support"
-    ],
+    features: TRIAL_PLAN_FEATURES,
   },
   {
     id: "BASIC",
     name: "Basic Package",
     description: "Unlimited QR codes for your business.",
-    features: [
-      "Unlimited QR codes",
-      "All QR code types",
-      "Dynamic link updates",
-      "Basic analytics",
-      "Email support",
-      "Cancel anytime"
-    ],
+    features: BASIC_PLAN_FEATURES,
   },
 ];
 

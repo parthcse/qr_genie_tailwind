@@ -1,7 +1,7 @@
 // pages/api/analytics/overview.js
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
-import { getDeviceFingerprint } from "../../../lib/scanUtils";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getDeviceFingerprint } from "@/lib/scanUtils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_DAYS = 365;

@@ -1,10 +1,10 @@
-import prisma from "../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { setLoginSession } from "../../../lib/auth";
-import { syncSubscriptionState } from "../../../lib/subscriptionSync";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { verifyTurnstile } from "../../../lib/turnstile";
+import { setLoginSession } from "@/lib/auth";
+import { syncSubscriptionState } from "@/lib/billing/subscriptionSync";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const WINDOW = 15 * 60 * 1000;
 // Compared against when the email doesn't exist, so response time doesn't reveal which emails have accounts

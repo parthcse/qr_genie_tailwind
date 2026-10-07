@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { FaQrcode, FaCheck, FaEnvelope, FaLock, FaArrowUp } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
-import { SUPPORT_EMAIL } from "../lib/site";
+import { SUPPORT_EMAIL, SITE_URL } from "@/lib/site";
 
-const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
 const SIGNUP_URL = `${SITE_URL}/auth/register`;
 
 // Hover: the colour deepens and a thin gradient underline grows from the left

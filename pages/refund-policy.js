@@ -1,5 +1,5 @@
 import Link from "next/link";
-import LegalPage from "../components/LegalPage";
+import LegalPage from "@/components/layout/LegalPage";
 
 const sections = [
   {

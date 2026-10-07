@@ -1,11 +1,11 @@
-import prisma from "../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { setLoginSession } from "../../../lib/auth";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { verifyTurnstile } from "../../../lib/turnstile";
-import { checkAccountEmail } from "../../../lib/emailCheck";
-import { sendVerificationCode } from "../../../lib/emailVerification";
+import { setLoginSession } from "@/lib/auth";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { verifyTurnstile } from "@/lib/turnstile";
+import { checkAccountEmail } from "@/lib/emailCheck";
+import { sendVerificationCode } from "@/lib/emailVerification";
 
 const HOUR = 60 * 60 * 1000;
 const TRIAL_DAYS = 14;

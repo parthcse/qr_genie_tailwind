@@ -1,5 +1,5 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
 
 /**
  * POST /api/qrs/[id]/pause

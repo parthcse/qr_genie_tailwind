@@ -1,6 +1,6 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
-import { getDeviceFingerprint } from "../../../../lib/scanUtils";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getDeviceFingerprint } from "@/lib/scanUtils";
 
 /**
  * GET /api/qrs/[id]/analytics?days=7|30

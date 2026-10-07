@@ -1,9 +1,9 @@
-import prisma from "../../../lib/prisma";
-import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../lib/activateBasicSubscription";
-import { sendPlanEmails } from "../../../lib/subscriptionEmails";
-import { issueInvoiceForPayment } from "../../../lib/invoices";
-import { verifyWebhookSignature } from "../../../lib/razorpayVerify";
-import { trimEnv } from "../../../lib/razorpayClient";
+import prisma from "@/lib/prisma";
+import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
+import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
+import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
+import { verifyWebhookSignature } from "@/lib/billing/razorpayVerify";
+import { trimEnv } from "@/lib/billing/razorpayClient";
 
 export const config = {
   api: {

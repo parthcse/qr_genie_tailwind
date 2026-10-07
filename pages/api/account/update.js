@@ -1,11 +1,11 @@
 // pages/api/account/update.js
-import prisma from "../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { getUserFromRequest } from "../../../lib/auth";
-import { checkAccountEmail } from "../../../lib/emailCheck";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { sendEmailChangeCode, resendWaitSeconds, RESEND_COOLDOWN_SECONDS } from "../../../lib/emailVerification";
-import { emailConfigured } from "../../../lib/email";
+import { getUserFromRequest } from "@/lib/auth";
+import { checkAccountEmail } from "@/lib/emailCheck";
+import { isRateLimited } from "@/lib/rateLimit";
+import { sendEmailChangeCode, resendWaitSeconds, RESEND_COOLDOWN_SECONDS } from "@/lib/emailVerification";
+import { emailConfigured } from "@/lib/email";
 
 /**
  * PUT /api/account/update — profile details. Changing the email address needs the current password and a real,

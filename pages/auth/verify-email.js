@@ -2,18 +2,18 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { FaEnvelopeOpenText, FaCheck, FaRedoAlt } from "react-icons/fa";
-import AuthShell, { AuthHeading, AuthAlert } from "../../components/AuthShell";
-import CodeInput, { CODE_LENGTH } from "../../components/CodeInput";
+import AuthShell, { AuthHeading, AuthAlert } from "@/components/auth/AuthShell";
+import CodeInput, { CODE_LENGTH } from "@/components/auth/CodeInput";
 
 // Signed-in accounts whose email isn't confirmed yet land here (after sign-up, login, or any account page)
 export async function getServerSideProps({ req }) {
-  const { getUserFromRequest } = await import("../../lib/auth");
+  const { getUserFromRequest } = await import("@/lib/auth");
   const user = await getUserFromRequest(req);
   if (!user) return { redirect: { destination: "/auth/login", permanent: false } };
   if (user.emailVerified) return { redirect: { destination: "/dashboard", permanent: false } };
 
-  const { default: prisma } = await import("../../lib/prisma");
-  const { resendWaitSeconds } = await import("../../lib/emailVerification");
+  const { default: prisma } = await import("@/lib/prisma");
+  const { resendWaitSeconds } = await import("@/lib/emailVerification");
   const row = await prisma.user.findUnique({ where: { id: user.id }, select: { emailCodeSentAt: true, emailCodeExpiresAt: true } });
   const codeExpired = !row?.emailCodeExpiresAt || new Date(row.emailCodeExpiresAt) < new Date();
   return { props: { email: user.email, initialWait: resendWaitSeconds(row?.emailCodeSentAt), codeExpired } };

@@ -1,7 +1,7 @@
 // pages/api/duplicate-qr.js
-import prisma from "../../lib/prisma";
-import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../lib/auth";
-import { checkQRCodeLimit } from "../../lib/subscription";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { checkQRCodeLimit } from "@/lib/billing/subscription";
 import { nanoid } from "nanoid";
 
 export default async function handler(req, res) {

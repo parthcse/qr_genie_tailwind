@@ -1,4 +1,4 @@
-// components/qrFields/DynamicForm.js
+// components/qr/fields/DynamicForm.js
 import { useState } from "react";
 import {
   FaChevronDown,
@@ -394,7 +394,7 @@ function getNestedValue(obj, path) {
 // Main Dynamic Form Component
 
 export default function DynamicForm({ schema, formData, updateFormData, type, folders = [], onFolderCreated }) {
-  // For nested types like "vcard" and "links", we need to prefix field paths
+  // For nested types like "links" and "wifi", we need to prefix field paths
   // BUT: name and folder should ALWAYS be at top level, regardless of type
   const getFieldPath = (fieldId) => {
     if (!type) return fieldId;
@@ -405,7 +405,7 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
     }
     
     // Types that have nested structure in formData
-    const nestedTypes = ["vcard", "links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
+    const nestedTypes = ["links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
     if (nestedTypes.includes(type)) {
       return `${type}.${fieldId}`;
     }

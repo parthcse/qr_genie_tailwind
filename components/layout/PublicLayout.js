@@ -1,6 +1,6 @@
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
-import { useCurrentUser } from "../lib/useCurrentUser";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 /**
  * Header + content + footer for public pages such as log in, contact and 404.

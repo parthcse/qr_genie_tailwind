@@ -1,6 +1,6 @@
 // pages/api/account/billing.js
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
 
 // Optional text field: trimmed, capped in length, empty becomes null
 const clean = (value, max = 200) => (typeof value === "string" ? value.trim().slice(0, max) || null : null);

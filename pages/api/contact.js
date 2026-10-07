@@ -1,11 +1,11 @@
-import prisma from "../../lib/prisma";
-import { getUserFromRequest } from "../../lib/auth";
-import { getClientIp } from "../../lib/clientIp";
-import { hashIp } from "../../lib/scanUtils";
-import { isRateLimited } from "../../lib/rateLimit";
-import { sendContactNotification } from "../../lib/email";
-import { verifyTurnstile } from "../../lib/turnstile";
-import { SUPPORT_EMAIL, CONTACT_TOPICS } from "../../lib/site";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getClientIp } from "@/lib/clientIp";
+import { hashIp } from "@/lib/scanUtils";
+import { isRateLimited } from "@/lib/rateLimit";
+import { sendContactNotification } from "@/lib/email";
+import { verifyTurnstile } from "@/lib/turnstile";
+import { SUPPORT_EMAIL, CONTACT_TOPICS } from "@/lib/site";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TEN_MINUTES = 10 * 60 * 1000;

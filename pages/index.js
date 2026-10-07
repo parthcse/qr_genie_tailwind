@@ -31,23 +31,21 @@ import {
   FaHome,
   FaBullhorn,
 } from "react-icons/fa";
-import SiteHeader from "../components/SiteHeader";
-import SiteFooter from "../components/SiteFooter";
-import { formatPrice, formatPeriod } from "../lib/price";
-import { BASIC_PLAN_FEATURES } from "../lib/site";
-
-const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
+import { formatPrice, formatPeriod } from "@/lib/billing/price";
+import { BASIC_PLAN_FEATURES, TRIAL_PLAN_FEATURES, SITE_URL } from "@/lib/site";
 
 // Server-side auth check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest } = await import('../lib/auth');
+  const { getUserFromRequest } = await import('@/lib/auth');
   const user = await getUserFromRequest(context.req);
 
   // Basic Package price from Razorpay (cached): rupees for visitors in India, dollars everywhere else
   let basicPlan = null;
   try {
-    const { getBasicPlans, publicPlans, currencyForIp } = await import('../lib/plans');
-    const { getClientIp } = await import('../lib/clientIp');
+    const { getBasicPlans, publicPlans, currencyForIp } = await import('@/lib/billing/plans');
+    const { getClientIp } = await import('@/lib/clientIp');
     const all = await getBasicPlans();
     basicPlan = publicPlans(all)[currencyForIp(all, getClientIp(context.req))] || null;
   } catch (err) {
@@ -105,7 +103,7 @@ const howItWorks = [
   {
     number: '2',
     title: 'Create QR Codes',
-    description: 'Generate unlimited dynamic QR codes. Link to websites, PDFs, vCards, and more.',
+    description: 'Generate unlimited dynamic QR codes for your website, WiFi, WhatsApp or Instagram.',
     icon: <FaQrcode className="h-6 w-6" />
   },
   {
@@ -162,14 +160,7 @@ const pricingPlans = [
     name: "Free Trial",
     period: "for 14 days",
     description: "Perfect for getting started",
-    features: [
-      "14-day full access",
-      "Create up to 2 QR codes",
-      "All QR code types",
-      "Dynamic link updates",
-      "Basic analytics",
-      "Email support"
-    ],
+    features: TRIAL_PLAN_FEATURES,
     cta: "Start Free Trial",
     popular: false,
   },

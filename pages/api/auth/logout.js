@@ -1,5 +1,5 @@
 // pages/api/auth/logout.js
-import { clearLoginSession } from "../../../lib/auth";
+import { clearLoginSession } from "@/lib/auth";
 
 export default async function handler(req, res) {
   // Set Content-Type header to ensure JSON response

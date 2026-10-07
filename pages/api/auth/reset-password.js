@@ -1,8 +1,8 @@
-import prisma from "../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { hashResetToken } from "../../../lib/resetToken";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
+import { hashResetToken } from "@/lib/resetToken";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
 
 const HOUR = 60 * 60 * 1000;
 

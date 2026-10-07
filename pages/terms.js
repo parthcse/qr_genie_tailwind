@@ -1,6 +1,6 @@
 import Link from "next/link";
-import LegalPage from "../components/LegalPage";
-import { SUPPORT_EMAIL } from "../lib/site";
+import LegalPage from "@/components/layout/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 const sections = [
   {

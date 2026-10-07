@@ -2,12 +2,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import DashboardLayout from "../../components/DashboardLayout";
-import QrOverviewModal from "../../components/QrOverviewModal";
-import QrDownloadModal from "../../components/QrDownloadModal";
-import DesignedQRCode from "../../components/DesignedQRCode";
-import FolderHeader from "../../components/FolderHeader";
-import { TRIAL_QR_LIMIT } from "../../lib/subscription";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import QrOverviewModal from "@/components/qr/QrOverviewModal";
+import QrDownloadModal from "@/components/qr/QrDownloadModal";
+import DesignedQRCode from "@/components/qr/DesignedQRCode";
+import FolderHeader from "@/components/dashboard/FolderHeader";
+import { TRIAL_QR_LIMIT } from "@/lib/billing/subscription";
 import {
   FaQrcode,
   FaDownload,
@@ -30,8 +30,6 @@ import {
   FaWifi,
   FaWhatsapp,
   FaInstagram,
-  FaAddressCard,
-  FaFilePdf,
   FaEye,
   FaPlus,
   FaLink,
@@ -45,7 +43,7 @@ import {
 } from "react-icons/fa";
 
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import("../../lib/auth");
+  const { getUserFromRequest, accountRedirect } = await import("@/lib/auth");
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);
@@ -59,8 +57,6 @@ const TYPE_META = {
   wifi: { label: "WiFi", icon: FaWifi, chip: "bg-cyan-50 text-cyan-700 ring-cyan-600/20" },
   whatsapp: { label: "WhatsApp", icon: FaWhatsapp, chip: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
   instagram: { label: "Instagram", icon: FaInstagram, chip: "bg-pink-50 text-pink-700 ring-pink-600/20" },
-  pdf: { label: "PDF", icon: FaFilePdf, chip: "bg-rose-50 text-rose-700 ring-rose-600/20" },
-  vcard: { label: "vCard", icon: FaAddressCard, chip: "bg-amber-50 text-amber-700 ring-amber-600/20" },
 };
 const typeMeta = (type) =>
   TYPE_META[type?.toLowerCase()] || { label: type || "QR code", icon: FaQrcode, chip: "bg-gray-50 text-gray-700 ring-gray-500/20" };

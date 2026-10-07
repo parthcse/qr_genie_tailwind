@@ -6,15 +6,15 @@
 // pages/r/[slug].js
 import { useState } from "react";
 import { FaLock, FaWifi, FaCopy, FaCheck, FaEye, FaEyeSlash, FaArrowRight, FaPauseCircle, FaQuestionCircle } from "react-icons/fa";
-import prisma from "../../lib/prisma";
-import { validateRedirectUrl } from "../../lib/redirectValidation";
-import { hashIp, getDeviceType, getBrowser, getOS } from "../../lib/scanUtils";
-import { getGeoFromIp } from "../../lib/geoIp";
-import { isRateLimited } from "../../lib/rateLimit";
-import { getQrPauseReason } from "../../lib/subscription";
-import { pauseActiveQrCodes } from "../../lib/subscriptionSync";
-import { getClientIp } from "../../lib/clientIp";
-import { parseWifiString } from "../../lib/qrPassword";
+import prisma from "@/lib/prisma";
+import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
+import { hashIp, getDeviceType, getBrowser, getOS } from "@/lib/scanUtils";
+import { getGeoFromIp } from "@/lib/geoIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { getQrPauseReason } from "@/lib/billing/subscription";
+import { pauseActiveQrCodes } from "@/lib/billing/subscriptionSync";
+import { getClientIp } from "@/lib/clientIp";
+import { parseWifiString } from "@/lib/qr/qrPassword";
 
 export async function getServerSideProps({ params, req }) {
   const slug = String(params.slug);

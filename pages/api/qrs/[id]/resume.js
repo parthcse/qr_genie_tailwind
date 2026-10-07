@@ -1,6 +1,6 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
-import { getQrPauseReason } from "../../../../lib/subscription";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getQrPauseReason } from "@/lib/billing/subscription";
 
 /**
  * POST /api/qrs/[id]/resume

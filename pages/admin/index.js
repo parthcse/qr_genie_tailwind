@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 // Only admins get this page at all; everyone else gets a normal 404, so it doesn't reveal an admin area
 export async function getServerSideProps({ req }) {
-  const { getUserFromRequest } = await import("../../lib/auth");
+  const { getUserFromRequest } = await import("@/lib/auth");
   const user = await getUserFromRequest(req);
   if (!user || user.role !== "admin") return { notFound: true };
   return { props: {} };

@@ -4,18 +4,18 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import DashboardLayout from "../../components/DashboardLayout";
-import DynamicForm from "../../components/qrFields/DynamicForm";
-import { getSchemaForType } from "../../lib/qrSchemas";
-import { createQRConfig } from "../../components/DesignedQRCode";
-import { downloadDesignedQR } from "../../lib/qrDownload";
-import { prepareLogo, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import DynamicForm from "@/components/qr/fields/DynamicForm";
+import { getSchemaForType } from "@/lib/qr/qrSchemas";
+import { createQRConfig } from "@/lib/qr/qrConfig";
+import { downloadDesignedQR } from "@/lib/qr/qrDownload";
+import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
 import { jsPDF } from "jspdf";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import('../../lib/auth');
+  const { getUserFromRequest, accountRedirect } = await import('@/lib/auth');
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);
@@ -76,7 +76,6 @@ import {
   FaQrcode,
   FaGlobe,
   FaFilePdf,
-  FaAddressCard,
   FaLink,
   FaBuilding,
   FaVideo,
@@ -172,23 +171,6 @@ const qrTypes = [
     icon: FaInstagram,
     active: true,
     color: "pink"
-  },
-  {
-
-    id: "pdf",
-    label: "PDF",
-    description: "Show a PDF file",
-    icon: FaFilePdf,
-    active: false,
-    color: "red"
-  },
-  {
-    id: "vcard",
-    label: "vCard",
-    description: "Share a digital business card",
-    icon: FaAddressCard,
-    active: false,
-    color: "blue"
   },
   {
     id: "links",
@@ -296,18 +278,6 @@ const generatePreviewUrl = (qrType, formData) => {
   switch (qrType) {
     case "website":
       return formData.url || "https://example.com";
-    case "pdf":
-      // If directShow is enabled, return PDF URL directly
-      if (formData.directShow && (formData.pdfUrl || formData.url)) {
-        return formData.pdfUrl || formData.url;
-      }
-      // Otherwise, return PDF URL for preview (will show landing page in preview)
-      return formData.pdfUrl || formData.url || "https://example.com/document.pdf";
-    case "vcard":
-      // For vCard, we'll show a preview URL (actual vCard would be generated server-side)
-      return formData.vcard?.firstName 
-        ? `${baseUrl}/api/vcard/preview` 
-        : `${baseUrl}/api/vcard/preview`;
     case "links":
       return formData.links?.buttons?.[0]?.url || "https://example.com";
     case "business":
@@ -369,7 +339,7 @@ const generatePreviewUrl = (qrType, formData) => {
 };
 
 // Custom QR Component that uses design config
-// Note: createQRConfig is now imported from DesignedQRCode component for consistency
+// Note: createQRConfig comes from lib/qr/qrConfig.js, shared with DesignedQRCode and the downloads
 
 const StyledQRCode = ({ value, designData, size = 200 }) => {
   const qrRef = React.useRef(null);
@@ -850,301 +820,6 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
                     <div className="w-4 h-4 border-2 border-gray-600 rounded"></div>
                   </div>
                 </button>
-              </div>
-            </div>
-          </div>
-        );
-      case "pdf":
-
-        // Check if directShow is enabled
-        const directShow = formData.directShow || false;
-        const pdfUrl = formData.pdfUrl || formData.url || "";
-        
-        // If directShow is true, show PDF viewer directly
-        if (directShow) {
-          if (pdfUrl) {
-            return (
-              <div className="h-full bg-slate-100 flex flex-col">
-                {/* PDF Viewer */}
-                <div className="flex-1 overflow-hidden">
-                  <iframe
-                    src={pdfUrl}
-                    className="w-full h-full border-0"
-                    title="PDF Preview"
-                    style={{ minHeight: '100%' }}
-                  />
-                </div>
-                
-                {/* Safari Browser Bottom Navigation Bar */}
-                <div className="bg-slate-50 border-t border-slate-200 flex-shrink-0 relative">
-                  <div className="px-3 py-2 flex items-center gap-1.5" style={{ 
-                    minHeight: '34px',
-                    paddingBottom: 'max(6px, calc(env(safe-area-inset-bottom, 0px) + 6px))'
-                  }}>
-                    <FaGlobe className="text-[10px] text-slate-500 flex-shrink-0" />
-                    <span className="text-[10px] text-slate-600 font-normal truncate flex-1 leading-tight">
-                      {pdfUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") || "PDF Document"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          } else {
-            // Show placeholder when directShow is enabled but no PDF URL
-            return (
-              <div className="h-full bg-slate-100 flex flex-col">
-                <div className="flex-1 flex items-center justify-center p-8">
-                  <div className="text-center">
-                    <FaFilePdf className="mx-auto text-4xl text-slate-400 mb-3" />
-                    <p className="text-sm text-slate-600 mb-1">PDF will be shown directly</p>
-                    <p className="text-xs text-slate-500">Please provide a PDF URL</p>
-                  </div>
-                </div>
-                
-                {/* Safari Browser Bottom Navigation Bar */}
-                <div className="bg-slate-50 border-t border-slate-200 flex-shrink-0 relative">
-                  <div className="px-3 py-2 flex items-center gap-1.5" style={{ 
-                    minHeight: '34px',
-                    paddingBottom: 'max(6px, calc(env(safe-area-inset-bottom, 0px) + 6px))'
-                  }}>
-                    <FaGlobe className="text-[10px] text-slate-500 flex-shrink-0" />
-                    <span className="text-[10px] text-slate-600 font-normal truncate flex-1 leading-tight">
-                      PDF Document
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-        }
-        
-        // Otherwise, show the website preview with landing page design
-        // Get colors from formData with fallbacks
-        const primaryColor = formData.primaryColor || "#FF7B25";
-        const secondaryColor = formData.secondaryColor || "#7EC09F";
-        const titleFont = formData.titleFont || "GT Walsheim Pro";
-        const bodyFont = formData.bodyFont || "GT Walsheim Pro";
-        
-        return (
-          <div className="h-full bg-white flex flex-col">
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-auto">
-              {/* Company Branding Section - Orange Header Background */}
-              <div 
-                className="px-4 pt-5 pb-4 text-center"
-                style={{ 
-                  backgroundColor: primaryColor,
-                  fontFamily: titleFont
-                }}
-              >
-                <p 
-                  className="text-[10px] font-semibold text-white mb-1.5 tracking-tight opacity-90"
-                  style={{ fontFamily: bodyFont }}
-                >
-                  {formData.company || "North American Accountants, Inc."}
-                </p>
-                <h1 
-                  className="text-2xl font-bold text-white mb-2 leading-tight px-2"
-                  style={{ fontFamily: titleFont }}
-                >
-                  {formData.title || "Bookkeeping Experts"}
-                </h1>
-                <p 
-                  className="text-xs text-white px-2 leading-relaxed max-w-sm mx-auto opacity-95"
-                  style={{ fontFamily: bodyFont }}
-                >
-                  {formData.description || "Learn about how we can help with all your business accounting needs."}
-                </p>
-              </div>
-
-              {/* Main Content Section */}
-              <div className="bg-white px-4 pb-6" style={{ fontFamily: bodyFont }}>
-                {/* Data Visualization Section - Secondary Color Background */}
-                <div 
-                  className="rounded-lg p-4 mb-4 border"
-                  style={{ 
-                    backgroundColor: `${secondaryColor}20`,
-                    borderColor: `${secondaryColor}40`
-                  }}
-                >
-                  <div className="relative">
-                    {/* Top Row Icons */}
-                    <div className="flex justify-between items-center mb-4 px-1">
-                      {/* Red Outlined Circle */}
-                      <div className="w-11 h-11 rounded-full border-2 border-red-500 flex items-center justify-center bg-white">
-                        <div className="w-6 h-6 rounded-full border-2 border-red-500"></div>
-                      </div>
-                      {/* Red Square with Envelope */}
-                      <div className="w-11 h-11 bg-white border-2 border-red-400 rounded flex items-center justify-center">
-                        <FaEnvelope className="text-red-500 text-base" />
-                      </div>
-                      {/* Secondary Color Circle with Dollar Sign */}
-                      <div 
-                        className="w-11 h-11 rounded-full flex items-center justify-center shadow-sm"
-                        style={{ backgroundColor: secondaryColor }}
-                      >
-                        <FaDollarSign className="text-white text-lg" />
-                      </div>
-                    </div>
-
-                    {/* Middle Section - Bar Chart and Magnifying Glass */}
-                    <div className="flex items-end justify-center gap-3 mb-4">
-                      {/* Bar Chart */}
-                      <div className="flex items-end gap-1.5 h-14">
-                        <div 
-                          className="w-3 rounded-t" 
-                          style={{ height: '45%', backgroundColor: secondaryColor }}
-                        ></div>
-                        <div 
-                          className="w-3 rounded-t" 
-                          style={{ height: '65%', backgroundColor: secondaryColor }}
-                        ></div>
-                        <div 
-                          className="w-3 rounded-t" 
-                          style={{ height: '30%', backgroundColor: secondaryColor }}
-                        ></div>
-                      </div>
-                      {/* Magnifying Glass with Plus */}
-                      <div 
-                        className="relative w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: `${secondaryColor}30` }}
-                      >
-                        <FaSearch className="text-sm" style={{ color: secondaryColor }} />
-                        <span 
-                          className="absolute -top-0.5 -right-0.5 text-xs font-bold leading-none"
-                          style={{ color: secondaryColor }}
-                        >
-                          +
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bottom Icons - Gear and Folder */}
-                    <div className="flex items-center justify-center gap-4">
-                      <div className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center">
-                        <FaCog className="text-gray-600 text-xs" />
-                      </div>
-                      <div className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center">
-                        <FaFolder className="text-gray-600 text-xs" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* View PDF Button */}
-                <div className="flex justify-center">
-                  <button 
-                    className="btn-shine inline-flex items-center gap-2 text-white px-6 py-3 rounded-full text-sm font-medium shadow-md active:opacity-90 transition-opacity"
-                    style={{ 
-                      backgroundColor: primaryColor,
-                      fontFamily: bodyFont
-                    }}
-                  >
-                    <FaEye className="text-sm" />
-                    <span>{formData.buttonText || "View PDF"}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Safari Browser Bottom Navigation Bar */}
-            <div className="bg-slate-50 border-t border-slate-200 flex-shrink-0 relative">
-              <div className="px-3 py-2 flex items-center gap-1.5" style={{ 
-                minHeight: '34px',
-                paddingBottom: 'max(6px, calc(env(safe-area-inset-bottom, 0px) + 6px))'
-              }}>
-                <FaGlobe className="text-[10px] text-slate-500 flex-shrink-0" />
-                <span className="text-[10px] text-slate-600 font-normal truncate flex-1 leading-tight">
-                  {formData.website || "www.nagi.com"}
-                </span>
-              </div>
-            </div>
-          </div>
-        );
-      case "vcard":
-
-        const vcardData = formData.vcard || {};
-        const fullName = vcardData.firstName && vcardData.lastName 
-          ? `${vcardData.firstName} ${vcardData.lastName}`
-          : vcardData.firstName || "David Elson";
-        const jobTitle = vcardData.jobTitle || "Lead Graphic Designer";
-        const company = vcardData.company || "Creative Design Inc.";
-        const description = `This is ${vcardData.firstName || "David"}, designer at ${company}. We offer outstanding graphic design services at reasonable rates.`;
-        // Dummy person image - using a placeholder service
-        const dummyImage = "https://i.pravatar.cc/150?img=12";
-        
-        return (
-          <div className="h-full bg-white flex flex-col">
-            {/* Content Area - Fills entire space */}
-            <div className="flex-1 flex flex-col min-h-0">
-              {/* Dark Blue Header Section with Gradient - Extra top padding for Dynamic Island */}
-              <div className="bg-gradient-to-b from-blue-700 via-blue-600 to-blue-600 pt-12 pb-7 px-4 text-center flex-shrink-0">
-                {/* Profile Picture */}
-                <div className="mb-2.5">
-                  {vcardData.profileImage ? (
-                    <img 
-                      src={vcardData.profileImage} 
-                      alt={fullName}
-                      className="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg object-cover"
-                    />
-                  ) : (
-                    <img 
-                      src={dummyImage}
-                      alt={fullName}
-                      className="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg object-cover"
-                    />
-                  )}
-                </div>
-                
-                {/* Name */}
-                <h1 className="text-xl font-bold text-white mb-1 leading-tight">
-                  {fullName}
-                </h1>
-                
-                {/* Job Title */}
-                <p className="text-xs text-gray-200">
-                  {jobTitle}
-                </p>
-              </div>
-
-              {/* Contact Icons Section - Light Blue Background */}
-              <div className="bg-indigo-50 px-4 py-3 flex-shrink-0">
-                <div className="flex justify-center items-center gap-5">
-                  {/* Phone Icon */}
-                  <div className="w-11 h-11 rounded-full border-2 border-indigo-400 bg-white flex items-center justify-center shadow-sm">
-                    <FaPhone className="text-indigo-600 text-base" />
-                  </div>
-                  
-                  {/* Email Icon */}
-                  <div className="w-11 h-11 rounded-full border-2 border-indigo-400 bg-white flex items-center justify-center shadow-sm">
-                    <FaEnvelope className="text-indigo-600 text-base" />
-                  </div>
-                  
-                  {/* Location Icon */}
-                  <div className="w-11 h-11 rounded-full border-2 border-blue-400 bg-white flex items-center justify-center shadow-sm">
-                    <FaMapMarkerAlt className="text-blue-600 text-base" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Description Text Section - Fills remaining space */}
-              <div className="bg-white px-4 py-6 flex-1 flex items-center justify-center min-h-0">
-                <p className="text-xs text-gray-700 leading-relaxed text-center max-w-xs">
-                  {description}
-                </p>
-              </div>
-            </div>
-
-            {/* Safari Browser Bottom Navigation Bar */}
-            <div className="bg-slate-50 border-t border-slate-200 flex-shrink-0 relative">
-              <div className="px-3 py-2 flex items-center gap-1.5" style={{ 
-                minHeight: '34px',
-                paddingBottom: 'max(6px, calc(env(safe-area-inset-bottom, 0px) + 6px))'
-              }}>
-                <FaGlobe className="text-[10px] text-slate-500 flex-shrink-0" />
-                <span className="text-[10px] text-slate-600 font-normal truncate flex-1 leading-tight">
-                  {vcardData.website || "www.example.com"}
-                </span>
               </div>
             </div>
           </div>
@@ -1878,30 +1553,13 @@ const INITIAL_FORM_DATA = {
 
   passwordEnabled: false,
   folder: "",
-  // PDF
-  pdfUrl: "",
-  pdfFile: null,
-  directShow: false,
+  // Shared by several types
   title: "",
   company: "",
   description: "",
   website: "",
-  buttonText: "View PDF",
-  thumbnail: null,
   primaryColor: "#527AC9",
   secondaryColor: "#7EC09F",
-  titleFont: "GT Walsheim Pro",
-  bodyFont: "GT Walsheim Pro",
-  // vCard
-  vcard: {
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-    company: "",
-    jobTitle: "",
-    website: "",
-  },
   // List of Links
   links: {
     profileImage: null,
@@ -2123,7 +1781,7 @@ export default function CreateQrPage() {
 
 
     // For nested types, prefix field paths
-    const nestedTypes = ["vcard", "links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
+    const nestedTypes = ["links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
     const getFieldPath = (fieldId) => {
       if (nestedTypes.includes(selectedType)) {
         return `${selectedType}.${fieldId}`;
@@ -2150,10 +1808,6 @@ export default function CreateQrPage() {
       case "website":
         if (formData.passwordEnabled && (formData.password || "").length < 4) return false;
         return !!formData.url;
-      case "pdf":
-        return !!(formData.pdfUrl || formData.pdfFile);
-      case "vcard":
-        return !!(formData.vcard?.firstName && formData.vcard?.phone);
       case "links":
 
         return !!(formData.links?.name && formData.links?.buttons?.some(b => b.title && b.url));
@@ -2218,10 +1872,6 @@ export default function CreateQrPage() {
           return "Add a password of at least 4 characters, or turn password protection off.";
         }
         return "Add the website address to continue.";
-      case "pdf":
-        return "Please fill data like PDF URL or upload PDF file*";
-      case "vcard":
-        return "Please fill data like First Name* and Phone*";
       case "links":
         return "Please fill data like Title* and at least one Link Button with Title* and URL*";
       case "business":

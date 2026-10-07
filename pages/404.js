@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import PublicLayout from "../components/PublicLayout";
+import PublicLayout from "@/components/layout/PublicLayout";
 
 export default function NotFoundPage() {
   return (

@@ -1,8 +1,8 @@
 // pages/api/auth/me.js
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
-import { getUserSubscriptionStatus } from "../../../lib/subscription";
-import { syncSubscriptionState } from "../../../lib/subscriptionSync";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getUserSubscriptionStatus } from "@/lib/billing/subscription";
+import { syncSubscriptionState } from "@/lib/billing/subscriptionSync";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");

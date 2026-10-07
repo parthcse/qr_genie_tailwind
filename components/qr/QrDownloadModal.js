@@ -1,8 +1,8 @@
-// components/QrDownloadModal.js
+// components/qr/QrDownloadModal.js
 // Modal for downloading QR codes with format and size selection
 import { useState } from "react";
 import { FaTimes, FaDownload, FaFileImage, FaFilePdf, FaPrint } from "react-icons/fa";
-import { downloadDesignedQR } from "../lib/qrDownload";
+import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 
 export default function QrDownloadModal({ qrCode, onClose }) {
   const [selectedFormat, setSelectedFormat] = useState("png");

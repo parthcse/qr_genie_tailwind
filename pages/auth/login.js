@@ -3,8 +3,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
-import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch } from "../../components/AuthShell";
-import Turnstile from "../../components/Turnstile";
+import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch } from "@/components/auth/AuthShell";
+import Turnstile from "@/components/auth/Turnstile";
 
 // Cloudflare Turnstile bot check; skipped when no site key is configured
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";

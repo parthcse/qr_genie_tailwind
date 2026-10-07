@@ -1,7 +1,7 @@
 // pages/api/account/password.js
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest, setLoginSession } from "../../../lib/auth";
-import { isRateLimited } from "../../../lib/rateLimit";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest, setLoginSession } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rateLimit";
 import bcrypt from "bcryptjs";
 
 /**

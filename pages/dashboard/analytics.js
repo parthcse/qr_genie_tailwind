@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import DashboardLayout from "../../components/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import {
   FaChartLine,
@@ -24,7 +24,7 @@ import {
 } from "react-icons/fa";
 
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import("../../lib/auth");
+  const { getUserFromRequest, accountRedirect } = await import("@/lib/auth");
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);
@@ -41,7 +41,7 @@ const PERIODS = [
 ];
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DEVICE_COLORS = { Mobile: "#6366f1", Desktop: "#a855f7", Tablet: "#0ea5e9", Unknown: "#cbd5e1" };
-const TYPE_LABELS = { website: "Website", wifi: "WiFi", whatsapp: "WhatsApp", instagram: "Instagram", pdf: "PDF", vcard: "vCard" };
+const TYPE_LABELS = { website: "Website", wifi: "WiFi", whatsapp: "WhatsApp", instagram: "Instagram" };
 
 const fmt = (n) => (n || 0).toLocaleString("en-US");
 const dayLabel = (key, withYear = false) =>

@@ -1,9 +1,10 @@
-// components/QrOverviewModal.js
+// components/qr/QrOverviewModal.js
 import { useEffect, useRef, useState } from "react";
-import { FaTimes, FaDownload, FaInfoCircle, FaExternalLinkAlt, FaGlobe, FaWifi, FaAddressCard, FaMusic, FaFilePdf, FaLink, FaBuilding, FaVideo, FaImages, FaFacebook, FaInstagram, FaShareAlt, FaWhatsapp, FaUtensils, FaMobileAlt, FaTicketAlt, FaQrcode } from "react-icons/fa";
+import { FaTimes, FaDownload, FaInfoCircle, FaExternalLinkAlt, FaGlobe, FaWifi, FaMusic, FaLink, FaBuilding, FaVideo, FaImages, FaFacebook, FaInstagram, FaShareAlt, FaWhatsapp, FaUtensils, FaMobileAlt, FaTicketAlt, FaQrcode } from "react-icons/fa";
 import Link from "next/link";
-import DesignedQRCode, { createQRConfig } from "./DesignedQRCode";
-import { downloadDesignedQR } from "../lib/qrDownload";
+import DesignedQRCode from "./DesignedQRCode";
+import { createQRConfig } from "@/lib/qr/qrConfig";
+import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 
 // QR Type icon mapping
 const getTypeIcon = (type) => {
@@ -12,8 +13,6 @@ const getTypeIcon = (type) => {
     wifi: FaWifi,
     whatsapp: FaWhatsapp,
     instagram: FaInstagram,
-    pdf: FaFilePdf,
-    vcard: FaAddressCard,
     links: FaLink,
     business: FaBuilding,
     video: FaVideo,

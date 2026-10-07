@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { FaQrcode, FaCheck, FaExclamationCircle, FaChevronDown } from "react-icons/fa";
-import PublicLayout from "./PublicLayout";
-
-const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co").replace(/\/$/, "");
+import PublicLayout from "@/components/layout/PublicLayout";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * Two-column card for login, register and email verification: a brand panel (large screens) and the form.

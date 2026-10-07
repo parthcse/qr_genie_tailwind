@@ -1,7 +1,7 @@
-// components/qrFields/FieldComponents.js
+// components/qr/fields/FieldComponents.js
 
 import { useState, useEffect, useRef } from "react";
-import { MAX_IMAGE_BYTES, MAX_IMAGE_LABEL } from "../../lib/imageUpload";
+import { MAX_IMAGE_BYTES, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import {
   FaPlus,
   FaTrash,

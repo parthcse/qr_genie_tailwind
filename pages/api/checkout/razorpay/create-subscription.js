@@ -1,11 +1,11 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "../../../../lib/auth";
-import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
-import { normalizeRazorpayApiError } from "../../../../lib/razorpayError";
-import { getUserSubscriptionStatus } from "../../../../lib/subscription";
-import { getBasicPlans, currencyForIp } from "../../../../lib/plans";
-import { getClientIp } from "../../../../lib/clientIp";
-import { CURRENCY_NAMES } from "../../../../lib/price";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
+import { getRazorpayClient, trimEnv } from "@/lib/billing/razorpayClient";
+import { normalizeRazorpayApiError } from "@/lib/billing/razorpayError";
+import { getUserSubscriptionStatus } from "@/lib/billing/subscription";
+import { getBasicPlans, currencyForIp } from "@/lib/billing/plans";
+import { getClientIp } from "@/lib/clientIp";
+import { CURRENCY_NAMES } from "@/lib/billing/price";
 
 /**
  * Creates a Razorpay subscription for the Basic plan: in rupees when the user connects from India, in dollars from

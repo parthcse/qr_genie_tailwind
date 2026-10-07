@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import PublicLayout from '../../components/PublicLayout';
+import PublicLayout from '@/components/layout/PublicLayout';
 
 import { FaEye, FaEyeSlash, FaLock, FaCheckCircle } from 'react-icons/fa';
 // Custom hook for form state management

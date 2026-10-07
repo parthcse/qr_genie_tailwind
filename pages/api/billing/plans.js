@@ -1,7 +1,7 @@
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
-import { getClientIp } from "../../../lib/clientIp";
-import { getBasicPlans, publicPlans, currencyForIp, getSubscriptionCurrency } from "../../../lib/plans";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getClientIp } from "@/lib/clientIp";
+import { getBasicPlans, publicPlans, currencyForIp, getSubscriptionCurrency } from "@/lib/billing/plans";
 
 /**
  * GET /api/billing/plans

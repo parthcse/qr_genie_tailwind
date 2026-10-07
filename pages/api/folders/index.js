@@ -1,5 +1,5 @@
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
 
 const MAX_FOLDERS = 100;
 const MAX_NAME_LENGTH = 60;

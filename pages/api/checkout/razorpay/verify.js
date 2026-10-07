@@ -1,10 +1,10 @@
-import prisma from "../../../../lib/prisma";
-import { getUserFromRequest } from "../../../../lib/auth";
-import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "../../../../lib/activateBasicSubscription";
-import { sendPlanEmails } from "../../../../lib/subscriptionEmails";
-import { issueInvoiceForPayment } from "../../../../lib/invoices";
-import { verifySubscriptionPaymentSignature } from "../../../../lib/razorpayVerify";
-import { getRazorpayClient, trimEnv } from "../../../../lib/razorpayClient";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
+import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
+import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
+import { verifySubscriptionPaymentSignature } from "@/lib/billing/razorpayVerify";
+import { getRazorpayClient, trimEnv } from "@/lib/billing/razorpayClient";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

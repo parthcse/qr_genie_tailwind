@@ -1,9 +1,9 @@
-import prisma from "../../../lib/prisma";
-import { getUserFromRequest } from "../../../lib/auth";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { sendVerificationCode, resendWaitSeconds } from "../../../lib/emailVerification";
-import { emailConfigured } from "../../../lib/email";
+import prisma from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/auth";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { sendVerificationCode, resendWaitSeconds } from "@/lib/emailVerification";
+import { emailConfigured } from "@/lib/email";
 
 const HOUR = 60 * 60 * 1000;
 

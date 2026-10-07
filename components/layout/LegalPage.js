@@ -2,8 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
-import { useCurrentUser } from "../lib/useCurrentUser";
-import { LEGAL_LAST_UPDATED, SUPPORT_EMAIL } from "../lib/site";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { LEGAL_LAST_UPDATED, SUPPORT_EMAIL } from "@/lib/site";
 
 const POLICIES = [
   { href: "/privacy", label: "Privacy policy" },

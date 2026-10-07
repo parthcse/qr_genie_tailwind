@@ -1,7 +1,7 @@
-import { getUserFromRequest } from "../../../lib/auth";
-import { getClientIp } from "../../../lib/clientIp";
-import { isRateLimited } from "../../../lib/rateLimit";
-import { checkVerificationCode } from "../../../lib/emailVerification";
+import { getUserFromRequest } from "@/lib/auth";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
+import { checkVerificationCode } from "@/lib/emailVerification";
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 

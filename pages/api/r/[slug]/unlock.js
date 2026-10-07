@@ -1,9 +1,9 @@
-import prisma from "../../../../lib/prisma";
-import { validateRedirectUrl } from "../../../../lib/redirectValidation";
-import { getQrPauseReason } from "../../../../lib/subscription";
-import { checkQrPassword } from "../../../../lib/qrPassword";
-import { getClientIp } from "../../../../lib/clientIp";
-import { isRateLimited } from "../../../../lib/rateLimit";
+import prisma from "@/lib/prisma";
+import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
+import { getQrPauseReason } from "@/lib/billing/subscription";
+import { checkQrPassword } from "@/lib/qr/qrPassword";
+import { getClientIp } from "@/lib/clientIp";
+import { isRateLimited } from "@/lib/rateLimit";
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 

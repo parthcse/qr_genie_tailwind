@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import DashboardLayout from "../../components/DashboardLayout";
-import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldTick } from "../../components/AuthShell";
-import CodeInput, { emptyCode } from "../../components/CodeInput";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldTick } from "@/components/auth/AuthShell";
+import CodeInput, { emptyCode } from "@/components/auth/CodeInput";
 import {
   FaUser,
   FaEnvelope,
@@ -28,7 +28,7 @@ import {
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import('../../lib/auth');
+  const { getUserFromRequest, accountRedirect } = await import('@/lib/auth');
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);

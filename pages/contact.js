@@ -18,10 +18,10 @@ import {
   FaUserShield,
   FaInfoCircle,
 } from "react-icons/fa";
-import PublicLayout from "../components/PublicLayout";
-import Turnstile from "../components/Turnstile";
-import { useCurrentUser } from "../lib/useCurrentUser";
-import { SUPPORT_EMAIL, CONTACT_TOPICS } from "../lib/site";
+import PublicLayout from "@/components/layout/PublicLayout";
+import Turnstile from "@/components/auth/Turnstile";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { SUPPORT_EMAIL, CONTACT_TOPICS } from "@/lib/site";
 
 const MAX_MESSAGE = 5000;
 // Cloudflare Turnstile; the check is skipped when no site key is configured

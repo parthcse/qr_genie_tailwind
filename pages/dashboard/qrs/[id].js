@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import DashboardLayout from "../../../components/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, FaEye, FaEyeSlash } from "react-icons/fa";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export async function getServerSideProps(context) {
-  const { getUserFromRequest, accountRedirect } = await import("../../../lib/auth");
+  const { getUserFromRequest, accountRedirect } = await import("@/lib/auth");
   const user = await getUserFromRequest(context.req);
   // Signed out -> login; email not confirmed yet -> verification page
   const redirect = accountRedirect(user);
