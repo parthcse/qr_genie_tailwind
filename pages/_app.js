@@ -11,10 +11,11 @@ export default function MyApp({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
-        <link rel="shortcut icon" type="image/png" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" key="viewport" />
+        {/* Small copies of favicon.png (which emails still use); made with sharp, see DEVELOPER_GUIDE "Icons" */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </Head>
       {/* On :root rather than a wrapper div, so menus and modals portaled into <body> get the fonts too */}
       <style jsx global>{`

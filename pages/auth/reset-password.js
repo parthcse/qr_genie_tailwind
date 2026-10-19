@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import PublicLayout from '@/components/layout/PublicLayout';
+import SeoMeta from '@/components/layout/SeoMeta';
 
 import { FaEye, FaEyeSlash, FaLock, FaCheckCircle } from 'react-icons/fa';
 // Custom hook for form state management
@@ -91,10 +92,16 @@ export default function ResetPassword() {
     isFormValid
   } = useResetPasswordForm();
 
-  // Focus password input on mount
+  // The page is pre-rendered without the link's token, so the browser's first render shows the same loading card
+  // as that HTML (otherwise React reports a mismatch); the form appears right after
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const ready = mounted && router.isReady;
+
+  // Focus the password field once the form is shown
   useEffect(() => {
-    passwordRef.current?.focus();
-  }, []);
+    if (ready) passwordRef.current?.focus();
+  }, [ready]);
 
   // Check if token is valid on mount
   useEffect(() => {
@@ -174,10 +181,11 @@ export default function ResetPassword() {
     setTouched(prev => ({ ...prev, [name]: true }));
   };
 
-  if (!router.isReady) {
+  if (!ready) {
     return (
 
       <PublicLayout>
+        <SeoMeta title="Choose a new password | QR-Genie" path="/auth/reset-password" noindex />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 text-center border border-indigo-100">
             <p className="text-sm text-gray-600">Loading...</p>
@@ -190,6 +198,7 @@ export default function ResetPassword() {
   return (
 
     <PublicLayout>
+      <SeoMeta title="Choose a new password | QR-Genie" path="/auth/reset-password" noindex />
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>

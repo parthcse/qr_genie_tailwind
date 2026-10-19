@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
 import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch } from "@/components/auth/AuthShell";
+import SeoMeta from "@/components/layout/SeoMeta";
 import Turnstile from "@/components/auth/Turnstile";
 
 // Cloudflare Turnstile bot check; skipped when no site key is configured
@@ -84,9 +84,11 @@ export default function Login() {
         points: ["Edit links after printing", "See scans by day, place and device", "Password-protect private pages"],
       }}
     >
-      <Head>
-        <title>Log in | QR-Genie</title>
-      </Head>
+      <SeoMeta
+        title="Log in | QR-Genie"
+        description="Log in to QR-Genie to create, edit and track your dynamic QR codes."
+        path="/auth/login"
+      />
       <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-6">
         <AuthHeading title="Welcome back">Log in to manage your QR codes.</AuthHeading>
 

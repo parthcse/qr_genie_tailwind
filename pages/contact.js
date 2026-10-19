@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import {
@@ -19,6 +18,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import PublicLayout from "@/components/layout/PublicLayout";
+import SeoMeta from "@/components/layout/SeoMeta";
 import Turnstile from "@/components/auth/Turnstile";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { SUPPORT_EMAIL, CONTACT_TOPICS } from "@/lib/site";
@@ -153,10 +153,11 @@ export default function ContactPage() {
 
   return (
     <PublicLayout session={session} centered={false}>
-      <Head>
-        <title>Contact us | QR-Genie</title>
-        <meta name="description" content="Questions about QR-Genie, billing or your account? Send us a message and we'll reply by email." />
-      </Head>
+      <SeoMeta
+        title="Contact QR-Genie | Billing, Account & QR Code Support"
+        description={`Need help with your dynamic QR codes, billing or account? Contact the QR-Genie team at ${SUPPORT_EMAIL} and we will reply by email.`}
+        path="/contact"
+      />
 
       <div className="mx-auto grid w-full max-w-site grid-cols-[minmax(0,1fr)] gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16 lg:px-8 lg:py-6">
         {/* How to reach us */}

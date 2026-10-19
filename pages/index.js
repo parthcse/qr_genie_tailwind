@@ -1,7 +1,6 @@
 // pages/index.js
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Head from "next/head";
 import { useRouter } from "next/router";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -9,7 +8,7 @@ import {
   FaCheck,
   FaQrcode,
   FaChartLine,
-  FaUsers,
+  FaFolderOpen,
   FaMobileAlt,
   FaGlobe,
   FaShieldAlt,
@@ -22,8 +21,6 @@ import {
   FaWifi,
   FaWhatsapp,
   FaInstagram,
-  FaLock,
-  FaPaperPlane,
   FaUtensils,
   FaStore,
   FaTicketAlt,
@@ -33,8 +30,24 @@ import {
 } from "react-icons/fa";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
-import { formatPrice, formatPeriod } from "@/lib/billing/price";
-import { BASIC_PLAN_FEATURES, TRIAL_PLAN_FEATURES, SITE_URL } from "@/lib/site";
+import SeoMeta from "@/components/layout/SeoMeta";
+import PricingCards from "@/components/landing/PricingCards";
+import { PhonePreview } from "@/components/landing/TypeScreen";
+import {
+  container,
+  sectionSpacing,
+  primaryButton,
+  secondaryButton,
+  HeroBackground,
+  HeroTitle,
+  SectionHeading,
+  FeatureGrid,
+  StepsList,
+  FaqList,
+} from "@/components/landing/LandingUi";
+import { formatPlanPriceShort } from "@/lib/billing/price";
+import { SITE_URL } from "@/lib/site";
+import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
 
 // Server-side auth check
 export async function getServerSideProps(context) {
@@ -43,11 +56,13 @@ export async function getServerSideProps(context) {
 
   // Basic Package price from Razorpay (cached): rupees for visitors in India, dollars everywhere else
   let basicPlan = null;
+  let plans = {};
   try {
     const { getBasicPlans, publicPlans, currencyForIp } = await import('@/lib/billing/plans');
     const { getClientIp } = await import('@/lib/clientIp');
     const all = await getBasicPlans();
-    basicPlan = publicPlans(all)[currencyForIp(all, getClientIp(context.req))] || null;
+    plans = publicPlans(all);
+    basicPlan = plans[currencyForIp(all, getClientIp(context.req))] || null;
   } catch (err) {
     console.error('Landing prices:', err.message);
   }
@@ -57,6 +72,8 @@ export async function getServerSideProps(context) {
       // Only what this page uses: page data is visible in the HTML
       initialUser: user ? { id: user.id, name: user.name || null, subscriptionPlan: user.subscriptionPlan } : null,
       basicPlan,
+      // Every currency's price, for the search result text and structured data (the same for every visitor)
+      plans,
     },
   };
 }
@@ -69,18 +86,18 @@ const features = [
   },
   {
     icon: <FaChartLine className="h-5 w-5" />,
-    title: "Real-time Analytics",
+    title: "QR Code Scan Tracking and Analytics",
     description: "Track scans, locations, devices, and timestamps. Get insights into your audience behavior instantly.",
   },
   {
-    icon: <FaUsers className="h-5 w-5" />,
-    title: "Team Collaboration",
-    description: "Share access with your team members. Manage multiple QR codes from one dashboard.",
+    icon: <FaFolderOpen className="h-5 w-5" />,
+    title: "Folders and Bulk Actions",
+    description: "Sort your codes into folders, search and filter them, and pause, move or delete several at once from one dashboard.",
   },
   {
     icon: <FaShieldAlt className="h-5 w-5" />,
-    title: "Secure & Private",
-    description: "Enterprise-grade security with password protection and custom domain options.",
+    title: "Password Protected QR Codes",
+    description: "Ask for a password before your page opens. It's never stored in readable form, and any dynamic code can be paused in one click.",
   },
   {
     icon: <FaMobileAlt className="h-5 w-5" />,
@@ -89,37 +106,74 @@ const features = [
   },
   {
     icon: <FaGlobe className="h-5 w-5" />,
-    title: "Custom Branding",
+    title: "Custom QR Codes with Your Logo and Colours",
     description: "Add your logo, colors, and custom frames. Make your QR codes uniquely yours.",
   }
 ];
 
 const howItWorks = [
   {
-    number: '1',
     title: 'Sign Up Free',
-    description: 'Create your account in seconds. No credit card required. Start with our free plan.',
+    description: 'Create your account in seconds. No credit card required. Start with a 14-day free trial.',
     icon: <FaRocket className="h-6 w-6" />
   },
   {
-    number: '2',
     title: 'Create QR Codes',
-    description: 'Generate unlimited dynamic QR codes for your website, WiFi, WhatsApp or Instagram.',
+    description: 'Make QR codes for your website, Wi-Fi, WhatsApp or Instagram in a few clicks.',
     icon: <FaQrcode className="h-6 w-6" />
   },
   {
-    number: '3',
     title: 'Customize & Track',
     description: 'Design your QR codes with custom colors and logos. Track every scan in real-time.',
     icon: <FaCog className="h-6 w-6" />
   },
   {
-    number: '4',
     title: 'Update Anytime',
     description: 'Change destinations without reprinting. Your QR codes stay the same, your links evolve.',
     icon: <FaLink className="h-6 w-6" />
   }
 ];
+
+// Home page FAQ, also sent to search engines as FAQ structured data. planPrice: "$5/month", or "" when unknown.
+function homeFaqs(planPrice) {
+  return [
+    {
+      question: "What happens to my QR codes if my subscription ends?",
+      answer:
+        "Your dynamic QR codes are paused, not deleted. Anyone who scans one sees a short \"QR code paused\" page instead of your link. Subscribe again and they switch back on with the same links, so printed codes work again without reprinting. Static codes, such as Wi-Fi codes, hold their content inside the code and keep working.",
+    },
+    {
+      question: "Can I change a QR code's destination after it is printed?",
+      answer:
+        "Yes, if it's a dynamic code. The printed code holds a short QR-Genie link, and you decide where that link sends people. Change the destination in your dashboard and the next scan goes to the new address. Static codes can't be changed once they're made.",
+    },
+    {
+      question: "What is the difference between a static and a dynamic QR code?",
+      answer:
+        "A static QR code holds its content, such as a web address or Wi-Fi details, inside the pattern itself, so it can't be edited or tracked. A dynamic QR code holds a short link that forwards people to your content, so you can change the destination later, see how many people scan it, add a password or pause it.",
+    },
+    {
+      question: "Do QR-Genie QR codes expire?",
+      answer:
+        "No. Dynamic codes work for as long as your free trial or subscription is active, with no expiry date and no scan limit. If your plan ends they're paused rather than deleted, and subscribing again brings them back. Static codes never expire.",
+    },
+    {
+      question: "Can I download QR codes as SVG or PNG for print?",
+      answer:
+        "Yes. Every code can be downloaded as PNG, SVG, JPEG or PDF, or printed straight from your browser. SVG and PDF stay sharp at any size, which suits posters, signs and packaging.",
+    },
+    {
+      question: `Is there a scan limit on the ${planPrice ? `${planPrice} plan` : "Basic plan"}?`,
+      answer:
+        "No. The Basic plan has no scan limit and lets you create as many QR codes as you need. The free trial includes up to 2 codes for 14 days.",
+    },
+    {
+      question: "Can I move my existing QR codes from another generator?",
+      answer:
+        "Not directly: a code made with another service points to that service's own link, so only that service can change it. Create a dynamic QR code in QR-Genie for the same destination and use it on your next print run. If your old provider lets you edit the destination, you can point the old code at your new QR-Genie link in the meantime.",
+    },
+  ];
+}
 
 const testimonials = [
   {
@@ -156,24 +210,6 @@ const testimonials = [
   }
 ];
 
-const pricingPlans = [
-  {
-    name: "Free Trial",
-    period: "for 14 days",
-    description: "Perfect for getting started",
-    features: TRIAL_PLAN_FEATURES,
-    cta: "Start Free Trial",
-    popular: false,
-  },
-  {
-    name: "Basic Package",
-    description: "For individuals and small businesses",
-    features: BASIC_PLAN_FEATURES,
-    cta: "Subscribe Now",
-    popular: true,
-  }
-];
-
 const stats = [
   { number: "50K+", label: "Active Users" },
   { number: "2M+", label: "QR Codes Created" },
@@ -181,13 +217,14 @@ const stats = [
   { number: "99.9%", label: "Uptime" }
 ];
 
-// The kinds of business QR-Genie is made for (shown in the band under the hero)
+// The kinds of business QR-Genie is made for (shown in the band under the hero); href: its own page, if any
 const businessTypes = [
   {
     name: "Restaurants",
     icon: FaUtensils,
     gradient: "from-orange-500 to-red-500",
-    textColor: "text-orange-700"
+    textColor: "text-orange-700",
+    href: "/restaurant-menu-qr-code"
   },
   {
     name: "Retail",
@@ -199,19 +236,22 @@ const businessTypes = [
     name: "Events",
     icon: FaTicketAlt,
     gradient: "from-green-500 to-emerald-500",
-    textColor: "text-green-700"
+    textColor: "text-green-700",
+    href: "/qr-codes-for-events"
   },
   {
     name: "Hotels",
     icon: FaHotel,
     gradient: "from-blue-500 to-cyan-500",
-    textColor: "text-blue-700"
+    textColor: "text-blue-700",
+    href: "/qr-codes-for-hotels"
   },
   {
     name: "Real estate",
     icon: FaHome,
     gradient: "from-indigo-500 to-purple-500",
-    textColor: "text-indigo-700"
+    textColor: "text-indigo-700",
+    href: "/qr-codes-for-real-estate"
   },
   {
     name: "Marketing",
@@ -251,6 +291,7 @@ const qrTypeShowcase = [
       "Pause it when a campaign ends",
     ],
     cta: "Create a website QR code",
+    page: "/website-qr-code",
   },
   {
     id: "wifi",
@@ -280,6 +321,7 @@ const qrTypeShowcase = [
       "The details live in the code, nothing to load",
     ],
     cta: "Create a Wi-Fi QR code",
+    page: "/wifi-qr-code",
   },
   {
     id: "whatsapp",
@@ -309,6 +351,7 @@ const qrTypeShowcase = [
       "Great on counters, packaging and flyers",
     ],
     cta: "Create a WhatsApp QR code",
+    page: "/whatsapp-qr-code",
   },
   {
     id: "instagram",
@@ -338,33 +381,9 @@ const qrTypeShowcase = [
       "Styled in your brand colours",
     ],
     cta: "Create an Instagram QR code",
+    page: "/instagram-qr-code",
   },
 ];
-
-const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
-const sectionSpacing = "py-16 sm:py-24 lg:py-28";
-
-const primaryButton =
-  "btn-shine group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-7 py-3.5 text-base font-semibold !text-white shadow-lg shadow-indigo-600/25 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 motion-reduce:transform-none sm:w-auto";
-const secondaryButton =
-  "btn-shine btn-shine-soft inline-flex w-full items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-slate-800 shadow-sm ring-1 ring-inset ring-slate-200 transition duration-200 hover:bg-slate-50 hover:!text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 sm:w-auto";
-
-// Eyebrow, heading and intro shared by the sections below the hero
-function SectionHeading({ eyebrow, title, description, children }) {
-  return (
-    <div className="mx-auto max-w-3xl text-center">
-      <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
-        <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" aria-hidden="true" />
-        {eyebrow}
-      </span>
-      <h2 className="mt-5 text-balance text-3xl font-bold tracking-[-0.015em] text-slate-900 sm:text-4xl lg:text-5xl">
-        {title}
-      </h2>
-      <p className="mx-auto mt-4 text-balance text-lg leading-relaxed text-slate-600">{description}</p>
-      {children}
-    </div>
-  );
-}
 
 /**
  * Counts a stat such as "50K+", "2M+" or "99.9%" up from zero the first time it scrolls into view.
@@ -490,124 +509,11 @@ function HeroVisual() {
   );
 }
 
-// What a scanner sees for each type, drawn inside the phone frame of QrTypesShowcase
-function TypeScreen({ type }) {
-  if (type === "wifi") {
-    return (
-      <div className="flex h-full flex-col items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 px-4">
-        <div className="w-full rounded-2xl bg-white p-4 text-center shadow-lg">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
-            <FaWifi className="h-5 w-5" />
-          </span>
-          <p className="mt-3 text-sm font-semibold text-slate-900">Join &ldquo;Cafe Guest&rdquo;?</p>
-          <p className="mt-1 text-[11px] text-slate-500">WPA network · password included</p>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-semibold">
-            <span className="rounded-lg bg-slate-100 py-2 text-slate-600">Cancel</span>
-            <span className="rounded-lg bg-cyan-700 py-2 text-white">Join</span>
-          </div>
-        </div>
-        <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-slate-600">
-          <FaCheck className="h-2.5 w-2.5 text-emerald-600" /> No password typing
-        </p>
-      </div>
-    );
-  }
-
-  if (type === "whatsapp") {
-    return (
-      <div className="flex h-full flex-col bg-[#efeae2]">
-        <div className="flex items-center gap-2.5 bg-[#075e54] px-3 pb-3 pt-8 text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-[11px] font-bold">YB</span>
-          <div>
-            <p className="text-xs font-semibold">Your Business</p>
-            <p className="text-[10px] text-white/80">online</p>
-          </div>
-        </div>
-        <div className="flex-1 space-y-2 p-3">
-          <div className="w-fit max-w-[85%] rounded-lg rounded-tl-none bg-white px-3 py-2 text-[11px] leading-snug text-slate-700 shadow-sm">
-            Hi! Thanks for scanning. How can we help?
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-2">
-          <div className="min-w-0 flex-1 rounded-full bg-white px-3 py-2 text-[11px] text-slate-700 shadow-sm">
-            Hi, I&apos;d like to order a large pizza
-          </div>
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#25d366] text-white">
-            <FaPaperPlane className="h-3 w-3" />
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "instagram") {
-    return (
-      <div className="flex h-full flex-col bg-white px-4 pb-4 pt-8">
-        <p className="text-xs font-bold text-slate-900">yourbrand</p>
-        <div className="mt-4 flex items-center gap-4">
-          <span className="flex-none rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[3px]">
-            <span className="block h-14 w-14 rounded-full border-2 border-white bg-gradient-to-br from-rose-100 to-purple-200" />
-          </span>
-          <div className="grid flex-1 grid-cols-3 text-center">
-            {[["128", "posts"], ["4.2k", "followers"], ["312", "following"]].map(([n, l]) => (
-              <div key={l}>
-                <p className="text-xs font-bold text-slate-900">{n}</p>
-                <p className="text-[9px] text-slate-500">{l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="mt-3 text-[11px] font-semibold text-slate-900">Your Brand</p>
-        <p className="text-[10px] text-slate-500">Handmade candles · Pune</p>
-        <div className="mt-3 rounded-lg bg-[#0095f6] py-1.5 text-center text-[11px] font-semibold text-white">Follow</div>
-        <div className="mt-4 grid grid-cols-3 gap-0.5">
-          {["from-amber-200 to-rose-300", "from-purple-200 to-indigo-300", "from-rose-200 to-pink-300", "from-indigo-200 to-sky-300", "from-orange-200 to-amber-300", "from-pink-200 to-purple-300"].map((g) => (
-            <span key={g} className={`aspect-square bg-gradient-to-br ${g}`} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="px-3 pb-2.5 pt-8">
-        <div className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[10px] text-slate-600">
-          <FaLock className="h-2 w-2 text-slate-400" />
-          yourcafe.com/menu
-        </div>
-      </div>
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-500 px-4 py-5 text-white">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/80">Spring menu</p>
-        <p className="mt-1 font-display text-lg font-bold leading-tight">Fresh dishes, new every week</p>
-      </div>
-      <div className="grid grid-cols-2 gap-2 p-3">
-        {["from-amber-200 to-orange-300", "from-emerald-200 to-teal-300"].map((g) => (
-          <div key={g}>
-            <span className={`block aspect-[4/3] rounded-lg bg-gradient-to-br ${g}`} />
-            <span className="mt-1.5 block h-1.5 w-3/4 rounded-full bg-slate-200" />
-            <span className="mt-1 block h-1.5 w-1/2 rounded-full bg-slate-100" />
-          </div>
-        ))}
-      </div>
-      <div className="space-y-1.5 px-3">
-        <span className="block h-1.5 w-full rounded-full bg-slate-100" />
-        <span className="block h-1.5 w-5/6 rounded-full bg-slate-100" />
-      </div>
-      <div className="mt-auto p-3">
-        <div className="rounded-xl bg-slate-900 py-2 text-center text-[11px] font-semibold text-white">Book a table</div>
-      </div>
-    </div>
-  );
-}
-
 // Tabs for the QR code types we offer, with a description and a phone showing the result of a scan
 function QrTypesShowcase({ isAuthenticated }) {
   const [active, setActive] = useState(qrTypeShowcase[0].id);
   const tabRefs = useRef([]);
-  const current = qrTypeShowcase.find((type) => type.id === active);
-  const CurrentIcon = current.icon;
-  const ctaHref = isAuthenticated ? `/dashboard/create-qr?type=${current.id}` : "/auth/register";
+  const ctaHref = (type) => (isAuthenticated ? `/dashboard/create-qr?type=${type.id}` : "/auth/register");
 
   // Arrow keys, Home and End move between the tabs
   const onTabKeyDown = (e, index) => {
@@ -633,7 +539,7 @@ function QrTypesShowcase({ isAuthenticated }) {
               type="button"
               role="tab"
               aria-selected={selected}
-              aria-controls="qr-type-panel"
+              aria-controls={`qr-type-panel-${type.id}`}
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(type.id)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
@@ -684,101 +590,91 @@ function QrTypesShowcase({ isAuthenticated }) {
         })}
       </div>
 
-      <div
-        id="qr-type-panel"
-        role="tabpanel"
-        aria-labelledby={`qr-type-tab-${current.id}`}
-        className="relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10"
-      >
+      <div className="relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10">
         <div className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />
 
-        <div key={current.id} className="grid items-center gap-10 p-5 motion-safe:animate-fade-in sm:gap-12 sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:p-14">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${current.accent}`}>
-                <CurrentIcon className="h-5 w-5" />
-              </span>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
-                {current.kind} QR code
-              </span>
-            </div>
-            <h3 className="mt-5 text-2xl font-bold tracking-[-0.01em] text-slate-900 sm:text-3xl">{current.title}</h3>
-            <p className="mt-3 text-pretty leading-relaxed text-slate-600 sm:text-lg">{current.description}</p>
-            <ul className="mt-7 grid gap-3.5 sm:grid-cols-2">
-              {current.points.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-[15px] text-slate-700">
-                  <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                    <FaCheck className="h-2.5 w-2.5" />
-                  </span>
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link href={ctaHref} className={primaryButton}>
-                {current.cta}
-                <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
-              </Link>
-              <p className="text-center text-sm text-slate-600 sm:text-left">Your colours, logo and frame on every type</p>
-            </div>
-          </div>
+        {/* Every type's panel is in the page (search engines read them all); only the selected one is shown */}
+        {qrTypeShowcase.map((type) => {
+          const TypeIcon = type.icon;
+          return (
+            <div
+              key={type.id}
+              id={`qr-type-panel-${type.id}`}
+              role="tabpanel"
+              aria-labelledby={`qr-type-tab-${type.id}`}
+              hidden={type.id !== active}
+            >
+              <div className="grid items-center gap-10 p-5 motion-safe:animate-fade-in sm:gap-12 sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:p-14">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${type.accent}`}>
+                      <TypeIcon className="h-5 w-5" />
+                    </span>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+                      {type.kind} QR code
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-2xl font-bold tracking-[-0.01em] text-slate-900 sm:text-3xl">{type.title}</h3>
+                  <p className="mt-3 text-pretty leading-relaxed text-slate-600 sm:text-lg">{type.description}</p>
+                  <ul className="mt-7 grid gap-3.5 sm:grid-cols-2">
+                    {type.points.map((point) => (
+                      <li key={point} className="flex items-start gap-3 text-[15px] text-slate-700">
+                        <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                          <FaCheck className="h-2.5 w-2.5" />
+                        </span>
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                    <Link href={ctaHref(type)} className={primaryButton}>
+                      {type.cta}
+                      <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
+                    </Link>
+                    <Link
+                      href={type.page}
+                      className="group/more inline-flex items-center justify-center gap-1.5 text-[15px] font-semibold !text-indigo-700 transition-colors hover:!text-purple-700"
+                    >
+                      More about {type.label} QR codes
+                      <FaArrowRight className="h-3 w-3 transition-transform group-hover/more:translate-x-1 motion-reduce:transform-none" />
+                    </Link>
+                  </div>
+                  <p className="mt-4 text-center text-sm text-slate-600 sm:text-left">Your colours, logo and frame on every type</p>
+                </div>
 
-          {/* Phone showing the result of a scan, with the code beside it */}
-          <div className="relative mx-auto w-full max-w-[13rem] sm:max-w-[16rem] lg:max-w-[17rem]" aria-hidden="true">
-            <div className="rounded-[2.5rem] bg-slate-900 p-2 shadow-2xl shadow-indigo-900/25 ring-1 ring-slate-900/10">
-              <div className="relative aspect-[9/18] overflow-hidden rounded-[2rem] bg-white">
-                <span className="absolute left-1/2 top-2 z-10 h-5 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
-                <TypeScreen type={current.id} />
+                {/* Phone showing the result of a scan, with the code beside it */}
+                <PhonePreview type={type.id} qrColor={type.qrColor} />
               </div>
             </div>
-            <div className="absolute -left-10 bottom-12 hidden rounded-2xl bg-white p-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 sm:block lg:-left-16">
-              <QRCodeSVG value={SITE_URL} size={88} level="M" fgColor={current.qrColor} bgColor="#ffffff" />
-              <p className="mt-2 text-center text-[11px] font-semibold text-slate-700">Scan me</p>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </>
   );
 }
 
-export default function Landing({ initialUser, basicPlan = null }) {
+export default function Landing({ initialUser, basicPlan = null, plans = {} }) {
   const router = useRouter();
-
-  // Pricing: the real Razorpay price in the visitor's currency (picked on the server by location)
-  const displayPlans = pricingPlans.map((plan) =>
-    plan.name === "Basic Package"
-      ? {
-          ...plan,
-          price: basicPlan ? formatPrice(basicPlan.amount, basicPlan.currency) : "—",
-          period: basicPlan ? formatPeriod(basicPlan.period, basicPlan.interval) : "",
-        }
-      : { ...plan, price: formatPrice(0, basicPlan?.currency || "USD") }
-  );
-  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   // The server already knows who is signed in, so the right buttons are in the first HTML (no placeholder flash)
   const currentUser = initialUser;
   const isAuthenticated = !!currentUser;
 
-  // Fetch subscription status for logged-in users
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      const fetchSubscriptionStatus = async () => {
-        try {
-          const res = await fetch('/api/auth/me', { credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
-          }
-        } catch (error) {
-          console.error('Failed to fetch subscription status:', error);
-          setSubscriptionStatus({ status: "NONE", daysLeft: null });
-        }
-      };
-      fetchSubscriptionStatus();
-    }
-  }, [isAuthenticated, currentUser]);
+  // The visitor's own price ("₹499/month" in India, "$5/month" elsewhere) for headings and the FAQ
+  const planPrice = formatPlanPriceShort(basicPlan);
+  const faqs = homeFaqs(planPrice);
+
+  // Search result text and structured data are the same for every visitor, with both currencies' prices
+  const searchPrices = pricesForSearch(plans);
+  const metaDescription =
+    "Create dynamic QR codes you can edit anytime. Track scans by device and location, add your logo and try it free for 14 days." +
+    (searchPrices ? ` From ${searchPrices}.` : "");
+  const structuredData = [
+    organizationSchema,
+    { "@type": "WebSite", "@id": `${SITE_URL}/#website`, name: "QR-Genie", url: `${SITE_URL}/`, publisher: { "@id": ORGANIZATION_ID } },
+    softwareApplicationSchema({ description: metaDescription, plans }),
+    faqPageSchema(faqs),
+  ];
 
   const handleLogout = async () => {
     try {
@@ -794,45 +690,16 @@ export default function Landing({ initialUser, basicPlan = null }) {
     }
   };
 
-  // Where each plan's button goes, depending on who is looking
-  const planButton = (plan) => {
-    let href = "/auth/register";
-    let text = plan.cta;
-    if (isAuthenticated) {
-      if (plan.name === "Free Trial") {
-        href = "/dashboard";
-        text = subscriptionStatus?.status === "TRIAL_ACTIVE" ? "Trial Active - Go to Dashboard" : "Go to Dashboard";
-      } else if (plan.name === "Basic Package") {
-        href = "/dashboard/billing";
-        if (subscriptionStatus?.status === "SUBSCRIPTION_ACTIVE" && currentUser?.subscriptionPlan === "BASIC") {
-          text = "Manage Plan";
-        } else {
-          text = subscriptionStatus?.status === "TRIAL_EXPIRED" ? "Upgrade Now" : "Subscribe Now";
-        }
-      }
-    }
-    return { href, text };
-  };
-
   return (
     <div className="min-h-screen bg-white">
-      <Head>
-        <title>QR-Genie | Dynamic QR Code Solution for Modern Businesses</title>
-        <meta name="description" content="Create, manage, and track dynamic QR codes with QR-Genie. Update your links anytime without reprinting. Perfect for restaurants, events, and marketing campaigns." />
-        <meta name="keywords" content="QR codes, dynamic QR codes, QR code generator, QR code analytics, QR code tracking" />
-      </Head>
+      <SeoMeta title="Dynamic QR Code Generator with Tracking | QR-Genie" description={metaDescription} path="/" jsonLd={structuredData} />
 
       <SiteHeader isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
       <main>
         {/* Hero */}
         <section className="relative isolate overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-            <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/90 via-white to-white" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(99_102_241/0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgb(99_102_241/0.07)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_75%_60%_at_50%_0%,#000_45%,transparent_100%)]" />
-            <div className="absolute -top-40 right-[-8%] h-[30rem] w-[30rem] rounded-full bg-purple-300/30 blur-3xl" />
-            <div className="absolute -left-40 top-32 h-[26rem] w-[26rem] rounded-full bg-indigo-300/25 blur-3xl" />
-          </div>
+          <HeroBackground />
 
           <div className={`${container} pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pt-24`}>
             <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 xl:gap-16">
@@ -842,15 +709,10 @@ export default function Landing({ initialUser, basicPlan = null }) {
                   Trusted by 50,000+ businesses worldwide
                 </div>
 
-                <h1 className="mt-7 text-[2.6rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-6xl lg:text-[4.1rem] xl:text-7xl">
-                  <span className="block">QR Codes That</span>
-                  <span className="block bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text pb-1.5 text-transparent">
-                    Work For You
-                  </span>
-                </h1>
+                <HeroTitle title="Dynamic QR Code Generator" subtitle="Edit Links Anytime, Track Every Scan" />
 
                 <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl lg:mx-0">
-                  Create, manage, and track dynamic QR codes. Update your links anytime without reprinting.
+                  Create, manage, and track editable QR codes. Update your links anytime without reprinting.
                   Perfect for restaurants, events, marketing campaigns, and more.
                 </p>
 
@@ -926,52 +788,56 @@ export default function Landing({ initialUser, basicPlan = null }) {
                 </p>
                 <span className="hidden h-px w-16 bg-gradient-to-l from-transparent to-indigo-300 sm:block" aria-hidden="true" />
               </div>
-              <p className="mt-3 text-balance font-display text-xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-2xl">
-                From café menus to property signs, change the link any time without reprinting
-              </p>
+              <h2 className="mt-3 text-balance font-display text-xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-2xl">
+                Dynamic QR codes for restaurants, retail, events and real estate
+              </h2>
             </div>
 
+            {/* Cards with their own page (restaurants, events, hotels, real estate) link to it */}
             <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 max-w-5xl mx-auto">
-              {businessTypes.map((business) => (
-                <div key={business.name} className="group relative">
-                  {/* Logo Card */}
-                  <div className="relative overflow-hidden rounded-2xl p-3 sm:p-6 bg-white border-2 border-gray-200 hover:border-transparent transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-2 motion-reduce:transform-none cursor-pointer">
-                    {/* Gradient Background on Hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+              {businessTypes.map((business) => {
+                const Card = business.href ? Link : "div";
+                return (
+                  <Card key={business.name} {...(business.href ? { href: business.href } : {})} className="group relative block">
+                    {/* Logo Card */}
+                    <div className="relative overflow-hidden rounded-2xl p-3 sm:p-6 bg-white border-2 border-gray-200 hover:border-transparent transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-2 motion-reduce:transform-none cursor-pointer">
+                      {/* Gradient Background on Hover */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
 
-                    {/* Icon */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${business.gradient} flex items-center justify-center font-display text-white font-bold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
-                        <business.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
+                      {/* Icon */}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${business.gradient} flex items-center justify-center font-display text-white font-bold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 motion-reduce:transform-none mb-3`}>
+                          <business.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
+                        </div>
+
+                        {/* Business type */}
+                        <div className="text-center">
+                          <p className={`text-xs sm:text-sm font-semibold group-hover:text-white transition-colors duration-300 ${business.textColor}`}>
+                            {business.name}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Business type */}
-                      <div className="text-center">
-                        <p className={`text-xs sm:text-sm font-semibold group-hover:text-white transition-colors duration-300 ${business.textColor}`}>
-                          {business.name}
-                        </p>
+                      {/* Shine Effect */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 motion-reduce:hidden"></div>
+                      </div>
+
+                      {/* Decorative Dots */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="flex gap-1">
+                          <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Shine Effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 motion-reduce:hidden"></div>
-                    </div>
-
-                    {/* Decorative Dots */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
-                        <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
-                        <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Glow Effect */}
-                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-20 blur-xl -z-10 transition-opacity duration-300`}></div>
-                </div>
-              ))}
+                    {/* Glow Effect */}
+                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${business.gradient} opacity-0 group-hover:opacity-20 blur-xl -z-10 transition-opacity duration-300`}></div>
+                  </Card>
+                );
+              })}
             </div>
 
             {/* Additional Trust Badge */}
@@ -993,7 +859,7 @@ export default function Landing({ initialUser, basicPlan = null }) {
           <div className={container}>
             <SectionHeading
               eyebrow="QR code types"
-              title="The right QR code for every job"
+              title="Create website, Wi-Fi, WhatsApp and Instagram QR codes"
               description="Choose what happens when someone scans: open your website, join your Wi-Fi, start a WhatsApp chat or visit your Instagram. Every type is styled with your own colours and logo."
             />
             <QrTypesShowcase isAuthenticated={isAuthenticated} />
@@ -1005,39 +871,10 @@ export default function Landing({ initialUser, basicPlan = null }) {
           <div className={container}>
             <SectionHeading
               eyebrow="Features"
-              title="Everything you need to succeed"
+              title="QR code generator features: tracking, branding and security"
               description="Powerful features designed to make QR code management simple and effective"
             />
-
-            <div className="mt-14 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:mt-16 lg:grid-cols-3 lg:gap-6">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="group relative flex cursor-pointer gap-5 overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-slate-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-900/5 hover:ring-indigo-200 motion-reduce:transform-none sm:block sm:p-8"
-                >
-                  {/* Hover: a light gradient that keeps drifting, plus a sheen that sweeps across once */}
-                  <div
-                    className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgb(238_242_255)_0%,rgb(250_245_255)_30%,rgb(255_255_255)_50%,rgb(245_243_255)_70%,rgb(238_242_255)_100%)] bg-[length:250%_250%] opacity-0 transition-opacity duration-500 group-hover:opacity-100 motion-safe:group-hover:animate-gradient-pan"
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="pointer-events-none absolute inset-0 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full motion-reduce:hidden"
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    aria-hidden="true"
-                  />
-                  <div className="relative flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 transition-colors duration-300 group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:text-white group-hover:ring-transparent">
-                    {feature.icon}
-                  </div>
-                  <div className="relative min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-900 sm:mt-6">{feature.title}</h3>
-                    <p className="mt-2 leading-relaxed text-slate-600">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <FeatureGrid items={features} />
           </div>
         </section>
 
@@ -1050,41 +887,10 @@ export default function Landing({ initialUser, basicPlan = null }) {
           <div className={container}>
             <SectionHeading
               eyebrow="How It Works"
-              title="Get started in minutes"
+              title="How to create a dynamic QR code in 4 steps"
               description="Simple steps to create and manage your dynamic QR codes"
             />
-
-            <div className="relative mx-auto mt-14 max-w-2xl lg:mt-20 lg:max-w-none">
-              {/* Line joining the steps: across on large screens, down the left side below that */}
-              <div
-                className="absolute left-[12.5%] right-[12.5%] top-8 hidden h-px bg-gradient-to-r from-indigo-200 via-purple-300 to-indigo-200 lg:block"
-                aria-hidden="true"
-              />
-              <div className="absolute bottom-8 left-8 top-8 w-px bg-gradient-to-b from-indigo-200 via-purple-300 to-indigo-200 lg:hidden" aria-hidden="true" />
-
-              <ol className="relative grid gap-10 lg:grid-cols-4 lg:gap-8">
-                {howItWorks.map((step) => (
-                  <li key={step.number} className="group flex cursor-pointer gap-6 lg:flex-col lg:items-center lg:text-center">
-                    {/* Hover: the tile lifts and fills, the icon tilts, the number spins with a pulse */}
-                    <div className="relative flex h-16 w-16 flex-none items-center justify-center rounded-2xl bg-white text-indigo-600 shadow-lg shadow-indigo-900/5 ring-1 ring-slate-200 transition duration-300 group-hover:-translate-y-1.5 group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-indigo-500/25 group-hover:ring-transparent motion-reduce:transform-none">
-                      <span className="transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110 motion-reduce:transform-none">
-                        {step.icon}
-                      </span>
-                      <span className="absolute -right-2.5 -top-2.5 flex h-7 w-7 items-center justify-center">
-                        <span className="absolute inset-0 rounded-full bg-purple-400 opacity-0 group-hover:opacity-60 motion-safe:group-hover:animate-ping" aria-hidden="true" />
-                        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 font-sans text-xs font-bold text-white ring-4 ring-slate-50 transition-transform duration-700 ease-out group-hover:rotate-[360deg] group-hover:scale-125 motion-reduce:transform-none">
-                          {step.number}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="pt-1 lg:pt-0">
-                      <h3 className="text-lg font-semibold text-slate-900 transition-colors duration-300 group-hover:text-indigo-700 lg:mt-7">{step.title}</h3>
-                      <p className="mt-2 leading-relaxed text-slate-600 lg:mx-auto lg:max-w-[17rem]">{step.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <StepsList steps={howItWorks} />
           </div>
         </section>
 
@@ -1093,94 +899,19 @@ export default function Landing({ initialUser, basicPlan = null }) {
           <div className={container}>
             <SectionHeading
               eyebrow="Pricing"
-              title="Simple, transparent pricing"
+              title={`Dynamic QR code pricing: free trial and ${planPrice ? `${planPrice} plan` : "monthly plan"}`}
               description="Start free for 14 days, no card needed. Cancel anytime."
             />
-
-            <div className="mx-auto mt-14 grid max-w-4xl items-stretch gap-8 md:grid-cols-2 lg:mt-16">
-              {displayPlans.map((plan) => {
-                const featured = plan.popular;
-                const button = planButton(plan);
-                return (
-                  <div
-                    key={plan.name}
-                    className={`relative flex flex-col rounded-3xl p-6 sm:p-10 ${
-                      featured
-                        ? "bg-gradient-to-b from-indigo-950 via-indigo-950 to-indigo-900 text-white shadow-2xl shadow-indigo-900/25 ring-1 ring-indigo-900"
-                        : "bg-white shadow-sm ring-1 ring-slate-200"
-                    }`}
-                  >
-                    {featured && (
-                      <>
-                        <div
-                          className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_85%_0%,rgb(167_139_250/0.28),transparent_55%)]"
-                          aria-hidden="true"
-                        />
-                        {/* White badge: gradient lettering that slowly drifts, and a soft sheen now and then */}
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                          <span className="relative block overflow-hidden whitespace-nowrap rounded-full bg-white px-4 py-1.5 shadow-lg shadow-indigo-950/25 ring-1 ring-indigo-100">
-                            <span className="bg-[linear-gradient(90deg,#4f46e5,#7c3aed,#c026d3,#7c3aed,#4f46e5)] bg-[length:200%_100%] bg-clip-text text-sm font-semibold text-transparent motion-safe:animate-gradient-pan">
-                              Most Popular
-                            </span>
-                            <span
-                              className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-indigo-100/80 to-transparent motion-safe:animate-sheen motion-reduce:hidden"
-                              aria-hidden="true"
-                            />
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="relative">
-                      <h3 className={`text-xl font-semibold ${featured ? "text-white" : "text-slate-900"}`}>{plan.name}</h3>
-                      <div className="mt-5 flex flex-wrap items-baseline gap-x-2">
-                        <span className={`font-sans text-5xl font-bold tracking-[-0.03em] tabular-nums ${featured ? "text-white" : "text-slate-900"}`}>
-                          {plan.price}
-                        </span>
-                        {plan.period && <span className={featured ? "text-indigo-200" : "text-slate-600"}>{plan.period}</span>}
-                      </div>
-                      <p className={`mt-3 ${featured ? "text-indigo-200" : "text-slate-600"}`}>{plan.description}</p>
-                    </div>
-
-                    <ul className={`relative mt-8 flex-1 space-y-3.5 border-t pt-8 ${featured ? "border-white/10" : "border-slate-100"}`}>
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-3">
-                          <span
-                            className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full ${
-                              featured ? "bg-white/10 text-emerald-300" : "bg-emerald-50 text-emerald-600"
-                            }`}
-                          >
-                            <FaCheck className="h-2.5 w-2.5" />
-                          </span>
-                          <span className={featured ? "text-indigo-50" : "text-slate-700"}>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Glowing gradient on the featured card, a confident dark button on the other (both pass AA with white text) */}
-                    <div className="relative mt-10">
-                      <Link
-                        href={button.href}
-                        className={`btn-shine group flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[15px] font-semibold transition duration-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-4 motion-reduce:transform-none ${
-                          featured
-                            ? "border border-white/15 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 !text-white shadow-lg shadow-fuchsia-600/30 hover:shadow-xl hover:shadow-fuchsia-500/40 focus-visible:ring-fuchsia-300/50"
-                            : "bg-slate-900 !text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/25 focus-visible:ring-slate-300"
-                        }`}
-                      >
-                        {button.text}
-                        <FaArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none" />
-                      </Link>
-                      {!isAuthenticated && (
-                        <p className={`mt-3 flex items-center justify-center gap-1.5 text-xs ${featured ? "text-indigo-200" : "text-slate-500"}`}>
-                          {featured ? <FaLock className="h-2.5 w-2.5" /> : <FaCheck className="h-2.5 w-2.5" />}
-                          {featured ? "Secure checkout with Razorpay" : "No card needed"}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <PricingCards basicPlan={basicPlan} currentUser={currentUser} />
+            <p className="mt-10 text-center">
+              <Link
+                href="/pricing"
+                className="group inline-flex items-center gap-1.5 text-[15px] font-semibold !text-indigo-700 transition-colors hover:!text-purple-700"
+              >
+                Compare plans, billing and GST details
+                <FaArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1 motion-reduce:transform-none" />
+              </Link>
+            </p>
           </div>
         </section>
 
@@ -1219,7 +950,7 @@ export default function Landing({ initialUser, basicPlan = null }) {
                       {testimonial.avatar}
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-semibold text-slate-900">{testimonial.name}</h4>
+                      <p className="font-display font-semibold text-slate-900">{testimonial.name}</p>
                       <p className="text-sm text-slate-600">{testimonial.role}</p>
                       <p className="mt-0.5 text-xs text-slate-500">{testimonial.company}</p>
                     </div>
@@ -1227,6 +958,18 @@ export default function Landing({ initialUser, basicPlan = null }) {
                 </figure>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* FAQ (the same questions go to search engines as FAQ structured data) */}
+        <section id="faq" className={`bg-white ${sectionSpacing}`}>
+          <div className={container}>
+            <SectionHeading
+              eyebrow="FAQ"
+              title="Frequently asked questions"
+              description="Straight answers about dynamic QR codes, your plan and what happens to printed codes."
+            />
+            <FaqList faqs={faqs} />
           </div>
         </section>
       </main>

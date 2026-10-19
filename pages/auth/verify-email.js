@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import Head from "next/head";
 import { useRouter } from "next/router";
 import { FaEnvelopeOpenText, FaCheck, FaRedoAlt } from "react-icons/fa";
 import AuthShell, { AuthHeading, AuthAlert } from "@/components/auth/AuthShell";
+import SeoMeta from "@/components/layout/SeoMeta";
 import CodeInput, { CODE_LENGTH } from "@/components/auth/CodeInput";
 
 // Signed-in accounts whose email isn't confirmed yet land here (after sign-up, login, or any account page)
@@ -115,9 +115,7 @@ export default function VerifyEmail({ email, initialWait, codeExpired }) {
         activeStep: status === "done" ? 2 : 1,
       }}
     >
-      <Head>
-        <title>Confirm your email | QR-Genie</title>
-      </Head>
+      <SeoMeta title="Confirm your email | QR-Genie" path="/auth/verify-email" noindex />
 
       {status === "done" ? (
         <div className="py-10 text-center" role="status">

@@ -49,7 +49,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                     {isAuthenticated ? "Go to dashboard" : "Start free trial"}
                   </Link>
                   <Link
-                    href="/#pricing"
+                    href="/pricing"
                     className="btn-shine inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-base font-semibold !text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                   >
                     See pricing
@@ -122,7 +122,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
         />
         <div className={`${container} pb-8 ${showCta ? "pt-16" : "pt-14"}`}>
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-8">
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-3 xl:col-span-4">
               <Link href="/" className="inline-flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-md">
                   <FaQrcode className="h-5 w-5 text-white" />
@@ -146,16 +146,34 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
               </a>
             </div>
 
-            {/* Phones: Product on the left, Account and Support stacked on the right */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-8 lg:pl-16">
-              <nav aria-labelledby="footer-product" className="row-span-2 sm:row-span-1">
+            {/* Two columns on phones, three on tablets, five side by side on large screens */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-9 lg:grid-cols-5 xl:col-span-8 xl:pl-8">
+              <nav aria-labelledby="footer-qr-codes">
+                <h3 id="footer-qr-codes" className="text-sm font-semibold text-gray-900">QR codes</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  <li><Link href="/website-qr-code" className={footerLink}>Website</Link></li>
+                  <li><Link href="/wifi-qr-code" className={footerLink}>Wi-Fi</Link></li>
+                  <li><Link href="/whatsapp-qr-code" className={footerLink}>WhatsApp</Link></li>
+                  <li><Link href="/instagram-qr-code" className={footerLink}>Instagram</Link></li>
+                </ul>
+              </nav>
+              <nav aria-labelledby="footer-use-cases">
+                <h3 id="footer-use-cases" className="text-sm font-semibold text-gray-900">Use cases</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  <li><Link href="/restaurant-menu-qr-code" className={footerLink}>Restaurant menus</Link></li>
+                  <li><Link href="/qr-codes-for-events" className={footerLink}>Events</Link></li>
+                  <li><Link href="/qr-codes-for-real-estate" className={footerLink}>Real estate</Link></li>
+                  <li><Link href="/qr-codes-for-hotels" className={footerLink}>Hotels</Link></li>
+                </ul>
+              </nav>
+              <nav aria-labelledby="footer-product">
                 <h3 id="footer-product" className="text-sm font-semibold text-gray-900">Product</h3>
                 <ul className="mt-4 space-y-3 text-sm">
-                  <li><Link href="/#qr-types" className={footerLink}>QR code types</Link></li>
                   <li><Link href="/#features" className={footerLink}>Features</Link></li>
                   <li><Link href="/#how-it-works" className={footerLink}>How it works</Link></li>
-                  <li><Link href="/#pricing" className={footerLink}>Pricing</Link></li>
+                  <li><Link href="/pricing" className={footerLink}>Pricing</Link></li>
                   <li><Link href="/#testimonials" className={footerLink}>Testimonials</Link></li>
+                  <li><Link href="/#faq" className={footerLink}>FAQ</Link></li>
                 </ul>
               </nav>
               <nav aria-labelledby="footer-account">

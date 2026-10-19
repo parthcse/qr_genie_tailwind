@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck, FaArrowRight, FaExclamationCircle } from "react-icons/fa";
 import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch, PasswordStrength, FieldTick, passwordChecksPassed } from "@/components/auth/AuthShell";
+import SeoMeta from "@/components/layout/SeoMeta";
 import Turnstile from "@/components/auth/Turnstile";
 
 // Cloudflare Turnstile bot check; skipped when no site key is configured
@@ -151,9 +151,11 @@ export default function Register() {
         activeStep: 0,
       }}
     >
-      <Head>
-        <title>Create your account | QR-Genie</title>
-      </Head>
+      <SeoMeta
+        title="Create your account | QR-Genie"
+        description="Create a QR-Genie account and try dynamic QR codes with scan tracking free for 14 days."
+        path="/auth/register"
+      />
       <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-5">
         <AuthHeading title="Create your account">Start your free 14-day trial. No card needed.</AuthHeading>
 

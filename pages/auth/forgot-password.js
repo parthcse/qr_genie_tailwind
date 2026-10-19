@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import PublicLayout from '@/components/layout/PublicLayout';
+import SeoMeta from '@/components/layout/SeoMeta';
 import Turnstile from '@/components/auth/Turnstile';
 
 import { FaEnvelope, FaCheckCircle } from 'react-icons/fa';
@@ -150,6 +151,7 @@ export default function ForgotPassword() {
   return (
 
     <PublicLayout>
+      <SeoMeta title="Forgot your password? | QR-Genie" path="/auth/forgot-password" noindex />
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>

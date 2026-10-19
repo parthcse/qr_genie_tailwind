@@ -1,5 +1,5 @@
-import Head from "next/head";
 import Link from "next/link";
+import SeoMeta from "./SeoMeta";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -20,10 +20,7 @@ export default function LegalPage({ path, title, description, intro, sections })
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Head>
-        <title>{`${title} | QR-Genie`}</title>
-        <meta name="description" content={description} />
-      </Head>
+      <SeoMeta title={`${title} | QR-Genie`} description={description} path={path} />
       <SiteHeader isAuthenticated={!!user} loading={loading} />
 
       <main className="flex-1">

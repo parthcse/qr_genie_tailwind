@@ -1,9 +1,9 @@
 // pages/auth/logout.js
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Head from 'next/head';
 import { FaLock, FaHome, FaSignInAlt } from 'react-icons/fa';
 import PublicLayout from '@/components/layout/PublicLayout';
+import SeoMeta from '@/components/layout/SeoMeta';
 
 export default function LogoutPage() {
   // Clear any remaining client-side auth state
@@ -14,10 +14,12 @@ export default function LogoutPage() {
 
   return (
     <PublicLayout>
-      <Head>
-        <title>Logged Out | QR-Genie</title>
-        <meta name="description" content="You have been successfully logged out of QR-Genie" />
-      </Head>
+      <SeoMeta
+        title="Logged Out | QR-Genie"
+        description="You have been successfully logged out of QR-Genie"
+        path="/auth/logout"
+        noindex
+      />
 
       <div className="mx-auto w-full max-w-md px-4 sm:px-0">
         <div className="rounded-2xl border border-indigo-100 bg-white/90 px-6 py-10 text-center shadow-xl sm:px-10">
