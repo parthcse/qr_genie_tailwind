@@ -1,21 +1,12 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import {
-  FaCheck,
-  FaChevronRight,
-  FaFileInvoice,
-  FaGlobe,
-  FaLock,
-  FaPause,
-  FaTag,
-  FaTimesCircle,
-  FaUndo,
-} from "react-icons/fa";
+import { FaCheck, FaFileInvoice, FaGlobe, FaLock, FaPause, FaTag, FaTimesCircle, FaUndo } from "react-icons/fa";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SeoMeta from "@/components/layout/SeoMeta";
+import PageBanner from "@/components/landing/PageBanner";
 import PricingCards from "@/components/landing/PricingCards";
-import { container, sectionSpacing, HeroBackground, HeroTitle, SectionHeading, FeatureGrid, FaqList } from "@/components/landing/LandingUi";
+import { container, sectionSpacing, SectionHeading, FeatureGrid, FaqList } from "@/components/landing/LandingUi";
 import { formatPlanPriceShort } from "@/lib/billing/price";
 import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema, pricesForSearch } from "@/lib/seo";
 
@@ -43,6 +34,54 @@ export async function getServerSideProps(context) {
       plans,
     },
   };
+}
+
+// The banner picture: a Basic Package card with the visitor's price, a free trial badge and the GST invoice note
+function PriceVisual({ planPrice }) {
+  const [amount, unit] = planPrice ? planPrice.split("/") : ["", ""];
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute h-64 w-64 rounded-full bg-indigo-300/30 blur-3xl" />
+      <div className="relative w-64 -rotate-2 rounded-3xl bg-white p-6 shadow-2xl shadow-indigo-900/15 ring-1 ring-slate-900/5 transition-transform duration-500 hover:rotate-0 motion-reduce:transition-none">
+        <span className="font-display text-sm font-semibold text-slate-900">Basic Package</span>
+        <p className="mt-4 flex items-baseline gap-1">
+          <span className="font-sans text-4xl font-bold tracking-[-0.03em] text-slate-900">{amount || "Monthly"}</span>
+          {unit && <span className="text-sm text-slate-500">/{unit}</span>}
+        </p>
+        <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4 text-[13px] text-slate-600">
+          {["Unlimited QR codes", "Scan analytics", "Cancel anytime"].map((item) => (
+            <li key={item} className="flex items-center gap-2">
+              <span className="flex h-4 w-4 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <FaCheck className="h-2 w-2" />
+              </span>
+              {item}
+            </li>
+          ))}
+        </ul>
+        <span className="mt-5 block rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-2.5 text-center text-xs font-semibold text-white shadow-md shadow-indigo-600/25">
+          Subscribe
+        </span>
+      </div>
+      <div className="absolute right-0 top-14 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float">
+        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+          <FaCheck className="h-3 w-3" />
+        </span>
+        <span className="whitespace-nowrap">
+          <span className="block text-sm font-semibold text-slate-900">14 days free</span>
+          <span className="block text-xs text-slate-500">No card needed</span>
+        </span>
+      </div>
+      <div className="absolute bottom-4 left-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float motion-safe:[animation-delay:-3s]">
+        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+          <FaFileInvoice className="h-3 w-3" />
+        </span>
+        <span className="whitespace-nowrap">
+          <span className="block text-sm font-semibold text-slate-900">GST invoice</span>
+          <span className="block text-xs text-slate-500">Emailed after payment</span>
+        </span>
+      </div>
+    </div>
+  );
 }
 
 // Rows of the plan comparison: [feature, Free Trial, Basic Package]; true shows a tick
@@ -167,41 +206,25 @@ export default function PricingPage({ initialUser, basicPlan = null, plans = {} 
       <SiteHeader isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
       <main>
-        {/* Hero and plans */}
-        <section className="relative isolate overflow-hidden">
-          <HeroBackground />
-          <div className={`${container} pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-28 lg:pt-16`}>
-            <nav aria-label="Breadcrumb" className="flex justify-center">
-              <ol className="flex items-center gap-2 text-sm text-slate-500">
-                <li>
-                  <Link href="/" className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
-                    Home
-                  </Link>
-                </li>
-                <li aria-hidden="true">
-                  <FaChevronRight className="h-2.5 w-2.5 text-slate-400" />
-                </li>
-                <li aria-current="page" className="font-medium text-slate-700">
-                  Pricing
-                </li>
-              </ol>
-            </nav>
+        <PageBanner
+          eyebrow={{ icon: FaTag, label: "Pricing" }}
+          title="Dynamic QR Code"
+          highlight="Pricing"
+          subtitle={planPrice ? `Free for 14 days, then ${planPrice}` : "Free for 14 days, then one simple plan"}
+          summary="One plan with everything: unlimited dynamic QR codes, scan analytics, your own design and link editing."
+          crumbs={[{ name: "Pricing", path: "/pricing" }]}
+          visual={<PriceVisual planPrice={planPrice} />}
+          visualClassName="hidden lg:block"
+        />
 
-            <div className="mx-auto mt-8 max-w-3xl text-center lg:mt-10">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-100">
-                <FaTag className="h-3.5 w-3.5" />
-                Pricing
-              </div>
-              <HeroTitle
-                title="Dynamic QR Code Pricing"
-                subtitle={planPrice ? `Free for 14 days, then ${planPrice}` : "Free for 14 days, then one simple plan"}
-              />
-              <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl">
-                One plan with everything: unlimited dynamic QR codes, scan analytics, your own design and link editing. Start with a
-                14-day free trial, no card needed, and cancel anytime.
-              </p>
-            </div>
-
+        {/* Plans */}
+        <section className={`bg-white ${sectionSpacing}`}>
+          <div className={container}>
+            <SectionHeading
+              eyebrow="Plans"
+              title="Start free, upgrade when you're ready"
+              description="Every feature for 14 days, no card needed. Then one simple plan you can cancel anytime."
+            />
             <PricingCards basicPlan={basicPlan} currentUser={initialUser} />
           </div>
         </section>

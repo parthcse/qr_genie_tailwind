@@ -1,34 +1,23 @@
 import Link from "next/link";
-import { FaArrowRight, FaCheck, FaChevronRight } from "react-icons/fa";
+import { FaArrowRight, FaCheck } from "react-icons/fa";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SeoMeta from "@/components/layout/SeoMeta";
+import PageBanner from "./PageBanner";
 import { PhonePreview } from "./TypeScreen";
 import { TYPE_PAGES, LANDING_LINKS } from "./landingPages";
-import {
-  container,
-  sectionSpacing,
-  primaryButton,
-  secondaryButton,
-  HeroBackground,
-  HeroTitle,
-  SectionHeading,
-  FeatureGrid,
-  StepsList,
-  FaqList,
-} from "./LandingUi";
+import { container, sectionSpacing, primaryButton, secondaryButton, SectionHeading, FeatureGrid, StepsList, FaqList } from "./LandingUi";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { organizationSchema, breadcrumbSchema, faqPageSchema } from "@/lib/seo";
 
 /**
- * A QR type or industry page (website, Wi-Fi, restaurants, hotels…): hero with a phone preview, benefits, steps,
- * ideas, FAQ and links to the other pages. page: one entry of LANDING_PAGES (components/landing/landingPages.js).
- * The page is static; the signed-in state only changes where the main button goes.
+ * A QR type or industry page (website, Wi-Fi, restaurants, hotels…): a banner with a phone preview, an overview with
+ * the buttons, benefits, steps, ideas, FAQ and links to the other pages. page: one entry of LANDING_PAGES
+ * (components/landing/landingPages.js). The page is static; the signed-in state only changes the buttons.
  */
 export default function LandingPage({ page }) {
   const { loading, user } = useCurrentUser();
   const createHref = user ? `/dashboard/create-qr${page.createType ? `?type=${page.createType}` : ""}` : "/auth/register";
-  const Eyebrow = page.eyebrow.icon;
   const Note = page.preview.note.icon;
 
   const structuredData = [
@@ -46,64 +35,28 @@ export default function LandingPage({ page }) {
       <SiteHeader isAuthenticated={!!user} loading={loading} />
 
       <main>
-        {/* Hero */}
-        <section className="relative isolate overflow-hidden">
-          <HeroBackground />
-          <div className={`${container} pb-16 pt-10 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16`}>
-            <nav aria-label="Breadcrumb" className="flex justify-center lg:justify-start">
-              <ol className="flex items-center gap-2 text-sm text-slate-500">
-                <li>
-                  <Link href="/" className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
-                    Home
-                  </Link>
-                </li>
-                <li aria-hidden="true">
-                  <FaChevronRight className="h-2.5 w-2.5 text-slate-400" />
-                </li>
-                <li aria-current="page" className="font-medium text-slate-700">
-                  {page.crumb}
-                </li>
-              </ol>
-            </nav>
-
-            <div className="mt-8 grid items-center gap-14 lg:mt-10 lg:grid-cols-[1.1fr_1fr] lg:gap-10 xl:gap-16">
-              <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-100">
-                  <Eyebrow className="h-3.5 w-3.5" />
-                  {page.eyebrow.label}
-                </div>
-
-                <HeroTitle title={page.title} subtitle={page.subtitle} />
-
-                <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl lg:mx-0">{page.intro}</p>
-
-                <div className="mx-auto mt-9 flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
-                  <Link href={createHref} className={primaryButton}>
-                    {page.cta}
-                    <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
-                  </Link>
-                  <Link href="/pricing" className={secondaryButton}>
-                    See pricing
-                  </Link>
-                </div>
-                {!user && (
-                  <p className="mt-4 flex items-center justify-center gap-1.5 text-sm text-slate-600 lg:justify-start">
-                    <FaCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
-                    Free for 14 days, no card needed
-                  </p>
-                )}
-              </div>
-
-              <div className="relative pb-4 lg:pb-0">
+        <PageBanner
+          eyebrow={page.eyebrow}
+          title={page.title}
+          highlight={page.highlight}
+          subtitle={page.subtitle}
+          summary={page.summary}
+          crumbs={[{ name: page.crumb, path: page.path }]}
+          visual={
+            <>
+              <div className="absolute left-1/2 top-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-indigo-300/30 blur-3xl" />
+              {/* The phone rises from the bottom edge of the banner, which cuts it off */}
+              <div className="absolute left-1/2 top-6 w-52 -translate-x-1/2 sm:w-60 lg:top-12 lg:w-64">
                 <PhonePreview
                   type={page.preview.type}
                   screen={page.preview.screen}
                   qrColor={page.preview.qrColor}
-                  className="max-w-[14rem] sm:max-w-[16rem] lg:max-w-[17rem]"
+                  className=""
+                  qrClassName="hidden lg:block -left-28 top-44"
                 >
-                  {/* A note about what just happened, floating beside the phone (lower down on phones, where it
-                      covers only the empty part of the screen) */}
-                  <div className="absolute -right-5 bottom-20 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float sm:bottom-auto sm:-right-20 sm:top-14 lg:-right-16 xl:-right-24">
+                  {/* A note about what just happened, floating over the top corner of the phone like a notification
+                      (clear of the screen's headline text) */}
+                  <div className="absolute -right-24 top-3 hidden items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float sm:flex lg:-right-20 xl:-right-28">
                     <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                       <Note className="h-3.5 w-3.5" />
                     </span>
@@ -113,6 +66,45 @@ export default function LandingPage({ page }) {
                     </span>
                   </div>
                 </PhonePreview>
+              </div>
+            </>
+          }
+        />
+
+        {/* Overview: the full introduction, the main points and the buttons */}
+        <section className="bg-white py-12 sm:py-16">
+          <div className={`${container} grid items-center gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16`}>
+            <div>
+              <p className="border-l-2 border-indigo-200 pl-5 text-pretty text-[17px] leading-[1.8] text-slate-700 sm:pl-6">{page.intro}</p>
+              <ul className="mt-6 flex flex-wrap gap-2.5">
+                {page.benefits.items.slice(0, 3).map((item) => (
+                  <li
+                    key={item.title}
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200"
+                  >
+                    <FaCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+                    {item.title}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm ring-1 ring-indigo-100 sm:p-8">
+              <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-200/40 blur-2xl" aria-hidden="true" />
+              <p className="relative font-display text-xl font-semibold tracking-[-0.01em] text-slate-900">
+                {user ? "Create it from your dashboard" : "Try it free for 14 days"}
+              </p>
+              <p className="relative mt-1.5 text-[15px] leading-relaxed text-slate-600">
+                {user ? "Your new code is ready to download in a few minutes." : "Make your first code in minutes. No card needed, cancel anytime."}
+              </p>
+              <div className="relative mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                <Link href={createHref} className={primaryButton}>
+                  {page.cta}
+                  <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
+                </Link>
+                <Link href="/pricing" className={secondaryButton}>
+                  See pricing
+                </Link>
               </div>
             </div>
           </div>

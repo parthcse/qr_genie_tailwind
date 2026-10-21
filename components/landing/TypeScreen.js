@@ -130,9 +130,16 @@ export function TypeScreen({ type, screen = {} }) {
 
 /**
  * A phone showing the result of a scan, with a "Scan me" code beside it (decorative). children: extra floating
- * cards, positioned by the caller.
+ * cards, positioned by the caller. qrClassName: where the "Scan me" card sits and from which screen width it shows.
  */
-export function PhonePreview({ type, screen, qrColor, className = "max-w-[13rem] sm:max-w-[16rem] lg:max-w-[17rem]", children }) {
+export function PhonePreview({
+  type,
+  screen,
+  qrColor,
+  className = "max-w-[13rem] sm:max-w-[16rem] lg:max-w-[17rem]",
+  qrClassName = "hidden sm:block -left-10 bottom-12 lg:-left-16",
+  children,
+}) {
   return (
     <div className={`relative mx-auto w-full ${className}`} aria-hidden="true">
       <div className="rounded-[2.5rem] bg-slate-900 p-2 shadow-2xl shadow-indigo-900/25 ring-1 ring-slate-900/10">
@@ -141,7 +148,7 @@ export function PhonePreview({ type, screen, qrColor, className = "max-w-[13rem]
           <TypeScreen type={type} screen={screen} />
         </div>
       </div>
-      <div className="absolute -left-10 bottom-12 hidden rounded-2xl bg-white p-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 sm:block lg:-left-16">
+      <div className={`absolute ${qrClassName} rounded-2xl bg-white p-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5`}>
         <QRCodeSVG value={SITE_URL} size={88} level="M" fgColor={qrColor} bgColor="#ffffff" />
         <p className="mt-2 text-center text-[11px] font-semibold text-slate-700">Scan me</p>
       </div>

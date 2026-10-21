@@ -41,3 +41,7 @@ Thumbs.db
 
 # Side build folders used by scripts/deploy.sh
 .next-*/
+
+# Written by `next dev` when an AI coding assistant starts it; not used by this project
+/AGENTS.md
+/CLAUDE.md

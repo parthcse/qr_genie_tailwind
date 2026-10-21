@@ -17,7 +17,7 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 | `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for the released types, each with a phone preview of what a scan does, a button to create one and a link to its page; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (in rupees for visitors in India, US dollars everywhere else), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read. |
 | `/pricing` | The plan cards (same as the landing page, in the visitor's currency), a Free Trial vs Basic comparison table, how billing works (currency, GST invoices, cancelling, refunds) and a pricing FAQ. |
 | `/website-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
-| `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: hero with a phone preview, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. |
+| `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: a medium-height banner (`PageBanner`: title, tagline and a one-line summary beside a phone preview), the breadcrumb, an overview with the buttons, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. Inner pages use this calmer banner on purpose; only the home page has the large hero. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 14-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/auth/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
 | `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or `wifi`, `whatsapp`, `instagram`) opens straight at step 2 with that type chosen; the landing page links there. |
@@ -63,7 +63,8 @@ All dashboard pages share `components/layout/DashboardLayout.js`: the sidebar ha
 pages/                 routes (see "What the app does"); pages/api/ is the JSON API. Every file here is a URL.
 components/
   layout/              SiteHeader, SiteFooter, PublicLayout, DashboardLayout, LegalPage, SeoMeta
-  landing/             marketing pages: LandingUi (shared sections, buttons, FAQ), LandingPage + landingPages
+  landing/             marketing pages: LandingUi (shared sections, buttons, FAQ accordion), PageBanner (inner page
+                       banner + breadcrumb), LandingPage + landingPages
                        (the QR type and industry pages and their content), TypeScreen (phone previews), PricingCards
   auth/                AuthShell (sign-in page shell and form fields), CodeInput, Turnstile
   qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal
@@ -160,6 +161,8 @@ Use a local PostgreSQL database, never the production one. Recommended local set
 | `npm run email:test -- you@example.com` | Send a test email with the current SMTP settings. |
 
 Restart `npm run dev` after `npm install` or `prisma generate`; the running server keeps the old Prisma client. On Windows, stop the dev server before `prisma generate` or it can fail with `EPERM`.
+
+If `AGENTS.md` and `CLAUDE.md` appear in the project folder, `next dev` wrote them because an AI coding assistant started it. The project doesn't use them: they're ignored by git and can be deleted.
 
 **Changing the database:** edit `prisma/schema.prisma`, run `npx prisma migrate dev --name short_description`, and commit the new folder in `prisma/migrations/`. The next deploy applies it. Never edit or delete a migration that has already been deployed.
 
@@ -354,7 +357,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
     - Home: Organization, WebSite, SoftwareApplication (with both currencies' prices) and FAQPage.
     - Pricing: the same plus breadcrumbs.
     - QR type and industry pages: Organization, breadcrumbs and FAQPage.
-  - FAQ structured data must match questions that are visible on the page. `FaqList` (`components/landing/LandingUi.js`) and `faqPageSchema` take the same list, so keep answers as plain text.
+  - FAQ structured data must match questions that are visible on the page. `FaqList` (`components/landing/LandingUi.js`) and `faqPageSchema` take the same list, so keep answers as plain text. `FaqList` is an accordion: one answer open at a time, sliding open (the answer's grid row grows from 0 to its height). Closed answers stay in the HTML, collapsed rather than removed, so search engines still read them; keep it that way if you change it.
   - Search result text and structured data show the same prices to everyone, both currencies (`pricesForSearch`), because search engines crawl from abroad. The visible page still shows only the visitor's own price.
   - Don't add review or rating structured data for the sample testimonials: search engines only allow it for real, verifiable reviews.
   - Add new public pages to `PAGES` in `pages/sitemap.xml.js`. Add private or one-time URLs to `DISALLOW` in `pages/robots.txt.js`; `/r/` is there because a crawler visit would count as a scan.

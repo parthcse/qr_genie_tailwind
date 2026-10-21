@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { FaPlus } from "react-icons/fa";
 
 /**
@@ -13,7 +14,12 @@ export const primaryButton =
 export const secondaryButton =
   "btn-shine btn-shine-soft inline-flex w-full items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-slate-800 shadow-sm ring-1 ring-inset ring-slate-200 transition duration-200 hover:bg-slate-50 hover:!text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 sm:w-auto";
 
-// Light hero background: soft indigo wash, a faint grid fading out, and two blurred colour blobs
+// The paragraph under the home page h1: comfortable reading size, kept smaller than the tagline. Add lg:mx-0 when
+// the text is left-aligned on large screens.
+export const heroIntro = "mx-auto mt-5 max-w-xl text-pretty text-base leading-[1.75] text-slate-600 sm:text-[17px]";
+
+// Light home page hero background: soft indigo wash, a faint grid fading out, and two blurred colour blobs (inner
+// pages use the calmer PageBanner instead)
 export function HeroBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
@@ -26,18 +32,35 @@ export function HeroBackground() {
 }
 
 /**
- * The page's h1: the search phrase large and dark, the promise underneath in the brand gradient. Search engines and
- * screen readers read it as one heading, "Title: subtitle".
+ * The page's h1: the search phrase large, its last words (highlight) in the brand gradient, and the promise as a calm
+ * tagline underneath, with a short line on its left on large screens (where the text is left-aligned). Search engines
+ * and screen readers read it as one heading, "Title highlight: subtitle".
+ * compact: the smaller size used in the inner pages' banners (PageBanner).
  */
-export function HeroTitle({ title, subtitle, className = "mt-7" }) {
+export function HeroTitle({ title, highlight, subtitle, compact = false, className = "mt-7" }) {
+  const titleSize = compact
+    ? "text-[2.15rem] leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-[3.1rem] xl:text-[3.35rem]"
+    : "text-[2.5rem] leading-[1.05] sm:text-6xl sm:leading-[1.05] lg:text-[3.6rem] xl:text-[4.1rem]";
+  const taglineSize = compact ? "text-base sm:text-lg xl:text-xl" : "text-lg sm:text-xl xl:text-[1.375rem]";
   return (
-    <h1 className={`${className} font-bold tracking-[-0.02em] text-slate-900`}>
-      <span className="block text-balance text-[2.5rem] leading-[1.06] sm:text-6xl lg:text-[3.6rem] xl:text-[4.1rem]">
+    <h1 className={`${className} font-bold tracking-[-0.025em] text-slate-900`}>
+      <span className={`block ${titleSize}`}>
         {title}
+        {highlight && (
+          <>
+            {" "}
+            <span className="whitespace-nowrap bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text pb-1 text-transparent">
+              {highlight}
+            </span>
+          </>
+        )}
         <span className="sr-only">:</span>
       </span>{" "}
-      <span className="mt-4 block text-balance bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text pb-1.5 text-[1.65rem] leading-[1.15] text-transparent sm:text-4xl xl:text-[2.6rem]">
-        {subtitle}
+      <span className={`flex items-center justify-center gap-4 lg:justify-start ${compact ? "mt-4" : "mt-5 sm:mt-6"}`}>
+        <span className="hidden h-px w-10 flex-none bg-gradient-to-r from-indigo-500 to-purple-400 lg:block xl:w-12" aria-hidden="true" />
+        <span className={`text-balance font-semibold leading-[1.45] tracking-[-0.01em] text-slate-700 ${taglineSize}`}>
+          {subtitle}
+        </span>
       </span>
     </h1>
   );
@@ -139,34 +162,82 @@ export function StepsList({ steps }) {
 }
 
 /**
- * Questions that open in place (no script needed, so search engines read every answer). The same list feeds the
- * FAQ structured data (faqPageSchema in lib/seo.js), so keep answers as plain text. faqs: [{ question, answer }]
+ * Questions that open one at a time: opening one closes the others, and the answer slides open smoothly (the row
+ * grows from 0 to its natural height while the text fades in). Closed answers stay in the HTML, so search engines
+ * read them all. The same list feeds the FAQ structured data (faqPageSchema in lib/seo.js), so keep answers as plain
+ * text. faqs: [{ question, answer }]
  */
 export function FaqList({ faqs }) {
+  const [openIndex, setOpenIndex] = useState(null);
+  const baseId = useId();
+
   return (
     <div className="mx-auto mt-12 max-w-3xl space-y-3 sm:mt-14 sm:space-y-4">
-      {faqs.map((faq) => (
-        <details
-          key={faq.question}
-          className="group rounded-2xl bg-white ring-1 ring-slate-200/80 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200 open:shadow-lg open:shadow-indigo-900/5 open:ring-indigo-200"
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-5 rounded-2xl px-5 py-4 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 sm:px-7 sm:py-5 [&::-webkit-details-marker]:hidden">
-            <h3 className="text-base font-semibold text-slate-900 transition-colors duration-300 group-hover:text-indigo-700 sm:text-lg">
-              {faq.question}
-            </h3>
-            {/* The plus turns into a cross and fills with the brand gradient when open */}
+      {faqs.map((faq, i) => {
+        const open = openIndex === i;
+        const buttonId = `${baseId}-question-${i}`;
+        const panelId = `${baseId}-answer-${i}`;
+        return (
+          <div
+            key={faq.question}
+            className={`group relative overflow-hidden rounded-2xl bg-white ring-1 transition duration-300 ${
+              open ? "shadow-xl shadow-indigo-900/[0.07] ring-indigo-200" : "ring-slate-200/80 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200"
+            }`}
+          >
+            {/* A thin gradient line grows down the left edge while the answer is open */}
             <span
-              className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 transition duration-300 group-hover:ring-indigo-200 group-open:rotate-45 group-open:bg-gradient-to-br group-open:from-indigo-600 group-open:to-purple-600 group-open:text-white group-open:ring-transparent motion-reduce:transform-none"
+              className={`pointer-events-none absolute inset-y-0 left-0 w-[3px] origin-top bg-gradient-to-b from-indigo-500 to-purple-500 transition-transform duration-500 ease-out motion-reduce:transition-none ${
+                open ? "scale-y-100" : "scale-y-0"
+              }`}
               aria-hidden="true"
+            />
+            <h3 className="text-base sm:text-lg">
+              <button
+                type="button"
+                id={buttonId}
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={() => setOpenIndex(open ? null : i)}
+                className="flex w-full cursor-pointer items-center justify-between gap-5 rounded-2xl px-5 py-4 text-left font-semibold focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-indigo-200 sm:px-7 sm:py-5"
+              >
+                <span className={`transition-colors duration-300 ${open ? "text-indigo-700" : "text-slate-900 group-hover:text-indigo-700"}`}>
+                  {faq.question}
+                </span>
+                {/* The plus turns into a cross and fills with the brand gradient */}
+                <span
+                  className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ring-1 ring-inset transition duration-500 ease-out motion-reduce:transition-none ${
+                    open
+                      ? "rotate-[135deg] bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 ring-transparent"
+                      : "bg-indigo-50 text-indigo-600 ring-indigo-100 group-hover:ring-indigo-200"
+                  }`}
+                  aria-hidden="true"
+                >
+                  <FaPlus className="h-3 w-3" />
+                </span>
+              </button>
+            </h3>
+            <div
+              id={panelId}
+              role="region"
+              aria-labelledby={buttonId}
+              inert={!open}
+              className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
             >
-              <FaPlus className="h-3 w-3" />
-            </span>
-          </summary>
-          <p className="px-5 pb-5 text-[15px] leading-relaxed text-slate-600 motion-safe:animate-fade-in sm:px-7 sm:pb-6 sm:text-base">
-            {faq.answer}
-          </p>
-        </details>
-      ))}
+              <div className="overflow-hidden">
+                <p
+                  className={`px-5 pb-5 text-[15px] leading-relaxed text-slate-600 transition duration-500 ease-out motion-reduce:transition-none sm:px-7 sm:pb-6 sm:text-base ${
+                    open ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+                  }`}
+                >
+                  {faq.answer}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

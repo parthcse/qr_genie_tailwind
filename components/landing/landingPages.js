@@ -34,7 +34,7 @@ import {
  * and QR-Genie doesn't host menus or forms; codes point to pages people already have.
  *
  * Fields: path, crumb (breadcrumb name), seoTitle (≤ 60 characters), description (≤ 160), eyebrow { icon, label },
- * title + subtitle (the h1), intro, createType (preselected type on the create page, or null), cta, preview (phone shown in the
+ * title + highlight (in the gradient) + subtitle (the h1), summary (one sentence under the h1 in the banner), intro (the overview below the banner), createType (preselected type on the create page, or null), cta, preview (phone shown in the
  * hero: type, qrColor, screen texts, note card), benefits, steps (3 or 4), ideas (type: which QR type fits, linked to
  * its page), faqs (also sent as FAQ structured data, so plain text), related (paths of other pages).
  */
@@ -74,8 +74,10 @@ export const LANDING_PAGES = {
     description:
       "Create a website QR code that opens any link. Change the URL after printing, track every scan and add your logo. Free for 14 days, no card needed.",
     eyebrow: { icon: FaGlobe, label: "Website QR code" },
-    title: "Website QR Code Generator",
+    title: "Website QR Code",
+    highlight: "Generator",
     subtitle: "Link to any page and change it anytime",
+    summary: "Turn any web address into a QR code you can edit after printing, with scan tracking built in.",
     intro:
       "Turn any web address into a QR code: your menu, booking page, online shop, review page or a PDF you host. Because QR-Genie codes are dynamic, you can change the link after the code is printed and see how many people scan it.",
     createType: "website",
@@ -154,8 +156,10 @@ export const LANDING_PAGES = {
     description:
       "Make a WiFi QR code so guests join your network in one scan, with no password typing. Works with iPhone and Android cameras. Free for 14 days.",
     eyebrow: { icon: FaWifi, label: "Wi-Fi QR code" },
-    title: "WiFi QR Code Generator",
+    title: "WiFi QR Code",
+    highlight: "Generator",
     subtitle: "Guests join your network in one scan",
+    summary: "Share your network name and password in one code, so guests connect with a single scan.",
     intro:
       "Put your network name and password into a QR code. Guests point their phone camera at it and join straight away, with no long password to read out or type. Made for cafés, hotels, offices, clinics and events.",
     createType: "wifi",
@@ -240,8 +244,10 @@ export const LANDING_PAGES = {
     description:
       "Create a WhatsApp QR code that opens a chat with your number and an optional ready-typed message. Track scans and add your logo. Free for 14 days.",
     eyebrow: { icon: FaWhatsapp, label: "WhatsApp QR code" },
-    title: "WhatsApp QR Code Generator",
+    title: "WhatsApp QR Code",
+    highlight: "Generator",
     subtitle: "Start a chat with customers in one scan",
+    summary: "One scan opens a WhatsApp chat with your business, with an optional message already typed.",
     intro:
       "Let customers message you without saving your number. One scan opens WhatsApp with your business number and, if you like, a message already typed, so asking a question, booking or ordering takes seconds.",
     createType: "whatsapp",
@@ -317,8 +323,10 @@ export const LANDING_PAGES = {
     description:
       "Create an Instagram QR code that opens your profile in one scan. Add your logo and colours, track scans and change it anytime. Free for 14 days.",
     eyebrow: { icon: FaInstagram, label: "Instagram QR code" },
-    title: "Instagram QR Code Generator",
+    title: "Instagram QR Code",
+    highlight: "Generator",
     subtitle: "Turn every scan into a new follower",
+    summary: "One scan opens your Instagram profile, ready for a tap on Follow.",
     intro:
       "Make a QR code for your Instagram profile and put it on posters, packaging, menus and shop windows. One scan opens your profile, in the Instagram app when it's installed, ready for a tap on Follow.",
     createType: "instagram",
@@ -395,8 +403,10 @@ export const LANDING_PAGES = {
     description:
       "Create a QR code for your restaurant menu. Change the menu link anytime without reprinting, share your Wi-Fi and track scans. Free for 14 days.",
     eyebrow: { icon: FaUtensils, label: "For restaurants" },
-    title: "QR Codes for Restaurant Menus",
+    title: "QR Codes for",
+    highlight: "Restaurant Menus",
     subtitle: "Update your menu without reprinting",
+    summary: "Link every table to your online menu, and change it whenever dishes or prices change.",
     intro:
       "Link your tables, windows and takeaway bags to your online menu. When dishes or prices change, update the link in QR-Genie and every printed code shows the new menu. Add a Wi-Fi code for guests and a WhatsApp code for orders.",
     createType: "website",
@@ -475,8 +485,10 @@ export const LANDING_PAGES = {
     description:
       "Use event QR codes for tickets, schedules, check-in forms and venue Wi-Fi. Change links as plans change and see how many people scan. Free for 14 days.",
     eyebrow: { icon: FaTicketAlt, label: "For events" },
-    title: "Event QR Codes",
+    title: "Event",
+    highlight: "QR Codes",
     subtitle: "One scan for tickets, schedules and updates",
+    summary: "Tickets, schedules, check-in forms and venue Wi-Fi, each one scan away and easy to change as plans change.",
     intro:
       "Put QR codes on posters, badges, signs and slides that open your ticket page, schedule, check-in or registration form, the venue Wi-Fi or a WhatsApp help line. Plans change; with dynamic codes, the printed signs keep up.",
     createType: "website",
@@ -553,8 +565,10 @@ export const LANDING_PAGES = {
     description:
       "Put QR codes on for-sale signs and flyers that open the property listing. Swap the link when a home sells and see how many buyers scan. Free for 14 days.",
     eyebrow: { icon: FaHome, label: "For real estate" },
-    title: "Real Estate QR Codes",
+    title: "Real Estate",
+    highlight: "QR Codes",
     subtitle: "From the sign to the listing in one scan",
+    summary: "Signs and flyers that open the full listing, and point to your next property when this one sells.",
     intro:
       "Add a QR code to for-sale signs, window cards and flyers that opens the full listing: photos, price, floor plan and viewing times. When the property sells, point the same sign at your next listing.",
     createType: "website",
@@ -631,8 +645,10 @@ export const LANDING_PAGES = {
     description:
       "QR codes for hotel rooms: Wi-Fi, room service menus, guest guides and WhatsApp concierge. Update links anytime and track scans. Free for 14 days.",
     eyebrow: { icon: FaHotel, label: "For hotels" },
-    title: "Hotel QR Codes",
+    title: "Hotel",
+    highlight: "QR Codes",
     subtitle: "Wi-Fi, menus and guest info in every room",
+    summary: "Room Wi-Fi, menus, guest guides and front desk chat, from QR codes you can keep up to date.",
     intro:
       "Give guests everything on their phone: join the Wi-Fi with one scan, open the room service menu or guest guide, and message the front desk on WhatsApp. Update menus and information without reprinting room cards.",
     createType: null,

@@ -38,6 +38,7 @@ import {
   sectionSpacing,
   primaryButton,
   secondaryButton,
+  heroIntro,
   HeroBackground,
   HeroTitle,
   SectionHeading,
@@ -709,9 +710,9 @@ export default function Landing({ initialUser, basicPlan = null, plans = {} }) {
                   Trusted by 50,000+ businesses worldwide
                 </div>
 
-                <HeroTitle title="Dynamic QR Code Generator" subtitle="Edit Links Anytime, Track Every Scan" />
+                <HeroTitle title="Dynamic QR Code" highlight="Generator" subtitle="Edit links anytime, track every scan" />
 
-                <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl lg:mx-0">
+                <p className={`${heroIntro} lg:mx-0`}>
                   Create, manage, and track editable QR codes. Update your links anytime without reprinting.
                   Perfect for restaurants, events, marketing campaigns, and more.
                 </p>
