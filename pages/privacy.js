@@ -62,11 +62,19 @@ const sections = [
     id: "cookies",
     heading: "Cookies",
     body: (
-      <p>
-        We use one essential cookie to keep you signed in. It lasts up to 7 days and can&apos;t be read by scripts on the
-        page. We don&apos;t use advertising or analytics cookies. When you open checkout, Razorpay&apos;s payment window may set
-        its own cookies to process your payment.
-      </p>
+      <>
+        <p>
+          We use one essential cookie to keep you signed in. It lasts up to 7 days and can&apos;t be read by scripts on the
+          page. When you open checkout, Razorpay&apos;s payment window may set its own cookies to process your payment.
+        </p>
+        <p>
+          On our website we also use Google Analytics, through Google Tag Manager, to understand how visitors find and use
+          the site, such as which pages are visited and where visits come from. Google Analytics sets its own cookies to
+          count visits; they don&apos;t tell us who you are. It doesn&apos;t run on QR code scan pages, so scans of your codes
+          are never sent to Google. We don&apos;t use advertising cookies. You can block analytics cookies in your browser
+          settings without affecting how QR-Genie works.
+        </p>
+      </>
     ),
   },
   {
@@ -94,7 +102,8 @@ const sections = [
         <ul>
           <li><strong>Razorpay</strong>, to take payments;</li>
           <li><strong>Amazon Web Services</strong>, which hosts our servers and database and sends our emails;</li>
-          <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots.</li>
+          <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots;</li>
+          <li><strong>Google</strong> (Tag Manager and Analytics), to measure visits to our website.</li>
         </ul>
         <p>We may also disclose information if the law requires it.</p>
       </>

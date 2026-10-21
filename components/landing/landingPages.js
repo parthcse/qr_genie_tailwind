@@ -34,8 +34,8 @@ import {
  * and QR-Genie doesn't host menus or forms; codes point to pages people already have.
  *
  * Fields: path, crumb (breadcrumb name), seoTitle (≤ 60 characters), description (≤ 160), eyebrow { icon, label },
- * title + highlight (in the gradient) + subtitle (the h1), summary (one sentence under the h1 in the banner), intro (the overview below the banner), createType (preselected type on the create page, or null), cta, preview (the banner picture: type, qrColor, screen texts
- * and note for the phone shown on large screens; card for the compact code card shown instead on phones and tablets), benefits, steps (3 or 4), ideas (type: which QR type fits, linked to
+ * title + highlight (in the gradient) + subtitle (the h1), summary (one sentence under the h1 in the banner), intro (the overview below the banner), createType (preselected type on the create page, or null), cta, preview (the banner picture: qrColor, card (name, what it opens,
+ * its scans; isStatic for Wi-Fi) and note), benefits, steps (3 or 4), ideas (type: which QR type fits, linked to
  * its page), faqs (also sent as FAQ structured data, so plain text), related (paths of other pages).
  */
 
@@ -83,7 +83,6 @@ export const LANDING_PAGES = {
     createType: "website",
     cta: "Create a website QR code",
     preview: {
-      type: "website",
       qrColor: "#4338ca",
       card: { title: "Website QR code", detail: "yourcafe.com/menu", stat: "248 scans this week" },
       note: { icon: FaLink, title: "Link updated", text: "No reprint needed" },
@@ -166,10 +165,8 @@ export const LANDING_PAGES = {
     createType: "wifi",
     cta: "Create a Wi-Fi QR code",
     preview: {
-      type: "wifi",
       qrColor: "#0e7490",
       card: { title: "Wi-Fi QR code", detail: "Guest Wi-Fi · WPA", stat: "Joins in one scan", isStatic: true },
-      screen: { network: "Guest Wi-Fi" },
       note: { icon: FaBolt, title: "Connected", text: "No password typed" },
     },
     benefits: {
@@ -255,7 +252,6 @@ export const LANDING_PAGES = {
     createType: "whatsapp",
     cta: "Create a WhatsApp QR code",
     preview: {
-      type: "whatsapp",
       qrColor: "#047857",
       card: { title: "WhatsApp QR code", detail: "Chat with Your Business", stat: "96 scans this week" },
       note: { icon: FaComments, title: "New chat", text: "From your flyer" },
@@ -335,7 +331,6 @@ export const LANDING_PAGES = {
     createType: "instagram",
     cta: "Create an Instagram QR code",
     preview: {
-      type: "instagram",
       qrColor: "#be185d",
       card: { title: "Instagram QR code", detail: "instagram.com/yourbrand", stat: "310 scans this week" },
       note: { icon: FaInstagram, title: "+1 follower", text: "From your poster" },
@@ -416,10 +411,8 @@ export const LANDING_PAGES = {
     createType: "website",
     cta: "Create a menu QR code",
     preview: {
-      type: "website",
       qrColor: "#c2410c",
       card: { title: "Table menu", detail: "yourcafe.com/menu", stat: "248 scans this week" },
-      screen: { url: "yourcafe.com/menu", eyebrow: "Today's menu", title: "Fresh dishes, new every week", button: "Book a table", banner: "amber" },
       note: { icon: FaUtensils, title: "Menu updated", text: "Same code on every table" },
     },
     benefits: {
@@ -499,10 +492,8 @@ export const LANDING_PAGES = {
     createType: "website",
     cta: "Create an event QR code",
     preview: {
-      type: "website",
       qrColor: "#047857",
       card: { title: "Event tickets", detail: "yourevent.com/tickets", stat: "512 scans this week" },
-      screen: { url: "yourevent.com/tickets", eyebrow: "This Saturday", title: "Summer music night", button: "Get tickets", banner: "emerald" },
       note: { icon: FaTicketAlt, title: "Schedule updated", text: "Posters stay the same" },
     },
     benefits: {
@@ -580,10 +571,8 @@ export const LANDING_PAGES = {
     createType: "website",
     cta: "Create a property QR code",
     preview: {
-      type: "website",
       qrColor: "#4338ca",
       card: { title: "12 Oak Lane sign", detail: "youragency.com/12-oak-lane", stat: "38 scans this week" },
-      screen: { url: "youragency.com/12-oak-lane", eyebrow: "For sale", title: "3-bed home with garden", button: "Book a viewing", banner: "sky" },
       note: { icon: FaHome, title: "38 scans this week", text: "From the sign outside" },
     },
     benefits: {
@@ -661,10 +650,8 @@ export const LANDING_PAGES = {
     createType: null,
     cta: "Create a hotel QR code",
     preview: {
-      type: "wifi",
       qrColor: "#0e7490",
       card: { title: "Room Wi-Fi", detail: "Hotel Guest · WPA", stat: "Joins in one scan", isStatic: true },
-      screen: { network: "Hotel Guest" },
       note: { icon: FaConciergeBell, title: "Room 214", text: "Wi-Fi joined in one scan" },
     },
     benefits: {

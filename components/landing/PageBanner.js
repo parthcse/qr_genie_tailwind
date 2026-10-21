@@ -7,9 +7,9 @@ import { container, HeroTitle } from "./LandingUi";
  * hero: a medium-height banner on a plain light background with the h1, tagline and a short summary on the left and
  * a picture on the right, then the breadcrumb on its own row underneath.
  * - eyebrow: { icon, label }; title + highlight + subtitle: the h1 (see HeroTitle)
- * - visual: the picture on the right (decorative). It sits in a box as tall as the text, so a tall picture (a phone)
- *   can rise from the bottom edge and be cut off there. visualClassName: that box's height per screen size (or
- *   "hidden lg:block" to leave the picture out on phones)
+ * - visual: the picture on the right (decorative). On large screens it sits in a box as tall as the banner (at least
+ *   26rem), so a picture centred in it fits without being cut off. visualClassName: that box's height per screen
+ *   size (or "hidden lg:block" to leave the picture out on phones)
  * - crumbs: [{ name, path }] after Home; the last one is the current page
  */
 export default function PageBanner({ eyebrow, title, highlight, subtitle, summary, visual, visualClassName = "h-48 sm:h-64 lg:h-auto", crumbs }) {
@@ -20,7 +20,7 @@ export default function PageBanner({ eyebrow, title, highlight, subtitle, summar
     <>
       <section className="relative isolate overflow-hidden border-b border-indigo-100/80 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
-        <div className={`${container} grid gap-2 lg:grid-cols-[1.2fr_1fr] lg:gap-10`}>
+        <div className={`${container} grid gap-2 lg:min-h-[26rem] lg:grid-cols-[1.2fr_1fr] lg:gap-10`}>
           <div className="self-center pb-8 pt-12 text-center sm:pt-14 lg:py-16 lg:text-left xl:py-20">
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-100">
               <Icon className="h-3.5 w-3.5" />
