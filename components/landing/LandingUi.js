@@ -172,7 +172,7 @@ export function FaqList({ faqs }) {
   const baseId = useId();
 
   return (
-    <div className="mx-auto mt-12 max-w-3xl space-y-3 sm:mt-14 sm:space-y-4">
+    <div className="mx-auto mt-10 max-w-3xl space-y-3 sm:mt-12">
       {faqs.map((faq, i) => {
         const open = openIndex === i;
         const buttonId = `${baseId}-question-${i}`;
@@ -191,21 +191,21 @@ export function FaqList({ faqs }) {
               }`}
               aria-hidden="true"
             />
-            <h3 className="text-base sm:text-lg">
+            <h3 className="text-[15px] leading-snug sm:text-base">
               <button
                 type="button"
                 id={buttonId}
                 aria-expanded={open}
                 aria-controls={panelId}
                 onClick={() => setOpenIndex(open ? null : i)}
-                className="flex w-full cursor-pointer items-center justify-between gap-5 rounded-2xl px-5 py-4 text-left font-semibold focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-indigo-200 sm:px-7 sm:py-5"
+                className="flex w-full cursor-pointer items-center justify-between gap-5 rounded-2xl px-5 py-3 text-left font-semibold focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-indigo-200 sm:px-6 sm:py-3.5"
               >
                 <span className={`transition-colors duration-300 ${open ? "text-indigo-700" : "text-slate-900 group-hover:text-indigo-700"}`}>
                   {faq.question}
                 </span>
                 {/* The plus turns into a cross and fills with the brand gradient */}
                 <span
-                  className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ring-1 ring-inset transition duration-500 ease-out motion-reduce:transition-none ${
+                  className={`flex h-7 w-7 flex-none items-center justify-center rounded-full ring-1 ring-inset transition duration-500 ease-out motion-reduce:transition-none ${
                     open
                       ? "rotate-[135deg] bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 ring-transparent"
                       : "bg-indigo-50 text-indigo-600 ring-indigo-100 group-hover:ring-indigo-200"
@@ -227,7 +227,7 @@ export function FaqList({ faqs }) {
             >
               <div className="overflow-hidden">
                 <p
-                  className={`px-5 pb-5 text-[15px] leading-relaxed text-slate-600 transition duration-500 ease-out motion-reduce:transition-none sm:px-7 sm:pb-6 sm:text-base ${
+                  className={`px-5 pb-4 text-[14px] leading-relaxed text-slate-600 transition duration-500 ease-out motion-reduce:transition-none sm:px-6 sm:pb-5 sm:text-[15px] ${
                     open ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
                   }`}
                 >

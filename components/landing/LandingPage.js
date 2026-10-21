@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import { FaArrowRight, FaCheck } from "react-icons/fa";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
@@ -8,12 +9,62 @@ import { PhonePreview } from "./TypeScreen";
 import { TYPE_PAGES, LANDING_LINKS } from "./landingPages";
 import { container, sectionSpacing, primaryButton, secondaryButton, SectionHeading, FeatureGrid, StepsList, FaqList } from "./LandingUi";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { SITE_URL } from "@/lib/site";
 import { organizationSchema, breadcrumbSchema, faqPageSchema } from "@/lib/seo";
 
+// Banner picture on phones and tablets (decorative): the code itself, what it opens and its scans on one card that
+// fits the screen, with the page's note tucked under its corner. Large screens show the phone instead.
+function CodeCard({ page }) {
+  const { card, qrColor, note } = page.preview;
+  const Icon = page.eyebrow.icon;
+  const Note = note.icon;
+  return (
+    <div className="relative mx-auto max-w-sm pb-12 pt-2 text-left sm:max-w-md lg:hidden">
+      <div className="absolute inset-x-10 top-6 -z-10 h-32 rounded-full bg-indigo-300/30 blur-3xl" />
+      <div className="flex items-center gap-4 rounded-3xl bg-white p-4 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 sm:gap-5 sm:p-5">
+        <div className="flex-none rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-2 ring-1 ring-indigo-100">
+          <QRCodeSVG value={SITE_URL} size={88} level="M" fgColor={qrColor} bgColor="#ffffff" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+            <span className="truncate font-display text-[15px] font-semibold text-slate-900">{card.title}</span>
+          </div>
+          <p className="mt-1.5 truncate text-xs text-slate-500">{card.detail}</p>
+          {card.isStatic ? (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              <FaCheck className="h-2.5 w-2.5" />
+              {card.stat}
+            </p>
+          ) : (
+            <div className="mt-3">
+              <div className="flex h-7 items-end gap-1">
+                {[38, 52, 34, 66, 58, 84, 100].map((height, i) => (
+                  <span key={i} className="flex-1 rounded-sm bg-gradient-to-t from-indigo-500 to-purple-400" style={{ height: `${height}%` }} />
+                ))}
+              </div>
+              <p className="mt-1.5 text-[11px] font-medium text-slate-500">{card.stat}</p>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="absolute bottom-5 right-4 flex items-center gap-2 rounded-xl bg-white py-2 pl-2 pr-3 shadow-lg shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float">
+        <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+          <Note className="h-3 w-3" />
+        </span>
+        <span className="whitespace-nowrap text-xs font-semibold text-slate-900">{note.title}</span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * A QR type or industry page (website, Wi-Fi, restaurants, hotels…): a banner with a phone preview, an overview with
- * the buttons, benefits, steps, ideas, FAQ and links to the other pages. page: one entry of LANDING_PAGES
- * (components/landing/landingPages.js). The page is static; the signed-in state only changes the buttons.
+ * A QR type or industry page (website, Wi-Fi, restaurants, hotels…): a banner (a phone on large screens, a code card
+ * on phones and tablets), an overview with the buttons, benefits, steps, ideas, FAQ and links to the other pages.
+ * page: one entry of LANDING_PAGES (components/landing/landingPages.js). The page is static; the signed-in state only
+ * changes the buttons.
  */
 export default function LandingPage({ page }) {
   const { loading, user } = useCurrentUser();
@@ -42,30 +93,36 @@ export default function LandingPage({ page }) {
           subtitle={page.subtitle}
           summary={page.summary}
           crumbs={[{ name: page.crumb, path: page.path }]}
+          visualClassName="lg:h-auto"
           visual={
             <>
-              <div className="absolute left-1/2 top-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-indigo-300/30 blur-3xl" />
-              {/* The phone rises from the bottom edge of the banner, which cuts it off */}
-              <div className="absolute left-1/2 top-6 w-52 -translate-x-1/2 sm:w-60 lg:top-12 lg:w-64">
-                <PhonePreview
-                  type={page.preview.type}
-                  screen={page.preview.screen}
-                  qrColor={page.preview.qrColor}
-                  className=""
-                  qrClassName="hidden lg:block -left-28 top-44"
-                >
-                  {/* A note about what just happened, floating over the top corner of the phone like a notification
-                      (clear of the screen's headline text) */}
-                  <div className="absolute -right-24 top-3 hidden items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float sm:flex lg:-right-20 xl:-right-28">
-                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <Note className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="whitespace-nowrap">
-                      <span className="block text-sm font-semibold text-slate-900">{page.preview.note.title}</span>
-                      <span className="block text-xs text-slate-500">{page.preview.note.text}</span>
-                    </span>
-                  </div>
-                </PhonePreview>
+              {/* Phones and tablets: a compact card that fits the screen */}
+              <CodeCard page={page} />
+
+              {/* Large screens: the phone rises from the bottom edge of the banner, which cuts it off */}
+              <div className="hidden lg:block">
+                <div className="absolute left-1/2 top-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-indigo-300/30 blur-3xl" />
+                <div className="absolute left-1/2 top-12 w-64 -translate-x-1/2">
+                  <PhonePreview
+                    type={page.preview.type}
+                    screen={page.preview.screen}
+                    qrColor={page.preview.qrColor}
+                    className=""
+                    qrClassName="-left-28 top-44"
+                  >
+                    {/* A note about what just happened, floating over the top corner of the phone like a notification
+                        (clear of the screen's headline text) */}
+                    <div className="absolute -right-20 top-3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float xl:-right-28">
+                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                        <Note className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="whitespace-nowrap">
+                        <span className="block text-sm font-semibold text-slate-900">{page.preview.note.title}</span>
+                        <span className="block text-xs text-slate-500">{page.preview.note.text}</span>
+                      </span>
+                    </div>
+                  </PhonePreview>
+                </div>
               </div>
             </>
           }
