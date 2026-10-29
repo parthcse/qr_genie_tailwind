@@ -5,7 +5,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import PaymentResultModal from "@/components/billing/PaymentResultModal";
 import CancelSubscriptionModal from "@/components/billing/CancelSubscriptionModal";
 import PricingCards, { PaymentMethods } from "@/components/landing/PricingCards";
-import { FaCheck, FaPlus } from "react-icons/fa";
+import { FaCheck } from "react-icons/fa";
+import { FaqList } from "@/components/landing/LandingUi";
 import { formatPrice, formatBilled, formatMonthly } from "@/lib/billing/price";
 import { termById, planNameFor } from "@/lib/billing/terms";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
@@ -28,22 +29,18 @@ const linkClass = "font-medium !text-indigo-600 hover:!text-indigo-700";
 // Billing questions shown at the bottom of the page
 const faqItems = [
   {
-    id: 1,
     question: "How does billing work?",
     answer: "Choose 3, 6 or 12 months. You pay for those months upfront, and the plan renews automatically for the same length until you cancel. Every plan has the same features; the longer the plan, the lower the monthly price. Your next renewal date is always shown on this page.",
   },
   {
-    id: 2,
     question: "If I subscribe during my free trial, do I lose my free days?",
     answer: `No. You pay when you subscribe, but your paid months only start when your ${TRIAL_DAYS} free days end. Cancel before then and we refund you in full.`,
   },
   {
-    id: 3,
     question: "Which payment methods can I use?",
-    answer: "Payments are processed securely by Razorpay. In India you pay in rupees and can use the Indian cards and other methods Razorpay offers at checkout. Outside India you pay in US dollars with a card that allows international payments; if it's declined, check that setting with your bank.",
+    answer: "Payments are processed securely by Razorpay. In India you pay in rupees with a Visa, Mastercard or RuPay card, UPI AutoPay or net banking; the options at checkout depend on your plan and bank. Outside India you pay in US dollars with a Visa or Mastercard card that allows international payments; if it's declined, check that setting with your bank.",
   },
   {
-    id: 4,
     question: "How do I cancel?",
     answer: (
       <>
@@ -54,12 +51,10 @@ const faqItems = [
     ),
   },
   {
-    id: 5,
     question: "What happens to my QR codes if my plan ends?",
     answer: "They're paused: anyone who scans them sees a short notice instead of your link. Subscribe again and they work straight away with the same links, so nothing needs reprinting. If a renewal payment is late, your codes keep working for 3 more days while it goes through.",
   },
   {
-    id: 6,
     question: "Can I get a refund?",
     answer: (
       <>
@@ -216,7 +211,6 @@ function PlanEndedNotice({ status }) {
 
 export default function BillingPage() {
   const router = useRouter();
-  const [openFaq, setOpenFaq] = useState(null);
   const [buyingTerm, setBuyingTerm] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [account, setAccount] = useState(null);
@@ -267,10 +261,6 @@ export default function BillingPage() {
   useEffect(() => {
     loadPlans();
   }, [loadPlans]);
-
-  const toggleFaq = (id) => {
-    setOpenFaq(openFaq === id ? null : id);
-  };
 
   function loadRazorpayScript() {
     if (typeof window !== "undefined" && window.Razorpay) {
@@ -508,51 +498,10 @@ export default function BillingPage() {
           <BillingDetails account={account} />
         </section>
 
-        {/* FAQ */}
+        {/* FAQ: the same accordion as the public pages */}
         <section aria-labelledby="faq-heading" className="pb-4">
           <h2 id="faq-heading" className="text-lg font-semibold text-gray-900">Questions about billing</h2>
-          <div className="mt-5 divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white">
-            {faqItems.map((item) => {
-              const open = openFaq === item.id;
-              return (
-                <div key={item.id} className={`transition-colors ${open ? "bg-indigo-50/40" : ""} first:rounded-t-2xl last:rounded-b-2xl`}>
-                  <h3>
-                    <button
-                      type="button"
-                      onClick={() => toggleFaq(item.id)}
-                      aria-expanded={open}
-                      aria-controls={`faq-answer-${item.id}`}
-                      className="group flex w-full items-center justify-between gap-6 px-5 py-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 sm:px-7 sm:py-6"
-                    >
-                      <span className={`text-base font-medium ${open ? "text-indigo-800" : "text-gray-900 group-hover:text-indigo-700"}`}>
-                        {item.question}
-                      </span>
-                      <span
-                        className={`flex h-8 w-8 flex-none items-center justify-center rounded-full border transition duration-300 motion-reduce:transition-none ${
-                          open
-                            ? "rotate-45 border-indigo-200 bg-white text-indigo-600"
-                            : "border-gray-200 text-gray-400 group-hover:border-indigo-200 group-hover:text-indigo-600"
-                        }`}
-                      >
-                        <FaPlus className="h-3 w-3" />
-                      </span>
-                    </button>
-                  </h3>
-                  <div
-                    id={`faq-answer-${item.id}`}
-                    aria-hidden={!open}
-                    className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
-                      open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <p className="max-w-[95%] px-5 pb-6 text-sm leading-relaxed text-gray-600 sm:px-7">{item.answer}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <FaqList faqs={faqItems} className="mt-5" />
         </section>
       </div>
 

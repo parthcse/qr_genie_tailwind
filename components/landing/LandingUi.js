@@ -165,14 +165,15 @@ export function StepsList({ steps }) {
  * Questions that open one at a time: opening one closes the others, and the answer slides open smoothly (the row
  * grows from 0 to its natural height while the text fades in). Closed answers stay in the HTML, so search engines
  * read them all. The same list feeds the FAQ structured data (faqPageSchema in lib/seo.js), so keep answers as plain
- * text. faqs: [{ question, answer }]
+ * text there (pages without structured data, like billing, may use links). faqs: [{ question, answer }].
+ * className: the list's width and spacing; defaults to a centred column under a section heading.
  */
-export function FaqList({ faqs }) {
+export function FaqList({ faqs, className = "mx-auto mt-10 max-w-3xl sm:mt-12" }) {
   const [openIndex, setOpenIndex] = useState(null);
   const baseId = useId();
 
   return (
-    <div className="mx-auto mt-10 max-w-3xl space-y-3 sm:mt-12">
+    <div className={`space-y-3 ${className}`}>
       {faqs.map((faq, i) => {
         const open = openIndex === i;
         const buttonId = `${baseId}-question-${i}`;
