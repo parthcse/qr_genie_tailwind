@@ -353,8 +353,8 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
   - `pages/_document.js` holds the Search Console verification tag and loads Tag Manager (container `GTM-M2HW6QST`), plus the `noscript` fallback.
   - Google's snippet is in `public/gtm-init.js`, a file rather than inline code, so the CSP allows it.
   - It runs only on qr-genie.co, and never on QR scan pages (`/r/…`, our customers' visitors) or on the password reset and email confirmation pages (their addresses carry one-time codes).
-  - The CSP allows Google's domains for Tag Manager, its Preview mode and Google Analytics. Tags that load anything else (ads pixels, chat widgets, custom HTML) are blocked until their domains are added.
-  - The privacy policy's Cookies and Service providers sections describe Google Analytics: update them if the tags change.
+  - The CSP allows Google's domains for Tag Manager, its Preview mode, Google Analytics and the Google tag's advertising measurement (Google Ads conversions send to `www.google.com` and `*.doubleclick.net`, allowed in `connect-src` only). Tags that load anything else (other ads pixels, chat widgets, custom HTML) are blocked until their domains are added.
+  - The privacy policy's Cookies, How we use your information and Service providers sections describe Google Analytics and Google Ads measurement: update them if the tags change.
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.
 - **Links styled as buttons** need `!text-…` color classes (e.g. `!text-white`), because the global link style sets link colors.
 - **Brand look:** indigo→purple gradient (`from-indigo-600 to-purple-600`) for primary actions, white cards with `rounded-2xl` and light borders, `max-w-site` for page width.

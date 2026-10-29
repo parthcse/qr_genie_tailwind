@@ -70,9 +70,23 @@ const sections = [
         <p>
           On our website we also use Google Analytics, through Google Tag Manager, to understand how visitors find and use
           the site, such as which pages are visited and where visits come from. Google Analytics sets its own cookies to
-          count visits; they don&apos;t tell us who you are. It doesn&apos;t run on QR code scan pages, so scans of your codes
-          are never sent to Google. We don&apos;t use advertising cookies. You can block analytics cookies in your browser
-          settings without affecting how QR-Genie works.
+          count visits; they don&apos;t tell us who you are.
+        </p>
+        <p>
+          We also use Google&apos;s advertising measurement (Google Ads) to see whether visits and sign-ups came from our
+          ads. Google may set its own advertising cookies for this, and uses them as described in{" "}
+          <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
+            Google&apos;s advertising policy
+          </a>
+          . You can manage the ads Google shows you in{" "}
+          <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer">
+            Google&apos;s My Ad Center
+          </a>
+          .
+        </p>
+        <p>
+          None of this runs on QR code scan pages, so scans of your codes are never sent to Google. You can block analytics
+          and advertising cookies in your browser settings without affecting how QR-Genie works.
         </p>
       </>
     ),
@@ -89,7 +103,10 @@ const sections = [
           <li>to keep QR-Genie secure and prevent abuse, such as spam or malicious links;</li>
           <li>to meet our legal and accounting obligations.</li>
         </ul>
-        <p>We don&apos;t sell your personal information, and we don&apos;t use it for advertising.</p>
+        <p>
+          We don&apos;t sell your personal information. Apart from measuring our own ads on our website (see Cookies), we
+          don&apos;t use it for advertising.
+        </p>
       </>
     ),
   },
@@ -103,7 +120,7 @@ const sections = [
           <li><strong>Razorpay</strong>, to take payments;</li>
           <li><strong>Amazon Web Services</strong>, which hosts our servers and database and sends our emails;</li>
           <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots;</li>
-          <li><strong>Google</strong> (Tag Manager and Analytics), to measure visits to our website.</li>
+          <li><strong>Google</strong> (Tag Manager, Analytics and Ads), to measure visits to our website and how well our ads work.</li>
         </ul>
         <p>We may also disclose information if the law requires it.</p>
       </>

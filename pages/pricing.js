@@ -12,7 +12,7 @@ import { container, sectionSpacing, SectionHeading, FeatureGrid, FaqList } from 
 import { formatPrice, formatMonthly, formatBilled, monthlyAmount, cheapestPlan, savingsFor } from "@/lib/billing/price";
 import { BEST_VALUE_TERM, termById } from "@/lib/billing/terms";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
-import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema, pricesForSearch } from "@/lib/seo";
+import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema } from "@/lib/seo";
 
 export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import("@/lib/auth");
@@ -354,12 +354,12 @@ export default function PricingPage({ initialUser, prices = null, plans = {} }) 
   const isAuthenticated = !!initialUser;
   const fromPrice = formatMonthly(cheapestPlan(prices));
 
-  const searchPrices = pricesForSearch(plans);
+  // Search result text, the same for everyone: the lowest US dollar monthly price ("$19.99/month")
+  const title = `Dynamic QR Code Pricing & Plans: ${TRIAL_DAYS}-Day Free Trial | QR-Genie`;
+  const usdFrom = formatMonthly(cheapestPlan(plans.USD));
   const description =
-    `Try QR-Genie free for ${TRIAL_DAYS} days, no card needed.` +
-    (searchPrices
-      ? ` Then from ${searchPrices} for unlimited dynamic QR codes and scan analytics.`
-      : " Then 3, 6 or 12-month plans with unlimited dynamic QR codes and scan analytics.");
+    `${usdFrom ? `Plans from ${usdFrom}` : "3, 6 and 12-month plans"} with unlimited dynamic QR codes, unlimited scans ` +
+    `and scan analytics. Edit links after printing. Try ${TRIAL_DAYS} days free, no card needed.`;
   const structuredData = [
     organizationSchema,
     breadcrumbSchema([
@@ -382,7 +382,7 @@ export default function PricingPage({ initialUser, prices = null, plans = {} }) 
 
   return (
     <div className="min-h-screen bg-white">
-      <SeoMeta title="Dynamic QR Code Pricing and Plans | QR-Genie" description={description} path="/pricing" jsonLd={structuredData} />
+      <SeoMeta title={title} description={description} path="/pricing" jsonLd={structuredData} />
       <SiteHeader isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
       <main>
