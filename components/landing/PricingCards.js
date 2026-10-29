@@ -233,7 +233,7 @@ export function PaymentMethods({ currency = "INR", className = "mt-12" }) {
           <li
             key={id}
             title={PAYMENT_LOGOS[id].label}
-            className="flex h-11 min-w-[4.5rem] items-center justify-center rounded-xl bg-white px-3.5 shadow-sm ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-indigo-200 motion-reduce:transform-none"
+            className="flex h-11 min-w-[4.5rem] items-center justify-center rounded-xl bg-white px-3.5 shadow-sm ring-1 ring-slate-200"
           >
             {PAYMENT_LOGOS[id].logo}
             <span className="sr-only">{PAYMENT_LOGOS[id].label}</span>
