@@ -440,8 +440,9 @@ export default function PricingPage({ initialUser, prices = null, plans = {} }) 
           </div>
         </section>
 
-        {/* FAQ (the same questions go to search engines as FAQ structured data) */}
-        <section className={`bg-white ${sectionSpacing}`}>
+        {/* FAQ (the same questions go to search engines as FAQ structured data). Little bottom padding: the
+            footer's sign-up panel brings its own space */}
+        <section className="bg-white pb-4 pt-16 sm:pt-24 lg:pt-28">
           <div className={container}>
             <SectionHeading eyebrow="FAQ" title="Pricing questions" />
             <FaqList faqs={faqs} />
