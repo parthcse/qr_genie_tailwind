@@ -1,6 +1,7 @@
 import Link from "next/link";
 import LegalPage from "@/components/layout/LegalPage";
 import { SUPPORT_EMAIL } from "@/lib/site";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 const sections = [
   {
@@ -40,8 +41,8 @@ const sections = [
     heading: "Free trial",
     body: (
       <p>
-        New accounts get a 14-day free trial with up to 2 QR codes. No card is needed. When the trial ends, your QR codes are
-        paused until you subscribe; subscribing switches them back on with the same links.
+        New accounts get a {TRIAL_DAYS}-day free trial with up to 2 QR codes. No card is needed. When the trial ends, your QR
+        codes are paused until you subscribe; subscribing switches them back on with the same links.
       </p>
     ),
   },
@@ -51,10 +52,16 @@ const sections = [
     body: (
       <>
         <p>
-          The Basic Package is a monthly subscription, billed through Razorpay: in Indian rupees if you subscribe from
-          India, and in US dollars from anywhere else (we go by the location of your internet connection). The price shown
-          on our pricing and billing pages is the amount you&apos;re charged. You pay when you subscribe, and the same amount
-          is charged automatically every month on that date until you cancel.
+          You can subscribe for 3, 6 or 12 months. Every plan has the same features. Subscriptions are billed through
+          Razorpay: in Indian rupees if you subscribe from India, and in US dollars from anywhere else (we go by the location
+          of your internet connection). Prices include 18% GST, and the amount shown on our pricing and billing pages is the
+          amount you&apos;re charged.
+        </p>
+        <p>
+          You pay for the whole plan upfront when you subscribe. At the end of each period the plan renews automatically for
+          the same length, and the same amount is charged, until you cancel. If you subscribe during your free trial for the
+          first time, you pay when you subscribe, but your paid months start when your free days end, so you don&apos;t lose
+          any of them.
         </p>
         <p>
           If a renewal payment fails, your QR codes keep working for 3 days while it&apos;s retried; after that they&apos;re paused
@@ -78,8 +85,10 @@ const sections = [
     body: (
       <p>
         You can cancel at any time with <strong>Cancel subscription</strong> on the Billing page of your dashboard, or by{" "}
-        <Link href="/contact?topic=cancel">contacting us</Link>. Your plan stays active until the end of the period
-        you&apos;ve paid for, and you won&apos;t be charged again. When it ends, your QR codes are paused.
+        <Link href="/contact?topic=cancel">contacting us</Link>. Your plan won&apos;t renew, it stays active until the end of
+        the period you&apos;ve paid for, and you won&apos;t be charged again. When it ends, your QR codes are paused. If you
+        cancel during your free days, before your paid months have started, the plan is cancelled straight away and your
+        payment is refunded in full.
       </p>
     ),
   },

@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PaymentResultModal from "@/components/billing/PaymentResultModal";
 import CancelSubscriptionModal from "@/components/billing/CancelSubscriptionModal";
+import PricingCards, { PaymentMethods } from "@/components/landing/PricingCards";
 import { FaCheck, FaPlus } from "react-icons/fa";
-import { formatPrice, formatPeriod, formatPlanPrice } from "@/lib/billing/price";
-import { TRIAL_PLAN_FEATURES, BASIC_PLAN_FEATURES } from "@/lib/site";
+import { formatPrice, formatBilled, formatMonthly } from "@/lib/billing/price";
+import { termById, planNameFor } from "@/lib/billing/terms";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
+import { PAID_PLAN_FEATURES } from "@/lib/site";
 
 // Server-side authentication check
 export async function getServerSideProps(context) {
@@ -19,64 +23,50 @@ export async function getServerSideProps(context) {
   };
 }
 
-const TRIAL_DAYS = 14;
+const linkClass = "font-medium !text-indigo-600 hover:!text-indigo-700";
 
-// Pricing plans data - Free Trial and Basic Package. The Basic price comes from Razorpay (/api/billing/plans).
-const pricingPlans = [
-  {
-    id: "TRIAL",
-    name: "Free Trial",
-    description: "Try every feature before you pay.",
-    period: "for 14 days",
-    features: TRIAL_PLAN_FEATURES,
-  },
-  {
-    id: "BASIC",
-    name: "Basic Package",
-    description: "Unlimited QR codes for your business.",
-    features: BASIC_PLAN_FEATURES,
-  },
-];
-
-// FAQ data; priceText is the Basic price in the currency being shown, e.g. "₹399 per month"
-const buildFaqItems = (priceText) => [
+// Billing questions shown at the bottom of the page
+const faqItems = [
   {
     id: 1,
     question: "How does billing work?",
-    answer: `${priceText ? `The Basic Package costs ${priceText}. ` : ""}You pay when you subscribe, and the same amount is charged automatically on that date each month. Your next renewal date is always shown on this page.`,
+    answer: "Choose 3, 6 or 12 months. You pay for those months upfront, and the plan renews automatically for the same length until you cancel. Every plan has the same features; the longer the plan, the lower the monthly price. Your next renewal date is always shown on this page.",
   },
   {
     id: 2,
+    question: "If I subscribe during my free trial, do I lose my free days?",
+    answer: `No. You pay when you subscribe, but your paid months only start when your ${TRIAL_DAYS} free days end. Cancel before then and we refund you in full.`,
+  },
+  {
+    id: 3,
     question: "Which payment methods can I use?",
     answer: "Payments are processed securely by Razorpay. In India you pay in rupees and can use the Indian cards and other methods Razorpay offers at checkout. Outside India you pay in US dollars with a card that allows international payments; if it's declined, check that setting with your bank.",
   },
   {
-    id: 3,
+    id: 4,
     question: "How do I cancel?",
     answer: (
       <>
         Choose <strong className="font-semibold text-gray-900">Cancel subscription</strong> on your plan card at the top of
-        this page. You keep the Basic Package until the end of the month you&apos;ve already paid for, and you won&apos;t be
-        charged again. If you&apos;d rather we do it,{" "}
-        <Link href="/contact?topic=cancel" className="font-medium !text-indigo-600 hover:!text-indigo-700">contact us</Link>.
+        this page. Your plan won&apos;t renew, and you keep it until the end of the period you&apos;ve paid for. If you&apos;d
+        rather we do it, <Link href="/contact?topic=cancel" className={linkClass}>contact us</Link>.
       </>
     ),
   },
   {
-    id: 4,
+    id: 5,
     question: "What happens to my QR codes if my plan ends?",
     answer: "They're paused: anyone who scans them sees a short notice instead of your link. Subscribe again and they work straight away with the same links, so nothing needs reprinting. If a renewal payment is late, your codes keep working for 3 more days while it goes through.",
   },
   {
-    id: 5,
+    id: 6,
     question: "Can I get a refund?",
     answer: (
       <>
-        Yes. If you cancel partway through a month,{" "}
-        <Link href="/contact?topic=refund" className="font-medium !text-indigo-600 hover:!text-indigo-700">contact us</Link> and
-        we&apos;ll refund the days you haven&apos;t used. The{" "}
-        <Link href="/refund-policy" className="font-medium !text-indigo-600 hover:!text-indigo-700">refund policy</Link> has
-        the details.
+        If you cancel during your free days, before your paid months start, we refund you in full automatically. After that,
+        cancelling stops the next renewal and your plan runs to the end of the period you&apos;ve paid for, without a refund.
+        Charged by mistake? <Link href="/contact?topic=refund" className={linkClass}>Contact us</Link> and we&apos;ll refund it
+        in full. The <Link href="/refund-policy" className={linkClass}>refund policy</Link> has the details.
       </>
     ),
   },
@@ -116,7 +106,7 @@ function QrMotif({ className }) {
   );
 }
 
-function MembershipPass({ planName, priceText, renewsOn, cancelled, onCancel }) {
+function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, onCancel }) {
   return (
     <section
       aria-label="Your subscription"
@@ -139,6 +129,8 @@ function MembershipPass({ planName, priceText, renewsOn, cancelled, onCancel }) 
         <p className="mt-2 max-w-md text-sm leading-relaxed text-indigo-200">
           {cancelled
             ? "Your plan is cancelled and won't renew. Everything keeps working until the end date; after that your QR codes are paused."
+            : startsOn
+            ? `Your free days carry on until ${startsOn}, then your paid months begin. Cancel before then for a full refund.`
             : "Create as many QR codes as you need. Your printed codes keep working while your plan is active."}
         </p>
         <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-white/10 pt-6 sm:grid-cols-3">
@@ -151,13 +143,13 @@ function MembershipPass({ planName, priceText, renewsOn, cancelled, onCancel }) 
             <dd className="mt-1 text-lg font-semibold tabular-nums">{priceText || "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-indigo-300">QR codes</dt>
-            <dd className="mt-1 text-lg font-semibold">Unlimited</dd>
+            <dt className="text-xs text-indigo-300">{startsOn ? "Paid months start" : "QR codes"}</dt>
+            <dd className="mt-1 text-lg font-semibold">{startsOn || "Unlimited"}</dd>
           </div>
         </dl>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-indigo-200">
           <p>
-            {cancelled && renewsOn ? `Changed your mind? You can subscribe again from ${renewsOn}. ` : ""}
+            {cancelled && renewsOn ? `Changed your mind? You can choose a new plan from ${renewsOn}. ` : ""}
             Billing question?{" "}
             <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
               Contact us
@@ -178,14 +170,16 @@ function MembershipPass({ planName, priceText, renewsOn, cancelled, onCancel }) 
   );
 }
 
-function TrialProgress({ daysLeft }) {
-  const pct = Math.max(4, Math.min(100, (daysLeft / TRIAL_DAYS) * 100));
+function TrialProgress({ daysLeft, endsOn }) {
+  // Accounts from before the trial was shortened keep their longer trial
+  const total = Math.max(TRIAL_DAYS, daysLeft);
+  const pct = Math.max(4, Math.min(100, (daysLeft / total) * 100));
   return (
     <section aria-label="Your free trial" className="rounded-2xl border border-indigo-100 bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold text-gray-900">Free trial</h2>
         <p className="text-sm tabular-nums text-gray-600">
-          {daysLeft} of {TRIAL_DAYS} days left
+          {daysLeft} {daysLeft === 1 ? "day" : "days"} left{endsOn ? `, until ${endsOn}` : ""}
         </p>
       </div>
       <div
@@ -193,12 +187,14 @@ function TrialProgress({ daysLeft }) {
         role="progressbar"
         aria-label="Trial days left"
         aria-valuemin={0}
-        aria-valuemax={TRIAL_DAYS}
+        aria-valuemax={total}
         aria-valuenow={daysLeft}
       >
         <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-3 text-sm text-gray-600">Subscribe before your trial ends to keep your QR codes working.</p>
+      <p className="mt-3 text-sm text-gray-600">
+        Choose a plan whenever you&apos;re ready: your paid months start when your free days end, so you don&apos;t lose any.
+      </p>
     </section>
   );
 }
@@ -213,102 +209,46 @@ function PlanEndedNotice({ status }) {
   return (
     <section aria-label="Plan status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
       <h2 className="text-base font-semibold text-amber-900">{title}</h2>
-      <p className="mt-1 text-sm text-amber-800">Your QR codes are paused. Subscribe to Basic to switch them back on.</p>
+      <p className="mt-1 text-sm text-amber-800">Your QR codes are paused. Choose a plan below to switch them back on.</p>
     </section>
   );
 }
 
-function FeatureList({ features, tone }) {
-  return (
-    <ul className="space-y-3">
-      {features.map((feature) => (
-        <li key={feature} className="flex items-start gap-3 text-sm text-gray-700">
-          <span
-            className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full ${
-              tone === "brand" ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            <FaCheck className="h-2.5 w-2.5" />
-          </span>
-          {feature}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PlanPrice({ amount, period }) {
-  return (
-    <p className="mt-6 flex min-h-[3rem] items-baseline gap-2">
-      {amount ? (
-        <>
-          <span className="text-5xl font-bold tracking-tight text-gray-900 tabular-nums">{amount}</span>
-          <span className="text-sm text-gray-500">{period}</span>
-        </>
-      ) : (
-        <span className="h-12 w-28 animate-pulse rounded-lg bg-gray-100" aria-hidden="true" />
-      )}
-    </p>
-  );
-}
-
 export default function BillingPage() {
+  const router = useRouter();
   const [openFaq, setOpenFaq] = useState(null);
-  const [buyingPlan, setBuyingPlan] = useState(null);
+  const [buyingTerm, setBuyingTerm] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
-  // When the subscription was cancelled (it then runs to subscriptionEndsAt and won't renew)
-  const [cancelledAt, setCancelledAt] = useState(null);
+  const [account, setAccount] = useState(null);
   const [showCancel, setShowCancel] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   // Razorpay shows its own failure screen with a retry; we only report the failure once the user closes checkout
   const lastPaymentFailure = useRef(null);
+  const autoCheckoutDone = useRef(false);
   const closePaymentResult = useCallback(() => setPaymentResult(null), []);
-  const [billingInfo, setBillingInfo] = useState({
-    billingName: "",
-    billingCompany: "",
-    billingAddress: "",
-    billingCity: "",
-    billingState: "",
-    billingZipCode: "",
-    billingCountry: "",
-    taxId: "",
-  });
 
-  useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
-          if (data.user) {
-            setSubscriptionEndsAt(data.user.subscriptionEndsAt || null);
-            setCancelledAt(data.user.subscriptionCancelledAt || null);
-            setBillingInfo({
-              billingName: data.user.billingName || "",
-              billingCompany: data.user.billingCompany || "",
-              billingAddress: data.user.billingAddress || "",
-              billingCity: data.user.billingCity || "",
-              billingState: data.user.billingState || "",
-              billingZipCode: data.user.billingZipCode || "",
-              billingCountry: data.user.billingCountry || "",
-              taxId: data.user.taxId || "",
-            });
-          }
-        } else {
-          setSubscriptionStatus({ status: "NONE", daysLeft: null });
-        }
-      } catch (e) {
+  const loadAccount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionStatus(data.subscriptionStatus || { status: "NONE", daysLeft: null });
+        setAccount(data.user || null);
+      } else {
         setSubscriptionStatus({ status: "NONE", daysLeft: null });
       }
-    };
-    fetchMe();
+    } catch (e) {
+      setSubscriptionStatus({ status: "NONE", daysLeft: null });
+    }
   }, []);
 
-  // Basic Package price straight from the Razorpay plans, in the currency set by location (rupees in India, dollars elsewhere)
+  useEffect(() => {
+    loadAccount();
+  }, [loadAccount]);
+
+  // Plan prices straight from the Razorpay plans, in the currency set by location (rupees in India, dollars elsewhere)
   const [plans, setPlans] = useState(null);
-  const [currentCurrency, setCurrentCurrency] = useState(null);
+  const [current, setCurrent] = useState(null);
   const [currency, setCurrency] = useState(null);
 
   const loadPlans = useCallback(async () => {
@@ -317,7 +257,7 @@ export default function BillingPage() {
       if (!res.ok) return;
       const data = await res.json();
       setPlans(data.plans || {});
-      setCurrentCurrency(data.currentCurrency || null);
+      setCurrent(data.current || null);
       setCurrency(data.currency || null);
     } catch (e) {
       console.error("Failed to load prices:", e);
@@ -346,9 +286,9 @@ export default function BillingPage() {
     });
   }
 
-  const handleBuyNow = async (plan) => {
-    if (plan !== "BASIC") return;
-    setBuyingPlan(plan);
+  const handleBuyNow = async (term) => {
+    if (!termById(term)) return;
+    setBuyingTerm(term);
     setPaymentResult(null);
     lastPaymentFailure.current = null;
     try {
@@ -356,7 +296,7 @@ export default function BillingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ currency }),
+        body: JSON.stringify({ currency, term }),
       });
       const checkout = await createRes.json().catch(() => ({}));
       if (!createRes.ok) {
@@ -367,7 +307,7 @@ export default function BillingPage() {
           title: "Couldn't start checkout",
           message: checkout.error || "Please try again in a moment.",
         });
-        setBuyingPlan(null);
+        setBuyingTerm(null);
         return;
       }
 
@@ -377,7 +317,7 @@ export default function BillingPage() {
         key: checkout.keyId,
         subscription_id: checkout.subscriptionId,
         name: checkout.name || "QR Genie",
-        description: checkout.description || "Basic Package",
+        description: checkout.description || termById(term).planName,
         prefill: checkout.prefill || {},
         handler: async function (response) {
           lastPaymentFailure.current = null;
@@ -404,28 +344,24 @@ export default function BillingPage() {
               return;
             }
 
-            let endsAt = null;
+            await Promise.all([loadAccount(), loadPlans()]);
             const meRes = await fetch("/api/auth/me", { credentials: "include" });
-            if (meRes.ok) {
-              const meData = await meRes.json();
-              setSubscriptionStatus(meData.subscriptionStatus || { status: "NONE", daysLeft: null });
-              endsAt = meData.user?.subscriptionEndsAt || null;
-              setSubscriptionEndsAt(endsAt);
-            }
-            setCurrentCurrency(currency);
+            const endsAt = meRes.ok ? (await meRes.json()).user?.subscriptionEndsAt || null : null;
             setPaymentResult({
               type: "success",
+              term,
               paymentId: response.razorpay_payment_id,
+              startsAt: verifyData.startsAt || null,
               endsAt,
               reactivatedCount: verifyData.reactivatedCount || 0,
             });
           } finally {
-            setBuyingPlan(null);
+            setBuyingTerm(null);
           }
         },
         modal: {
           ondismiss: function () {
-            setBuyingPlan(null);
+            setBuyingTerm(null);
             const failure = lastPaymentFailure.current;
             if (failure) {
               lastPaymentFailure.current = null;
@@ -435,6 +371,7 @@ export default function BillingPage() {
                 message: failure.description || "Your payment could not be completed.",
                 note: "If any amount was deducted, it will be refunded to you automatically.",
                 paymentId: failure.metadata?.payment_id,
+                term,
               });
             }
           },
@@ -453,34 +390,42 @@ export default function BillingPage() {
         type: "error",
         title: "Couldn't start checkout",
         message: e?.message || "Please try again in a moment.",
+        term,
       });
-      setBuyingPlan(null);
+      setBuyingTerm(null);
     }
   };
 
-  const [trialPlan, basicPlan] = pricingPlans;
   const status = subscriptionStatus?.status;
   const statusLoaded = subscriptionStatus !== null;
   const isSubscribed = status === "SUBSCRIPTION_ACTIVE";
   const isTrial = status === "TRIAL_ACTIVE";
   const daysLeft = subscriptionStatus?.daysLeft ?? 0;
-  const renewsOn = formatDate(subscriptionEndsAt);
+  const cancelled = !!account?.subscriptionCancelledAt;
+  const renewsOn = formatDate(account?.subscriptionEndsAt);
+  // Bought during the free days: the paid months start later (and cancelling before then is refunded in full)
+  const startsAt = isSubscribed && account?.subscriptionStartedAt && new Date(account.subscriptionStartedAt) > new Date() ? account.subscriptionStartedAt : null;
 
   // Prices: the currency for this location, or for subscribers the one they pay in
-  const shownCurrency = (isSubscribed && currentCurrency) || currency;
-  const shownPlan = plans && shownCurrency ? plans[shownCurrency] : null;
-  const shownPriceText = formatPlanPrice(shownPlan);
-  const basicAmount = shownPlan ? formatPrice(shownPlan.amount, shownPlan.currency) : plans ? "—" : null;
-  const basicPeriod = shownPlan ? formatPeriod(shownPlan.period, shownPlan.interval) : "";
-  const trialAmount = plans ? formatPrice(0, shownCurrency || "USD") : null;
-  const faqItems = buildFaqItems(shownPriceText);
+  const shownCurrency = (isSubscribed && current?.currency) || currency;
+  const prices = plans && shownCurrency ? plans[shownCurrency] || null : null;
+  const currentPlan = isSubscribed && current ? plans?.[current.currency]?.[current.term] || null : null;
+  const planName = planNameFor(account?.subscriptionMonths || currentPlan?.months);
+  const priceText = currentPlan ? formatBilled(currentPlan) : null;
 
-  const addressLines = [
-    billingInfo.billingAddress,
-    [billingInfo.billingCity, billingInfo.billingState, billingInfo.billingZipCode].filter(Boolean).join(", "),
-    billingInfo.billingCountry,
-  ].filter(Boolean);
-  const hasBillingInfo = billingInfo.billingName || billingInfo.billingCompany || addressLines.length > 0 || billingInfo.taxId;
+  // "Subscribe" on the pricing page sends people here with ?plan=12m: open that checkout once everything has loaded
+  useEffect(() => {
+    const term = typeof router.query.plan === "string" ? router.query.plan : null;
+    if (!term || autoCheckoutDone.current || !statusLoaded || !prices || !termById(term)) return;
+    autoCheckoutDone.current = true;
+    router.replace("/dashboard/billing", undefined, { shallow: true });
+    if (!isSubscribed && prices[term]) handleBuyNow(term);
+    // handleBuyNow is recreated each render; running once per visit is what matters here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query.plan, statusLoaded, prices, isSubscribed]);
+
+  const paidTerm = paymentResult?.term ? termById(paymentResult.term) : null;
+  const paidPlan = paymentResult?.term && prices ? prices[paymentResult.term] : null;
 
   return (
     <DashboardLayout title="" description="">
@@ -496,72 +441,57 @@ export default function BillingPage() {
         {!statusLoaded && <div className="h-40 animate-pulse rounded-3xl bg-indigo-50" />}
         {isSubscribed && (
           <MembershipPass
-            planName={basicPlan.name}
-            priceText={shownPriceText}
+            planName={planName}
+            priceText={priceText}
+            startsOn={formatDate(startsAt)}
             renewsOn={renewsOn}
-            cancelled={!!cancelledAt}
+            cancelled={cancelled}
             onCancel={() => setShowCancel(true)}
           />
         )}
-        {isTrial && <TrialProgress daysLeft={daysLeft} />}
+        {isTrial && <TrialProgress daysLeft={daysLeft} endsOn={formatDate(account?.trialEndsAt)} />}
         {statusLoaded && !isSubscribed && !isTrial && <PlanEndedNotice status={status} />}
 
         {/* Plans */}
         <section aria-labelledby="plans-heading">
-          <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
-          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div className="flex flex-col rounded-2xl border border-gray-200 bg-white/70 p-6 sm:p-7">
-              <h3 className="text-base font-semibold text-gray-900">{trialPlan.name}</h3>
-              <p className="mt-1 text-sm text-gray-500">{trialPlan.description}</p>
-              <PlanPrice amount={trialAmount} period={trialPlan.period} />
-              <div className="mt-6 rounded-xl bg-gray-50 px-4 py-3 text-center text-sm font-medium text-gray-600">
-                {!statusLoaded
-                  ? " "
-                  : isTrial
-                  ? "Your current plan"
-                  : isSubscribed
-                  ? "You've upgraded to Basic"
-                  : "Trial ended"}
-              </div>
-              <div className="mt-6 border-t border-gray-100 pt-6">
-                <FeatureList features={trialPlan.features} tone="muted" />
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 p-[1.5px] shadow-lg shadow-indigo-500/10">
-              <div className="flex h-full flex-col rounded-[14.5px] bg-white p-6 sm:p-7">
-                <h3 className="text-base font-semibold text-gray-900">{basicPlan.name}</h3>
-                <p className="mt-1 text-sm text-gray-500">{basicPlan.description}</p>
-                <PlanPrice amount={basicAmount} period={basicPeriod} />
-                {isSubscribed ? (
-                  <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                    <FaCheck className="h-3 w-3" />
-                    {renewsOn ? `Active, renews on ${renewsOn}` : "Active"}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleBuyNow("BASIC")}
-                    disabled={!statusLoaded || !shownPlan || buyingPlan !== null}
-                    className="btn-shine mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {buyingPlan === "BASIC" ? "Opening checkout…" : "Subscribe to Basic"}
-                  </button>
-                )}
-                {!isSubscribed && (
-                  <p className="mt-3 text-center text-xs leading-relaxed text-gray-500">
-                    By subscribing you agree to our{" "}
-                    <Link href="/terms" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">terms</Link>
-                    {" "}and{" "}
-                    <Link href="/refund-policy" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">refund policy</Link>.
-                  </p>
-                )}
-                <div className="mt-6 border-t border-gray-100 pt-6">
-                  <FeatureList features={basicPlan.features} tone="brand" />
-                </div>
-              </div>
-            </div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
+            <p className="text-sm text-gray-500">Every plan has every feature. Prices include 18% GST.</p>
           </div>
+          <PricingCards
+            prices={prices}
+            currentUser={account}
+            onSelect={handleBuyNow}
+            busyTerm={buyingTerm}
+            currentTerm={isSubscribed ? current?.term : null}
+            disabled={!statusLoaded || isSubscribed}
+          />
+          {!isSubscribed && <PaymentMethods currency={shownCurrency || undefined} className="mt-10" />}
+          <div className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-500">
+            {isSubscribed ? (
+              <p>
+                {cancelled
+                  ? `You can choose a new plan from ${renewsOn || "the end of your current plan"}.`
+                  : "To switch to a longer or shorter plan, cancel this one and choose the new plan when it ends."}
+              </p>
+            ) : (
+              <p>
+                You pay upfront for the months you choose; the plan renews for the same length until you cancel. By subscribing
+                you agree to our{" "}
+                <Link href="/terms" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">terms</Link>
+                {" "}and{" "}
+                <Link href="/refund-policy" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">refund policy</Link>.
+              </p>
+            )}
+          </div>
+          <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-600">
+            {PAID_PLAN_FEATURES.map((feature) => (
+              <li key={feature} className="inline-flex items-center gap-2">
+                <FaCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+                {feature}
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* Billing details */}
@@ -572,45 +502,10 @@ export default function BillingPage() {
               href="/dashboard/account?tab=billing"
               className="text-sm font-medium !text-indigo-600 hover:!text-indigo-700"
             >
-              {hasBillingInfo ? "Edit details" : "Add billing details"}
+              {account && (account.billingName || account.billingCompany || account.billingAddress || account.taxId) ? "Edit details" : "Add billing details"}
             </Link>
           </div>
-          <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 sm:p-7">
-            {hasBillingInfo ? (
-              <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-                {billingInfo.billingName && (
-                  <div>
-                    <dt className="text-sm text-gray-500">Name</dt>
-                    <dd className="mt-1 text-sm font-medium text-gray-900">{billingInfo.billingName}</dd>
-                  </div>
-                )}
-                {billingInfo.billingCompany && (
-                  <div>
-                    <dt className="text-sm text-gray-500">Company</dt>
-                    <dd className="mt-1 text-sm font-medium text-gray-900">{billingInfo.billingCompany}</dd>
-                  </div>
-                )}
-                {addressLines.length > 0 && (
-                  <div>
-                    <dt className="text-sm text-gray-500">Address</dt>
-                    <dd className="mt-1 text-sm font-medium leading-relaxed text-gray-900">
-                      {addressLines.map((line) => (
-                        <span key={line} className="block">{line}</span>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {billingInfo.taxId && (
-                  <div>
-                    <dt className="text-sm text-gray-500">Tax ID</dt>
-                    <dd className="mt-1 text-sm font-medium text-gray-900">{billingInfo.taxId}</dd>
-                  </div>
-                )}
-              </dl>
-            ) : (
-              <p className="text-sm text-gray-500">No billing details saved yet.</p>
-            )}
-          </div>
+          <BillingDetails account={account} />
         </section>
 
         {/* FAQ */}
@@ -664,16 +559,74 @@ export default function BillingPage() {
       <CancelSubscriptionModal
         open={showCancel}
         endsOn={renewsOn || "the end of your paid period"}
+        refund={
+          startsAt
+            ? { amount: currentPlan ? formatPrice(currentPlan.amount, currentPlan.currency) : null, freeDaysEndOn: formatDate(startsAt) }
+            : null
+        }
         onClose={() => setShowCancel(false)}
-        onCancelled={() => setCancelledAt(new Date().toISOString())}
+        onCancelled={() => {
+          loadAccount();
+          loadPlans();
+        }}
       />
       <PaymentResultModal
         result={paymentResult}
-        planName={basicPlan.name}
-        priceLabel={shownPriceText}
+        planName={paidTerm?.planName || planName}
+        priceLabel={paidPlan ? `${formatBilled(paidPlan)} (${formatMonthly(paidPlan)})` : priceText}
         onClose={closePaymentResult}
-        onRetry={() => handleBuyNow("BASIC")}
+        onRetry={() => paymentResult?.term && handleBuyNow(paymentResult.term)}
       />
     </DashboardLayout>
+  );
+}
+
+function BillingDetails({ account }) {
+  const addressLines = account
+    ? [
+        account.billingAddress,
+        [account.billingCity, account.billingState, account.billingZipCode].filter(Boolean).join(", "),
+        account.billingCountry,
+      ].filter(Boolean)
+    : [];
+  const hasBillingInfo = account && (account.billingName || account.billingCompany || addressLines.length > 0 || account.taxId);
+
+  return (
+    <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 sm:p-7">
+      {hasBillingInfo ? (
+        <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+          {account.billingName && (
+            <div>
+              <dt className="text-sm text-gray-500">Name</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900">{account.billingName}</dd>
+            </div>
+          )}
+          {account.billingCompany && (
+            <div>
+              <dt className="text-sm text-gray-500">Company</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900">{account.billingCompany}</dd>
+            </div>
+          )}
+          {addressLines.length > 0 && (
+            <div>
+              <dt className="text-sm text-gray-500">Address</dt>
+              <dd className="mt-1 text-sm font-medium leading-relaxed text-gray-900">
+                {addressLines.map((line) => (
+                  <span key={line} className="block">{line}</span>
+                ))}
+              </dd>
+            </div>
+          )}
+          {account.taxId && (
+            <div>
+              <dt className="text-sm text-gray-500">Tax ID</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900">{account.taxId}</dd>
+            </div>
+          )}
+        </dl>
+      ) : (
+        <p className="text-sm text-gray-500">No billing details saved yet.</p>
+      )}
+    </div>
   );
 }

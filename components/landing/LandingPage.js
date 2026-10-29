@@ -10,6 +10,7 @@ import { container, sectionSpacing, primaryButton, secondaryButton, SectionHeadi
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { SITE_URL } from "@/lib/site";
 import { organizationSchema, breadcrumbSchema, faqPageSchema } from "@/lib/seo";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 // Banner picture on phones and tablets (decorative): the code itself, what it opens and its scans on one card that
 // fits the screen, with the page's note tucked under its corner. Large screens show the bigger CodePanel instead.
@@ -212,7 +213,7 @@ export default function LandingPage({ page }) {
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm ring-1 ring-indigo-100 sm:p-8">
               <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-200/40 blur-2xl" aria-hidden="true" />
               <p className="relative font-display text-xl font-semibold tracking-[-0.01em] text-slate-900">
-                {user ? "Create it from your dashboard" : "Try it free for 14 days"}
+                {user ? "Create it from your dashboard" : `Try it free for ${TRIAL_DAYS} days`}
               </p>
               <p className="relative mt-1.5 text-[15px] leading-relaxed text-slate-600">
                 {user ? "Your new code is ready to download in a few minutes." : "Make your first code in minutes. No card needed, cancel anytime."}

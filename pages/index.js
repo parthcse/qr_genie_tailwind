@@ -31,7 +31,7 @@ import {
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SeoMeta from "@/components/layout/SeoMeta";
-import PricingCards from "@/components/landing/PricingCards";
+import PricingCards, { PricingFootnote } from "@/components/landing/PricingCards";
 import { PhonePreview } from "@/components/landing/TypeScreen";
 import {
   container,
@@ -46,7 +46,8 @@ import {
   StepsList,
   FaqList,
 } from "@/components/landing/LandingUi";
-import { formatPlanPriceShort } from "@/lib/billing/price";
+import { formatMonthly, cheapestPlan } from "@/lib/billing/price";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { SITE_URL } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
 
@@ -55,15 +56,15 @@ export async function getServerSideProps(context) {
   const { getUserFromRequest } = await import('@/lib/auth');
   const user = await getUserFromRequest(context.req);
 
-  // Basic Package price from Razorpay (cached): rupees for visitors in India, dollars everywhere else
-  let basicPlan = null;
+  // Plan prices from Razorpay (cached): rupees for visitors in India, dollars everywhere else
+  let prices = null;
   let plans = {};
   try {
-    const { getBasicPlans, publicPlans, currencyForIp } = await import('@/lib/billing/plans');
+    const { getPlans, publicPlans, currencyForIp } = await import('@/lib/billing/plans');
     const { getClientIp } = await import('@/lib/clientIp');
-    const all = await getBasicPlans();
+    const all = await getPlans();
     plans = publicPlans(all);
-    basicPlan = plans[currencyForIp(all, getClientIp(context.req))] || null;
+    prices = plans[currencyForIp(all, getClientIp(context.req))] || null;
   } catch (err) {
     console.error('Landing prices:', err.message);
   }
@@ -72,7 +73,8 @@ export async function getServerSideProps(context) {
     props: {
       // Only what this page uses: page data is visible in the HTML
       initialUser: user ? { id: user.id, name: user.name || null, subscriptionPlan: user.subscriptionPlan } : null,
-      basicPlan,
+      // The visitor's plans by term ({ "3m", "6m", "12m" }) in their currency
+      prices,
       // Every currency's price, for the search result text and structured data (the same for every visitor)
       plans,
     },
@@ -115,7 +117,7 @@ const features = [
 const howItWorks = [
   {
     title: 'Sign Up Free',
-    description: 'Create your account in seconds. No credit card required. Start with a 14-day free trial.',
+    description: `Create your account in seconds. No credit card required. Start with a ${TRIAL_DAYS}-day free trial.`,
     icon: <FaRocket className="h-6 w-6" />
   },
   {
@@ -135,8 +137,8 @@ const howItWorks = [
   }
 ];
 
-// Home page FAQ, also sent to search engines as FAQ structured data. planPrice: "$5/month", or "" when unknown.
-function homeFaqs(planPrice) {
+// Home page FAQ, also sent to search engines as FAQ structured data
+function homeFaqs() {
   return [
     {
       question: "What happens to my QR codes if my subscription ends?",
@@ -164,9 +166,12 @@ function homeFaqs(planPrice) {
         "Yes. Every code can be downloaded as PNG, SVG, JPEG or PDF, or printed straight from your browser. SVG and PDF stay sharp at any size, which suits posters, signs and packaging.",
     },
     {
-      question: `Is there a scan limit on the ${planPrice ? `${planPrice} plan` : "Basic plan"}?`,
-      answer:
-        "No. The Basic plan has no scan limit and lets you create as many QR codes as you need. The free trial includes up to 2 codes for 14 days.",
+      question: "Is there a scan limit on the paid plans?",
+      answer: `No. Every plan, 3, 6 or 12 months, has unlimited scans and lets you create as many QR codes as you need. The free trial includes up to 2 codes for ${TRIAL_DAYS} days.`,
+    },
+    {
+      question: "How do the 3, 6 and 12-month plans work?",
+      answer: `Every plan has the same features; the longer the plan, the lower the monthly price. You pay upfront for the months you choose, and the plan renews for the same length until you cancel. If you subscribe during your ${TRIAL_DAYS} free days, your paid months start when the free days end, so you don't lose any of them.`,
     },
     {
       question: "Can I move my existing QR codes from another generator?",
@@ -655,20 +660,20 @@ function QrTypesShowcase({ isAuthenticated }) {
   );
 }
 
-export default function Landing({ initialUser, basicPlan = null, plans = {} }) {
+export default function Landing({ initialUser, prices = null, plans = {} }) {
   const router = useRouter();
   // The server already knows who is signed in, so the right buttons are in the first HTML (no placeholder flash)
   const currentUser = initialUser;
   const isAuthenticated = !!currentUser;
 
-  // The visitor's own price ("₹499/month" in India, "$5/month" elsewhere) for headings and the FAQ
-  const planPrice = formatPlanPriceShort(basicPlan);
-  const faqs = homeFaqs(planPrice);
+  // The visitor's lowest monthly price ("₹2,000/month" in India, "$19.99/month" elsewhere) for the pricing heading
+  const fromPrice = formatMonthly(cheapestPlan(prices));
+  const faqs = homeFaqs();
 
   // Search result text and structured data are the same for every visitor, with both currencies' prices
   const searchPrices = pricesForSearch(plans);
   const metaDescription =
-    "Create dynamic QR codes you can edit anytime. Track scans by device and location, add your logo and try it free for 14 days." +
+    `Create dynamic QR codes you can edit anytime. Track scans by device and location, add your logo and try it free for ${TRIAL_DAYS} days.` +
     (searchPrices ? ` From ${searchPrices}.` : "");
   const structuredData = [
     organizationSchema,
@@ -848,7 +853,7 @@ export default function Landing({ initialUser, basicPlan = null, plans = {} }) {
                   <FaCheck className="h-3 w-3" />
                 </span>
                 <span className="text-sm font-medium text-slate-700">
-                  Free for <span className="font-semibold text-slate-900">14 days</span>, no card needed
+                  Free for <span className="font-semibold text-slate-900">{TRIAL_DAYS} days</span>, no card needed
                 </span>
               </div>
             </div>
@@ -900,19 +905,27 @@ export default function Landing({ initialUser, basicPlan = null, plans = {} }) {
           <div className={container}>
             <SectionHeading
               eyebrow="Pricing"
-              title={`Dynamic QR code pricing: free trial and ${planPrice ? `${planPrice} plan` : "monthly plan"}`}
-              description="Start free for 14 days, no card needed. Cancel anytime."
+              title={`Dynamic QR code pricing: ${TRIAL_DAYS}-day free trial, plans from ${fromPrice || "one low monthly price"}`}
+              description={`Try every feature free for ${TRIAL_DAYS} days, no card needed. Then pick 3, 6 or 12 months: the longer the plan, the lower the monthly price.`}
             />
-            <PricingCards basicPlan={basicPlan} currentUser={currentUser} />
-            <p className="mt-10 text-center">
+            <PricingCards prices={prices} currentUser={currentUser} />
+            <PricingFootnote />
+            {/* Leads to the full pricing page: plan comparison, payment methods and everything included */}
+            <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center gap-6 rounded-3xl bg-gradient-to-r from-indigo-50 via-white to-purple-50 px-6 py-8 text-center ring-1 ring-indigo-100 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 sm:px-10 md:flex-row md:justify-between md:text-left">
+              <div>
+                <h3 className="font-display text-xl font-bold tracking-[-0.015em] text-slate-900">Compare every plan side by side</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
+                  See the full plan comparison, the ways you can pay and everything that comes with every plan.
+                </p>
+              </div>
               <Link
                 href="/pricing"
-                className="group inline-flex items-center gap-1.5 text-[15px] font-semibold !text-indigo-700 transition-colors hover:!text-purple-700"
+                className="btn-shine group inline-flex flex-none items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-[15px] font-semibold !text-white shadow-lg shadow-indigo-600/20 transition duration-300 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none"
               >
-                Compare plans, billing and GST details
-                <FaArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1 motion-reduce:transform-none" />
+                See full pricing
+                <FaArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none" />
               </Link>
-            </p>
+            </div>
           </div>
         </section>
 

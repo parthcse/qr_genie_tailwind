@@ -1,7 +1,7 @@
 # QR Genie
 
 SaaS for creating QR codes that can be edited after printing and tracked when scanned (https://qr-genie.co).
-New accounts get a 14-day trial (2 QR codes); the Basic plan is a monthly Razorpay subscription.
+New accounts get a 7-day trial (2 QR codes); the paid plans are 3, 6 or 12-month Razorpay subscriptions, paid upfront.
 
 **Stack:** Next.js 16 (Pages Router), React 19, Tailwind 3, Prisma 6 + PostgreSQL 16, JWT cookie auth, Razorpay, email over SMTP (AWS SES), Cloudflare Turnstile. Node 24 LTS in production (22+ locally).
 
@@ -11,7 +11,8 @@ New accounts get a 14-day trial (2 QR codes); the Basic plan is a monthly Razorp
 
 - **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused). Four types are open: Website, WiFi, WhatsApp, Instagram. WiFi codes are always static so phones can join the network straight from the camera; website codes can be password protected.
 - **Scan:** `pages/r/[slug].js` checks the code's status and the owner's plan, records a `ScanEvent` (hashed IP, device, country), asks for the password if the code is protected (`api/r/[slug]/unlock` checks it), then redirects.
-- **Plans:** `lib/billing/subscription.js` decides what a user may do; `lib/billing/subscriptionSync.js` pauses codes when a trial or subscription ends; `lib/billing/activateBasicSubscription.js` restores them after payment. Paid codes keep working for 3 days after the end date to cover late renewals (not after a cancellation). Customers cancel themselves on the billing page (`api/billing/cancel`, `lib/billing/cancelSubscription.js`).
+- **Plans:** `lib/billing/subscription.js` decides what a user may do; `lib/billing/subscriptionSync.js` pauses codes when a trial or subscription ends; `lib/billing/activateBasicSubscription.js` restores them after payment. Paid codes keep working for 3 days after the end date to cover late renewals (not after a cancellation). Customers cancel themselves on the billing page (`api/billing/cancel`, `lib/billing/cancelSubscription.js`): the plan runs to the end of the paid period, except during the free days, when it's cancelled at once and refunded in full.
+- **Pricing:** the plan lengths are in `lib/billing/terms.js`; the prices come from the six Razorpay plans in `RAZORPAY_PLAN_ID_{INR|USD}_{3M|6M|12M}` (`lib/billing/plans.js`). `/pricing` has the cards, payment methods, what every plan includes and a full comparison; the home page shows the cards and links there.
 - **Payments:** billing page → `api/checkout/razorpay/create-subscription` → Razorpay Checkout → `api/checkout/razorpay/verify`. `api/webhooks/razorpay` handles renewals and is the backup if the browser never calls verify. Visitors in India pay in INR and everyone else in USD, decided by IP (`lib/billing/plans.js`) and enforced at checkout. Every payment gets a GST tax invoice by email with a PDF attached (`lib/invoices/invoices.js`; set the `INVOICE_*` variables first).
 
 ## Local setup

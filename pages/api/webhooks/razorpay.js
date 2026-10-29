@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
+import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd, getPlanStart, findUpfrontPayment } from "@/lib/billing/activateBasicSubscription";
 import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
 import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
 import { recordRazorpayCancellation } from "@/lib/billing/cancelSubscription";
@@ -69,12 +69,18 @@ export default async function handler(req, res) {
     }
   }
 
-  if (eventName !== "subscription.activated" && eventName !== "subscription.charged") {
+  if (!["subscription.authenticated", "subscription.activated", "subscription.charged"].includes(eventName)) {
     return res.status(200).json({ ok: true, ignored: true });
   }
 
   const subscription = event.payload?.subscription?.entity;
   if (!subscription?.notes?.userId) {
+    return res.status(200).json({ ok: true, ignored: true });
+  }
+  // Bought during the free days: paid upfront when the customer authorises it (authenticated), while Razorpay's own
+  // charges start when the paid months end. Other subscriptions are switched on by activated / charged.
+  const boughtInFreeDays = !!getPlanStart(subscription);
+  if (eventName === "subscription.authenticated" && !boughtInFreeDays) {
     return res.status(200).json({ ok: true, ignored: true });
   }
 
@@ -86,20 +92,31 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, ignored: true });
     }
 
+    let payment = event.payload?.payment?.entity;
+    if (!payment && eventName === "subscription.authenticated") {
+      payment = await findUpfrontPayment(subscription.id);
+      if (!payment) return res.status(200).json({ ok: true, ignored: true }); // authorised but not paid yet
+    }
+
     // Uses Razorpay's period end, so activated + charged for the same payment, and webhook retries, don't stack
-    const payment = event.payload?.payment?.entity;
     const activation = await activateBasicSubscriptionForUser({
       userId,
       periodEnd: getRazorpayPeriodEnd(subscription),
+      planStartsAt: getPlanStart(subscription),
+      planId: subscription.plan_id,
       razorpayCustomerId: subscription.customer_id || undefined,
       razorpaySubscriptionId: subscription.id,
       razorpayPaymentId: payment?.id || undefined,
     });
 
+    // When Razorpay starts charging a subscription bought in the free days, "activated" comes with that first renewal
+    // charge; the charged event emails and invoices it, so activated adds nothing.
+    if (eventName === "subscription.activated" && boughtInFreeDays) return res.status(200).json({ ok: true });
+
     // Not awaited, so Razorpay gets its answer quickly. A new subscription and each renewal payment are emailed once,
     // whether checkout or this webhook reports them first.
     sendPlanEmails({ userId, subscription, paymentId: payment?.id, payment, activation, source: "webhook" });
-    // Every charge (the first payment and each renewal) gets a GST invoice, once per payment
+    // Every payment (the first one and each renewal) gets a GST invoice, once per payment
     if (payment?.id) issueInvoiceForPayment({ userId, payment, subscription });
   } catch (err) {
     console.error("Razorpay webhook activate:", err);

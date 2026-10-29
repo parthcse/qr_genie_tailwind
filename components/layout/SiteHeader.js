@@ -3,12 +3,13 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaQrcode, FaThLarge, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 
-// Main menu. "/#..." glides to the section on the landing page and navigates there from anywhere else
+// Main menu. "/#..." glides to the section on the landing page and navigates there from anywhere else;
+// the others are pages of their own
 const SECTION_LINKS = [
   { href: "/#qr-types", label: "QR types" },
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How it works" },
-  { href: "/#pricing", label: "Pricing" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/#testimonials", label: "Testimonials" },
   { href: "/contact", label: "Contact" },
 ];
@@ -114,7 +115,7 @@ export default function SiteHeader({
 
   const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
   const hiddenFrom = menuBreakpoint === "md" ? "md:hidden" : "lg:hidden";
-  const links = drawerLinks || SECTION_LINKS;
+  const links = drawerLinks || SECTION_LINKS.map((link) => ({ ...link, active: link.href === router.pathname }));
 
   let actions;
   if (loading) {
@@ -201,12 +202,13 @@ export default function SiteHeader({
             </div>
             <nav className="hidden lg:flex lg:items-center lg:gap-1 xl:gap-6" aria-label="Site sections">
               {SECTION_LINKS.map((link) => {
-                const current = activeSection !== null && link.href === `/#${activeSection}`;
+                const onPage = link.href === router.pathname;
+                const current = onPage || (activeSection !== null && link.href === `/#${activeSection}`);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    aria-current={current ? "true" : undefined}
+                    aria-current={onPage ? "page" : current ? "true" : undefined}
                     className={`relative whitespace-nowrap px-3 py-2 text-[15px] font-semibold transition-colors duration-200 hover:!text-indigo-700 focus:outline-none focus-visible:!text-indigo-700 after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-gradient-to-r after:from-indigo-600 after:to-purple-600 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100 motion-reduce:after:transition-none ${
                       current ? "!text-indigo-700 after:scale-x-100" : "!text-gray-700 after:scale-x-0"
                     }`}

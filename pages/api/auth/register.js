@@ -6,9 +6,9 @@ import { isRateLimited } from "@/lib/rateLimit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { checkAccountEmail } from "@/lib/emailCheck";
 import { sendVerificationCode } from "@/lib/emailVerification";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 const HOUR = 60 * 60 * 1000;
-const TRIAL_DAYS = 14;
 
 /**
  * POST /api/auth/register

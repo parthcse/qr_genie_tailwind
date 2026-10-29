@@ -4,8 +4,9 @@ import { cancelSubscriptionForUser, CancelError } from "@/lib/billing/cancelSubs
 
 /**
  * POST /api/billing/cancel  { reason?, comment? }
- * Cancels the signed-in customer's Basic subscription: no further charges, the plan runs to the end of the paid
- * period. Asking again after it's cancelled just returns the same answer.
+ * Cancels the signed-in customer's subscription: no further charges, the plan runs to the end of the paid period.
+ * Bought during the free days and not started yet: cancelled now and refunded in full ({ refund, freeDaysEndAt }).
+ * Asking again after it's cancelled just returns the same answer.
  */
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -23,8 +24,8 @@ export default async function handler(req, res) {
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
 
   try {
-    const { endsAt, alreadyCancelled } = await cancelSubscriptionForUser({ userId: user.id, reason: body.reason, comment: body.comment });
-    return res.status(200).json({ cancelled: true, endsAt, alreadyCancelled });
+    const result = await cancelSubscriptionForUser({ userId: user.id, reason: body.reason, comment: body.comment });
+    return res.status(200).json({ cancelled: true, ...result });
   } catch (err) {
     if (err instanceof CancelError) {
       return res.status(err.status).json({ error: err.message });

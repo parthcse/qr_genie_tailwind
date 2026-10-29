@@ -56,8 +56,8 @@ export default async function handler(req, res) {
     const { status } = getUserSubscriptionStatus(user);
     return res.status(403).json({
       error: status === "TRIAL_EXPIRED" 
-        ? "Your 14-day free trial has expired. Please subscribe to a plan to continue creating QR codes."
-        : "Your subscription has expired. Please renew to continue creating QR codes.",
+        ? "Your free trial has ended. Choose a plan to continue creating QR codes."
+        : "Your plan has ended. Choose a plan again to continue creating QR codes.",
     });
   }
 

@@ -1978,7 +1978,7 @@ export default function CreateQrPage() {
                   href="/dashboard/billing"
                   className="btn-shine inline-flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
                 >
-                  Upgrade to Basic Package
+                  Choose a plan
                 </Link>
               )}
             </div>
@@ -2828,8 +2828,8 @@ export default function CreateQrPage() {
           <h3 className="mt-4 text-lg font-semibold text-amber-900">{trialEnded ? "Your free trial has ended" : "Your subscription has ended"}</h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-amber-800">
             {trialEnded
-              ? "Subscribe to the Basic plan to create new QR codes and switch your existing ones back on."
-              : "Renew the Basic plan to create new QR codes and switch your existing ones back on."}
+              ? "Choose a 3, 6 or 12-month plan to create new QR codes and switch your existing ones back on."
+              : "Choose a plan again to create new QR codes and switch your existing ones back on."}
           </p>
           <Link
             href="/dashboard/billing"

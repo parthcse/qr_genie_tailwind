@@ -4,15 +4,17 @@ import { FaCalendarTimes, FaCheck, FaQrcode, FaRedo, FaTimes } from "react-icons
 import { CANCEL_REASONS } from "@/lib/site";
 
 /**
- * Confirms cancelling the Basic Package (billing page), with an optional reason, then shows the result.
- * endsOn: the last day of the paid period, as text. onCancelled(endsAt) runs after the cancellation went through.
+ * Confirms cancelling the customer's plan (billing page), with an optional reason, then shows the result.
+ * endsOn: the last day of the paid period, as text. refund: { amount (text, or null if unknown), freeDaysEndOn } when the
+ * plan was bought during the free days and its paid months haven't started: it's then cancelled now and refunded in full.
+ * onCancelled(result) runs after the cancellation went through, with the API's answer.
  */
-export default function CancelSubscriptionModal({ open, endsOn, onClose, onCancelled }) {
+export default function CancelSubscriptionModal({ open, endsOn, refund = null, onClose, onCancelled }) {
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(null);
   const doneButton = useRef(null);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function CancelSubscriptionModal({ open, endsOn, onClose, onCance
     setReason("");
     setComment("");
     setError("");
-    setDone(false);
+    setDone(null);
   }, [open]);
 
   useEffect(() => {
@@ -50,8 +52,8 @@ export default function CancelSubscriptionModal({ open, endsOn, onClose, onCance
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "We couldn't cancel your subscription. Please try again.");
-      setDone(true);
-      onCancelled?.(data.endsAt || null);
+      setDone(data);
+      onCancelled?.(data);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -86,11 +88,22 @@ export default function CancelSubscriptionModal({ open, endsOn, onClose, onCance
               <FaCheck className="h-6 w-6" />
             </span>
             <h2 id="cancel-plan-title" className="mt-5 text-xl font-bold tracking-tight text-gray-900">
-              Your subscription is cancelled
+              {done.refund ? "Cancelled and refunded" : "Your subscription is cancelled"}
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-600">
-              Your Basic Package stays active until <strong className="text-gray-900">{endsOn}</strong>, and you won&apos;t be
-              charged again. We&apos;ve emailed you a confirmation.
+              {done.refund ? (
+                <>
+                  {done.refund.ok
+                    ? `We've refunded ${done.refund.amount || "your payment"} in full; it usually reaches your account within 5-7 working days.`
+                    : `You'll get ${done.refund.amount || "your payment"} back in full; we're processing the refund and will email you.`}{" "}
+                  Your free days carry on{refund?.freeDaysEndOn ? ` until ${refund.freeDaysEndOn}` : ""}.
+                </>
+              ) : (
+                <>
+                  Your plan stays active until <strong className="text-gray-900">{endsOn}</strong>, and you won&apos;t be charged
+                  again. We&apos;ve emailed you a confirmation.
+                </>
+              )}
             </p>
             <button
               ref={doneButton}
@@ -109,26 +122,51 @@ export default function CancelSubscriptionModal({ open, endsOn, onClose, onCance
             <h2 id="cancel-plan-title" className="mt-4 pr-8 text-xl font-bold tracking-tight text-gray-900">
               Cancel your subscription?
             </h2>
-            <p className="mt-1.5 text-sm text-gray-600">You keep everything you&apos;ve paid for. Here&apos;s what happens:</p>
-
-            <div className="mt-5 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Your plan stays active until</p>
-              <p className="mt-1 font-display text-2xl font-extrabold text-gray-900">{endsOn}</p>
-              <ul className="mt-4 space-y-2.5 text-sm text-gray-700">
-                <li className="flex gap-3">
-                  <FaCheck className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden="true" />
-                  You won&apos;t be charged again.
-                </li>
-                <li className="flex gap-3">
-                  <FaQrcode className="mt-0.5 h-4 w-4 flex-none text-indigo-600" aria-hidden="true" />
-                  Your QR codes keep working until then. After that date they&apos;re paused.
-                </li>
-                <li className="flex gap-3">
-                  <FaRedo className="mt-0.5 h-3.5 w-3.5 flex-none text-indigo-600" aria-hidden="true" />
-                  Nothing is deleted. Subscribe again later and the same codes work straight away.
-                </li>
-              </ul>
-            </div>
+            {refund ? (
+              <>
+                <p className="mt-1.5 text-sm text-gray-600">Your paid months haven&apos;t started yet, so you get your money back:</p>
+                <div className="mt-5 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 sm:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Full refund</p>
+                  <p className="mt-1 font-display text-2xl font-extrabold text-gray-900">{refund.amount || "Everything you paid"}</p>
+                  <ul className="mt-4 space-y-2.5 text-sm text-gray-700">
+                    <li className="flex gap-3">
+                      <FaCheck className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden="true" />
+                      Your plan is cancelled straight away and refunded in full.
+                    </li>
+                    <li className="flex gap-3">
+                      <FaQrcode className="mt-0.5 h-4 w-4 flex-none text-indigo-600" aria-hidden="true" />
+                      Your free days carry on{refund.freeDaysEndOn ? ` until ${refund.freeDaysEndOn}` : ""}. After that your QR codes are paused.
+                    </li>
+                    <li className="flex gap-3">
+                      <FaRedo className="mt-0.5 h-3.5 w-3.5 flex-none text-indigo-600" aria-hidden="true" />
+                      Nothing is deleted. Choose a plan again any time.
+                    </li>
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-1.5 text-sm text-gray-600">You keep everything you&apos;ve paid for. Here&apos;s what happens:</p>
+                <div className="mt-5 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 sm:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Your plan stays active until</p>
+                  <p className="mt-1 font-display text-2xl font-extrabold text-gray-900">{endsOn}</p>
+                  <ul className="mt-4 space-y-2.5 text-sm text-gray-700">
+                    <li className="flex gap-3">
+                      <FaCheck className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden="true" />
+                      It won&apos;t renew, and you won&apos;t be charged again.
+                    </li>
+                    <li className="flex gap-3">
+                      <FaQrcode className="mt-0.5 h-4 w-4 flex-none text-indigo-600" aria-hidden="true" />
+                      Your QR codes keep working until then. After that date they&apos;re paused.
+                    </li>
+                    <li className="flex gap-3">
+                      <FaRedo className="mt-0.5 h-3.5 w-3.5 flex-none text-indigo-600" aria-hidden="true" />
+                      Nothing is deleted. Subscribe again later and the same codes work straight away.
+                    </li>
+                  </ul>
+                </div>
+              </>
+            )}
 
             <fieldset className="mt-6">
               <legend className="text-sm font-semibold text-gray-900">
@@ -194,7 +232,7 @@ export default function CancelSubscriptionModal({ open, endsOn, onClose, onCance
                 className="btn-shine btn-shine-soft flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold !text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 disabled:opacity-60"
               >
                 {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600" aria-hidden="true" />}
-                {busy ? "Cancelling…" : "Cancel subscription"}
+                {busy ? "Cancelling…" : refund ? "Cancel and refund" : "Cancel subscription"}
               </button>
             </div>
           </>

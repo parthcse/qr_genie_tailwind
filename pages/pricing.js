@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FaCheck, FaFileInvoice, FaGlobe, FaLock, FaPause, FaTag, FaTimesCircle, FaUndo } from "react-icons/fa";
+import { QRCodeSVG } from "qrcode.react";
+import { FaCheck, FaCoins, FaFileInvoice, FaGlobe, FaLock, FaPause, FaTag, FaTimesCircle } from "react-icons/fa";
+import { SITE_URL } from "@/lib/site";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SeoMeta from "@/components/layout/SeoMeta";
 import PageBanner from "@/components/landing/PageBanner";
-import PricingCards from "@/components/landing/PricingCards";
+import PricingCards, { PricingFootnote, AllPlansInclude, PaymentMethods } from "@/components/landing/PricingCards";
 import { container, sectionSpacing, SectionHeading, FeatureGrid, FaqList } from "@/components/landing/LandingUi";
-import { formatPlanPriceShort } from "@/lib/billing/price";
+import { formatPrice, formatMonthly, formatBilled, monthlyAmount, cheapestPlan, savingsFor } from "@/lib/billing/price";
+import { BEST_VALUE_TERM, termById } from "@/lib/billing/terms";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema, pricesForSearch } from "@/lib/seo";
 
 export async function getServerSideProps(context) {
@@ -15,14 +19,14 @@ export async function getServerSideProps(context) {
   const user = await getUserFromRequest(context.req);
 
   // Same prices as the home page: the visitor's currency for the cards, every currency for search engines
-  let basicPlan = null;
+  let prices = null;
   let plans = {};
   try {
-    const { getBasicPlans, publicPlans, currencyForIp } = await import("@/lib/billing/plans");
+    const { getPlans, publicPlans, currencyForIp } = await import("@/lib/billing/plans");
     const { getClientIp } = await import("@/lib/clientIp");
-    const all = await getBasicPlans();
+    const all = await getPlans();
     plans = publicPlans(all);
-    basicPlan = plans[currencyForIp(all, getClientIp(context.req))] || null;
+    prices = plans[currencyForIp(all, getClientIp(context.req))] || null;
   } catch (err) {
     console.error("Pricing page prices:", err.message);
   }
@@ -30,76 +34,243 @@ export async function getServerSideProps(context) {
   return {
     props: {
       initialUser: user ? { id: user.id, subscriptionPlan: user.subscriptionPlan } : null,
-      basicPlan,
+      prices,
       plans,
     },
   };
 }
 
-// The banner picture: a Basic Package card with the visitor's price, a free trial badge and the GST invoice note
-function PriceVisual({ planPrice }) {
-  const [amount, unit] = planPrice ? planPrice.split("/") : ["", ""];
+// The banner picture: one still price tag carrying a QR code and the 12-month price in the visitor's currency
+function PriceVisual({ prices }) {
+  const plan = prices?.[BEST_VALUE_TERM] || null;
+  const saving = plan ? savingsFor(plan, prices) : null;
   return (
     <div className="absolute inset-0 flex items-center justify-center">
-      <div className="absolute h-64 w-64 rounded-full bg-indigo-300/30 blur-3xl" />
-      <div className="relative w-64 -rotate-2 rounded-3xl bg-white p-6 shadow-2xl shadow-indigo-900/15 ring-1 ring-slate-900/5 transition-transform duration-500 hover:rotate-0 motion-reduce:transition-none">
-        <span className="font-display text-sm font-semibold text-slate-900">Basic Package</span>
-        <p className="mt-4 flex items-baseline gap-1">
-          <span className="font-sans text-4xl font-bold tracking-[-0.03em] text-slate-900">{amount || "Monthly"}</span>
-          {unit && <span className="text-sm text-slate-500">/{unit}</span>}
-        </p>
-        <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4 text-[13px] text-slate-600">
-          {["Unlimited QR codes", "Scan analytics", "Cancel anytime"].map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <span className="flex h-4 w-4 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                <FaCheck className="h-2 w-2" />
+      <div className="absolute h-72 w-72 rounded-full bg-indigo-300/25 blur-3xl" />
+      <div className="relative drop-shadow-[0_24px_36px_rgba(49,46,129,0.2)]">
+        {/* Tag: a pointed left end with an eyelet, rounded on the right */}
+        <div className="relative flex items-center gap-6 rounded-r-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 py-8 pl-16 pr-9 text-white [clip-path:polygon(12%_0,100%_0,100%_100%,12%_100%,0_50%)]">
+          <span className="absolute left-[7%] top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-indigo-50 ring-4 ring-white/25" />
+          <div className="flex-none rounded-2xl bg-white p-2.5 shadow-lg shadow-indigo-950/20">
+            <QRCodeSVG value={`${SITE_URL}/pricing`} size={84} level="M" fgColor="#1e1b4b" bgColor="#ffffff" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-100">{termById(BEST_VALUE_TERM).name}</p>
+            <p className="mt-1.5 flex items-baseline gap-1 whitespace-nowrap">
+              <span className="font-sans text-4xl font-bold tracking-[-0.03em] tabular-nums">
+                {plan ? formatPrice(monthlyAmount(plan), plan.currency) : "—"}
               </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <span className="mt-5 block rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-2.5 text-center text-xs font-semibold text-white shadow-md shadow-indigo-600/25">
-          Subscribe
-        </span>
-      </div>
-      <div className="absolute right-0 top-14 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float">
-        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-          <FaCheck className="h-3 w-3" />
-        </span>
-        <span className="whitespace-nowrap">
-          <span className="block text-sm font-semibold text-slate-900">14 days free</span>
-          <span className="block text-xs text-slate-500">No card needed</span>
-        </span>
-      </div>
-      <div className="absolute bottom-4 left-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 motion-safe:animate-float motion-safe:[animation-delay:-3s]">
-        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-          <FaFileInvoice className="h-3 w-3" />
-        </span>
-        <span className="whitespace-nowrap">
-          <span className="block text-sm font-semibold text-slate-900">GST invoice</span>
-          <span className="block text-xs text-slate-500">Emailed after payment</span>
-        </span>
+              <span className="text-sm text-indigo-100">/month</span>
+            </p>
+            <p className="mt-1 whitespace-nowrap text-xs text-indigo-100">{plan ? `Billed ${formatPrice(plan.amount, plan.currency)} every year` : " "}</p>
+            <p className="mt-3.5 inline-block whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700">
+              Best value{saving ? ` · Save ${saving.percent}%` : ""}
+            </p>
+          </div>
+        </div>
+        {/* The string, threaded through the eyelet */}
+        <svg viewBox="0 0 96 96" className="absolute bottom-1/2 left-[-50px] h-24 w-24 text-indigo-300" fill="none" aria-hidden="true">
+          <path d="M4 6c26 4 50 26 80 88" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
       </div>
     </div>
   );
 }
 
-// Rows of the plan comparison: [feature, Free Trial, Basic Package]; true shows a tick
-function comparisonRows(planPrice) {
+// The comparison table's columns: the free trial, then the paid plans from shortest to longest
+const COMPARE_TERMS = ["3m", "6m", "12m"];
+
+// Groups of rows for the comparison: [feature, Free trial, 3 months, 6 months, 12 months].
+// true shows a tick, false a dash; every paid plan has the same features, only the price and length differ.
+function comparisonGroups(prices) {
+  const plans = COMPARE_TERMS.map((id) => prices?.[id] || null);
+  const each = (fn) => plans.map((plan) => (plan ? fn(plan) : "—"));
+  const all = (value) => [value, value, value];
   return [
-    ["Price", "Free", planPrice || "Monthly"],
-    ["How long", "14 days", "Month to month"],
-    ["QR codes", "Up to 2", "Unlimited"],
-    ["Scans", "Unlimited", "Unlimited"],
-    ["Website, Wi-Fi, WhatsApp and Instagram codes", true, true],
-    ["Change links after printing", true, true],
-    ["Scan analytics and CSV export", true, true],
-    ["Colours, logo and frames", true, true],
-    ["Password protection", true, true],
-    ["PNG, SVG, JPEG and PDF downloads", true, true],
-    ["Folders and bulk actions", true, true],
-    ["Email support", true, true],
+    {
+      title: "Price and billing",
+      rows: [
+        ["Price per month", "Free", ...each((plan) => formatPrice(monthlyAmount(plan), plan.currency))],
+        ["You pay", "Nothing", ...each((plan) => formatBilled(plan))],
+        ["Saving compared with 3 months", false, ...each((plan) => (savingsFor(plan, prices) ? `${savingsFor(plan, prices).percent}%` : false))],
+        ["Length", `${TRIAL_DAYS} days`, "3 months", "6 months", "12 months"],
+        ["Renews automatically", false, ...all(true)],
+        ["Card needed", "No", ...all("At checkout")],
+        ["GST invoice by email", false, ...all(true)],
+        ["Cancel anytime", "Nothing to cancel", ...all(true)],
+      ],
+    },
+    {
+      title: "QR codes",
+      rows: [
+        ["Dynamic QR codes", "Up to 2", ...all("Unlimited")],
+        ["Scans", "Unlimited", ...all("Unlimited")],
+        ["Website, Wi-Fi, WhatsApp and Instagram codes", true, ...all(true)],
+        ["Change links after printing", true, ...all(true)],
+        ["Pause and resume, with your own message", true, ...all(true)],
+        ["Password protection", true, ...all(true)],
+      ],
+    },
+    {
+      title: "Design and downloads",
+      rows: [
+        ["Colours, gradients and corner styles", true, ...all(true)],
+        ["Your logo and a frame with your text", true, ...all(true)],
+        ["PNG, SVG, JPEG and PDF downloads", true, ...all(true)],
+      ],
+    },
+    {
+      title: "Analytics",
+      rows: [
+        ["Scans by day, hour, country, city, device and browser", true, ...all(true)],
+        ["CSV export", true, ...all(true)],
+      ],
+    },
+    {
+      title: "Organise and support",
+      rows: [
+        ["Folders", true, ...all(true)],
+        ["Bulk move, pause and delete", true, ...all(true)],
+        ["Email support", true, ...all(true)],
+      ],
+    },
   ];
+}
+
+function CompareValue({ value, strong }) {
+  if (value === true) {
+    return (
+      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+        <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
+        <span className="sr-only">Included</span>
+      </span>
+    );
+  }
+  if (value === false) {
+    return (
+      <span className="text-slate-300">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">Not included</span>
+      </span>
+    );
+  }
+  return <span className={strong ? "font-semibold text-slate-900" : "text-slate-700"}>{value}</span>;
+}
+
+// Where each column's button goes: sign up when signed out, checkout for that plan when signed in
+function compareLink(currentUser, termId) {
+  if (!currentUser) return { href: "/auth/register", text: "Start free trial" };
+  if (currentUser.subscriptionPlan === "BASIC") return { href: "/dashboard/billing", text: "Manage plan" };
+  return termId ? { href: `/dashboard/billing?plan=${termId}`, text: "Subscribe" } : null;
+}
+
+/** Every plan side by side: price, billing and features, with the best value column highlighted */
+function PlanComparison({ prices, currentUser }) {
+  const columns = [
+    { id: "trial", name: "Free trial", price: "Free", per: `for ${TRIAL_DAYS} days`, link: compareLink(currentUser, null) },
+    ...COMPARE_TERMS.map((id) => {
+      const plan = prices?.[id] || null;
+      return {
+        id,
+        name: termById(id).name,
+        price: plan ? formatPrice(monthlyAmount(plan), plan.currency) : "—",
+        per: "/month",
+        featured: id === BEST_VALUE_TERM,
+        link: compareLink(currentUser, id),
+      };
+    }),
+  ];
+  // Solid colours: the feature column stays put while the plans scroll under it on phones
+  const stickyLabel = "sticky left-0 z-10 bg-white";
+  const rowHover = (featured) => (featured ? "bg-[#f5f7ff] group-hover:bg-indigo-50" : "group-hover:bg-[#f8f9ff]");
+
+  return (
+    <div className="mx-auto mt-12 max-w-6xl sm:mt-14">
+      <p className="mb-3 text-center text-xs text-slate-500 md:hidden">Swipe sideways to see every plan</p>
+      {/* relative: the screen-reader labels in the cells are positioned inside this scroll box, not the page */}
+      <div className="relative overflow-x-auto rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+        <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left text-sm">
+          <caption className="sr-only">The free trial and the 3, 6 and 12-month plans compared</caption>
+          <thead>
+            <tr>
+              <th scope="col" className={`${stickyLabel} w-[30%] border-b border-slate-200 px-4 py-6 align-bottom sm:px-6`}>
+                <span className="font-display text-base font-semibold text-slate-900">Compare plans</span>
+              </th>
+              {columns.map((col) => (
+                <th
+                  key={col.id}
+                  scope="col"
+                  className={`border-b border-slate-200 px-3 py-6 text-center align-bottom ${col.featured ? "bg-[#f5f7ff]" : ""}`}
+                >
+                  {col.featured && (
+                    <span className="mb-2 inline-block rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                      Best value
+                    </span>
+                  )}
+                  <span className={`block font-display text-xs font-bold uppercase tracking-[0.12em] ${col.featured ? "text-indigo-700" : "text-slate-500"}`}>
+                    {col.name}
+                  </span>
+                  <span className="mt-2 block">
+                    <span className="font-sans text-2xl font-bold tracking-[-0.02em] text-slate-900 tabular-nums">{col.price}</span>
+                    <span className="ml-1 text-xs font-normal text-slate-500">{col.per}</span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          {comparisonGroups(prices).map((group) => (
+            <tbody key={group.title}>
+              <tr>
+                <th
+                  scope="colgroup"
+                  colSpan={columns.length + 1}
+                  className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700 sm:px-6"
+                >
+                  <span className="sticky left-4 sm:left-6">{group.title}</span>
+                </th>
+              </tr>
+              {group.rows.map(([feature, ...values]) => (
+                <tr key={feature} className="group">
+                  <th scope="row" className={`${stickyLabel} border-b border-slate-100 px-4 py-3.5 font-medium text-slate-700 transition-colors group-hover:bg-[#f8f9ff] sm:px-6`}>
+                    {feature}
+                  </th>
+                  {values.map((value, i) => (
+                    <td
+                      key={columns[i].id}
+                      className={`border-b border-slate-100 px-3 py-3.5 text-center transition-colors ${rowHover(columns[i].featured)}`}
+                    >
+                      <CompareValue value={value} strong={i > 0 && feature === "Price per month"} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          ))}
+          <tfoot>
+            <tr>
+              <td className={`${stickyLabel} px-4 py-6 sm:px-6`} />
+              {columns.map((col) => (
+                <td key={col.id} className={`px-3 py-6 text-center ${col.featured ? "bg-[#f5f7ff]" : ""}`}>
+                  {col.link && (
+                    <Link
+                      href={col.link.href}
+                      className={`btn-shine inline-flex w-full max-w-[10rem] items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-4 motion-reduce:transform-none ${
+                        col.featured
+                          ? "bg-gradient-to-r from-indigo-600 to-purple-600 !text-white shadow-md shadow-indigo-600/20 hover:shadow-lg focus-visible:ring-indigo-200"
+                          : "btn-shine-soft bg-white !text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50 focus-visible:ring-indigo-100"
+                      }`}
+                    >
+                      {col.link.text}
+                    </Link>
+                  )}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 const billingDetails = [
@@ -109,6 +280,11 @@ const billingDetails = [
     description: "Visitors in India pay in rupees and everyone else in US dollars. The price you see is the price you pay.",
   },
   {
+    icon: <FaCoins className="h-5 w-5" />,
+    title: "Pay upfront, save more",
+    description: "You pay for the months you choose in one go. The 12-month plan costs half as much per month as the 3-month plan.",
+  },
+  {
     icon: <FaFileInvoice className="h-5 w-5" />,
     title: "GST invoice every time",
     description: "Prices include 18% GST, and a GST invoice is emailed to you after every payment.",
@@ -116,17 +292,12 @@ const billingDetails = [
   {
     icon: <FaTimesCircle className="h-5 w-5" />,
     title: "Cancel anytime",
-    description: "Cancel from your billing page. Your plan stays active until the end of the period you've paid for.",
+    description: "Cancel from your billing page. Your plan stays active until the end of the period you've paid for, then stops.",
   },
   {
     icon: <FaLock className="h-5 w-5" />,
     title: "Secure checkout",
     description: "Payments are processed by Razorpay. Your card details go to Razorpay, never to QR-Genie.",
-  },
-  {
-    icon: <FaUndo className="h-5 w-5" />,
-    title: "Fair refunds",
-    description: "Cancel partway through a month and we refund the days you haven't used when you ask.",
   },
   {
     icon: <FaPause className="h-5 w-5" />,
@@ -138,12 +309,21 @@ const billingDetails = [
 const faqs = [
   {
     question: "Is there a free trial?",
-    answer: "Yes. Every new account gets 14 days free with up to 2 QR codes and every feature. No card is needed to start.",
+    answer: `Yes. Every new account gets ${TRIAL_DAYS} days free with up to 2 QR codes and every feature. No card is needed to start.`,
+  },
+  {
+    question: "What's the difference between the 3, 6 and 12-month plans?",
+    answer:
+      "Only the length and the price. Every plan has the same features. You pay upfront for the months you choose, and the longer the plan, the lower the price per month.",
+  },
+  {
+    question: "If I subscribe during the free trial, do I lose my free days?",
+    answer: `No. You pay when you subscribe, but your paid months only start when your ${TRIAL_DAYS} free days end.`,
   },
   {
     question: "What happens when the free trial ends?",
     answer:
-      "Your codes are paused until you subscribe to the Basic plan. Nothing is deleted, and subscribing switches them back on with the same links.",
+      "If you haven't chosen a plan, your codes are paused. Nothing is deleted, and choosing a plan switches them back on with the same links.",
   },
   {
     question: "Which currency will I pay in?",
@@ -156,30 +336,30 @@ const faqs = [
   {
     question: "Can I cancel anytime?",
     answer:
-      "Yes. Cancel from the billing page in your dashboard. You won't be charged again, and your plan stays active until the end of the period you've paid for.",
+      "Yes. Cancel from the billing page in your dashboard. Your plan won't renew, and it stays active until the end of the period you've paid for.",
   },
   {
     question: "Do you offer refunds?",
-    answer:
-      "Yes. If you cancel partway through a month, we refund the days you haven't used when you ask. If you were charged by mistake, we refund the extra payment in full. The refund policy has the details.",
+    answer: `If you cancel during your ${TRIAL_DAYS} free days, before your paid months have started, we refund your payment in full automatically. Once your paid months have started, cancelling stops the next renewal and the plan runs to the end of the period you've paid for, without a refund. If you were charged by mistake, we refund that payment in full.`,
   },
   {
-    question: "Is there a limit on scans or QR codes?",
-    answer: "The Basic plan has no limit on QR codes or scans. The free trial includes up to 2 codes.",
+    question: "Can I switch to a longer or shorter plan?",
+    answer:
+      "Yes. Cancel your current plan on the billing page, and when it ends, choose the new one. Your QR codes and their links stay the same.",
   },
 ];
 
-export default function PricingPage({ initialUser, basicPlan = null, plans = {} }) {
+export default function PricingPage({ initialUser, prices = null, plans = {} }) {
   const router = useRouter();
   const isAuthenticated = !!initialUser;
-  const planPrice = formatPlanPriceShort(basicPlan);
+  const fromPrice = formatMonthly(cheapestPlan(prices));
 
   const searchPrices = pricesForSearch(plans);
   const description =
-    "Try QR-Genie free for 14 days, no card needed." +
+    `Try QR-Genie free for ${TRIAL_DAYS} days, no card needed.` +
     (searchPrices
-      ? ` Then ${searchPrices} for unlimited dynamic QR codes, scan analytics and link editing.`
-      : " Then one monthly plan with unlimited dynamic QR codes, scan analytics and link editing.");
+      ? ` Then from ${searchPrices} for unlimited dynamic QR codes and scan analytics.`
+      : " Then 3, 6 or 12-month plans with unlimited dynamic QR codes and scan analytics.");
   const structuredData = [
     organizationSchema,
     breadcrumbSchema([
@@ -210,10 +390,10 @@ export default function PricingPage({ initialUser, basicPlan = null, plans = {} 
           eyebrow={{ icon: FaTag, label: "Pricing" }}
           title="Dynamic QR Code"
           highlight="Pricing"
-          subtitle={planPrice ? `Free for 14 days, then ${planPrice}` : "Free for 14 days, then one simple plan"}
-          summary="One plan with everything: unlimited dynamic QR codes, scan analytics, your own design and link editing."
+          subtitle={fromPrice ? `Free for ${TRIAL_DAYS} days, then from ${fromPrice}` : `Free for ${TRIAL_DAYS} days, then a plan that suits you`}
+          summary="Three plans with every feature: unlimited dynamic QR codes, scan analytics, your own design and link editing."
           crumbs={[{ name: "Pricing", path: "/pricing" }]}
-          visual={<PriceVisual planPrice={planPrice} />}
+          visual={<PriceVisual prices={prices} />}
           visualClassName="hidden lg:block"
         />
 
@@ -222,60 +402,25 @@ export default function PricingPage({ initialUser, basicPlan = null, plans = {} 
           <div className={container}>
             <SectionHeading
               eyebrow="Plans"
-              title="Start free, upgrade when you're ready"
-              description="Every feature for 14 days, no card needed. Then one simple plan you can cancel anytime."
+              title="Plans and prices"
+              description={`Try it for ${TRIAL_DAYS} days for free, no card needed. Then pick 3, 6 or 12 months: the longer the plan, the lower the monthly price.`}
             />
-            <PricingCards basicPlan={basicPlan} currentUser={initialUser} />
+            <PricingCards prices={prices} currentUser={initialUser} />
+            <PaymentMethods currency={prices?.[BEST_VALUE_TERM]?.currency} />
+            <PricingFootnote className="mt-8" razorpay={false} />
+            <AllPlansInclude />
           </div>
         </section>
 
         {/* Plan comparison */}
-        <section className={`border-t border-slate-100 bg-white ${sectionSpacing}`}>
+        <section id="compare" className={`scroll-mt-24 border-t border-slate-100 bg-white ${sectionSpacing}`}>
           <div className={container}>
             <SectionHeading
               eyebrow="Compare"
-              title="What's in each plan"
-              description="The free trial has every feature, so you can try everything before you pay."
+              title="Compare all plans"
+              description="Every paid plan has the same features; only the length and the monthly price change. The free trial has every feature too, with up to 2 QR codes."
             />
-            <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 sm:mt-14">
-              <table className="w-full text-left text-sm sm:text-[15px]">
-                <caption className="sr-only">Free Trial and Basic Package compared</caption>
-                <thead>
-                  <tr className="bg-gradient-to-r from-indigo-50 via-white to-purple-50">
-                    <th scope="col" className="px-4 py-4 font-display font-semibold text-slate-900 sm:px-8">
-                      <span className="sr-only">Feature</span>
-                    </th>
-                    <th scope="col" className="w-[26%] px-3 py-4 text-center font-display font-semibold text-slate-900 sm:px-6">
-                      Free Trial
-                    </th>
-                    <th scope="col" className="w-[30%] px-3 py-4 text-center font-display font-semibold text-indigo-700 sm:px-6">
-                      Basic Package
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {comparisonRows(planPrice).map(([feature, trial, basic]) => (
-                    <tr key={feature} className="transition-colors hover:bg-indigo-50/40">
-                      <th scope="row" className="px-4 py-3.5 font-medium text-slate-700 sm:px-8">
-                        {feature}
-                      </th>
-                      {[trial, basic].map((value, i) => (
-                        <td key={i} className="px-3 py-3.5 text-center text-slate-700 sm:px-6">
-                          {value === true ? (
-                            <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                              <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
-                              <span className="sr-only">Included</span>
-                            </span>
-                          ) : (
-                            <span className={i === 1 ? "font-semibold text-slate-900" : ""}>{value}</span>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PlanComparison prices={prices} currentUser={initialUser} />
           </div>
         </section>
 

@@ -26,6 +26,7 @@ import {
   FaWhatsapp,
   FaWifi,
 } from "react-icons/fa";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 /**
  * Content of the QR type and industry pages (rendered by LandingPage.js). Each page targets one search phrase from
@@ -63,7 +64,7 @@ export const LANDING_LINKS = {
 const signUpStep = {
   icon: <FaUserPlus className="h-6 w-6" />,
   title: "Create a free account",
-  description: "Sign up in under a minute. The 14-day free trial needs no card.",
+  description: `Sign up in under a minute. The ${TRIAL_DAYS}-day free trial needs no card.`,
 };
 
 export const LANDING_PAGES = {
@@ -72,7 +73,7 @@ export const LANDING_PAGES = {
     crumb: "Website QR code",
     seoTitle: "Website QR Code Generator with Tracking | QR-Genie",
     description:
-      "Create a website QR code that opens any link. Change the URL after printing, track every scan and add your logo. Free for 14 days, no card needed.",
+      `Create a website QR code that opens any link. Change the URL after printing, track every scan and add your logo. Free for ${TRIAL_DAYS} days, no card needed.`,
     eyebrow: { icon: FaGlobe, label: "Website QR code" },
     title: "Website QR Code",
     highlight: "Generator",
@@ -123,7 +124,7 @@ export const LANDING_PAGES = {
       {
         question: "Is a website QR code free?",
         answer:
-          "You can create website QR codes free for 14 days with the free trial: up to 2 codes, no card needed. After that the Basic plan gives you unlimited codes; the pricing page shows the price in your currency.",
+          `You can create website QR codes free for ${TRIAL_DAYS} days with the free trial: up to 2 codes, no card needed. After that a 3, 6 or 12-month plan gives you unlimited codes; the pricing page shows the prices in your currency.`,
       },
       {
         question: "Can I change the URL after the QR code is printed?",
@@ -154,7 +155,7 @@ export const LANDING_PAGES = {
     crumb: "Wi-Fi QR code",
     seoTitle: "WiFi QR Code Generator for Guests and Customers | QR-Genie",
     description:
-      "Make a WiFi QR code so guests join your network in one scan, with no password typing. Works with iPhone and Android cameras. Free for 14 days.",
+      `Make a WiFi QR code so guests join your network in one scan, with no password typing. Works with iPhone and Android cameras. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaWifi, label: "Wi-Fi QR code" },
     title: "WiFi QR Code",
     highlight: "Generator",
@@ -241,7 +242,7 @@ export const LANDING_PAGES = {
     crumb: "WhatsApp QR code",
     seoTitle: "WhatsApp QR Code Generator for Business | QR-Genie",
     description:
-      "Create a WhatsApp QR code that opens a chat with your number and an optional ready-typed message. Track scans and add your logo. Free for 14 days.",
+      `Create a WhatsApp QR code that opens a chat with your number and an optional ready-typed message. Track scans and add your logo. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaWhatsapp, label: "WhatsApp QR code" },
     title: "WhatsApp QR Code",
     highlight: "Generator",
@@ -320,7 +321,7 @@ export const LANDING_PAGES = {
     crumb: "Instagram QR code",
     seoTitle: "Instagram QR Code Generator for Your Profile | QR-Genie",
     description:
-      "Create an Instagram QR code that opens your profile in one scan. Add your logo and colours, track scans and change it anytime. Free for 14 days.",
+      `Create an Instagram QR code that opens your profile in one scan. Add your logo and colours, track scans and change it anytime. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaInstagram, label: "Instagram QR code" },
     title: "Instagram QR Code",
     highlight: "Generator",
@@ -400,7 +401,7 @@ export const LANDING_PAGES = {
     crumb: "Restaurant menus",
     seoTitle: "QR Code for Restaurant Menus, Editable Anytime | QR-Genie",
     description:
-      "Create a QR code for your restaurant menu. Change the menu link anytime without reprinting, share your Wi-Fi and track scans. Free for 14 days.",
+      `Create a QR code for your restaurant menu. Change the menu link anytime without reprinting, share your Wi-Fi and track scans. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaUtensils, label: "For restaurants" },
     title: "QR Codes for",
     highlight: "Restaurant Menus",
@@ -451,7 +452,7 @@ export const LANDING_PAGES = {
       {
         question: "How do I create a QR code for my restaurant menu?",
         answer:
-          "Put your menu online, create a website QR code in QR-Genie with the menu's link, design it and print it. The free trial lets you try it with up to 2 codes for 14 days.",
+          `Put your menu online, create a website QR code in QR-Genie with the menu's link, design it and print it. The free trial lets you try it with up to 2 codes for ${TRIAL_DAYS} days.`,
       },
       {
         question: "Can I update the menu without reprinting the QR code?",
@@ -481,7 +482,7 @@ export const LANDING_PAGES = {
     crumb: "Events",
     seoTitle: "Event QR Codes for Tickets, Schedules and Wi-Fi | QR-Genie",
     description:
-      "Use event QR codes for tickets, schedules, check-in forms and venue Wi-Fi. Change links as plans change and see how many people scan. Free for 14 days.",
+      `Use event QR codes for tickets, schedules, check-in forms and venue Wi-Fi. Change links as plans change and see how many people scan. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaTicketAlt, label: "For events" },
     title: "Event",
     highlight: "QR Codes",
@@ -560,7 +561,7 @@ export const LANDING_PAGES = {
     crumb: "Real estate",
     seoTitle: "Real Estate QR Codes for Signs and Listings | QR-Genie",
     description:
-      "Put QR codes on for-sale signs and flyers that open the property listing. Swap the link when a home sells and see how many buyers scan. Free for 14 days.",
+      `Put QR codes on for-sale signs and flyers that open the property listing. Swap the link when a home sells and see how many buyers scan. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaHome, label: "For real estate" },
     title: "Real Estate",
     highlight: "QR Codes",
@@ -639,7 +640,7 @@ export const LANDING_PAGES = {
     crumb: "Hotels",
     seoTitle: "Hotel QR Codes for Rooms, Wi-Fi and Menus | QR-Genie",
     description:
-      "QR codes for hotel rooms: Wi-Fi, room service menus, guest guides and WhatsApp concierge. Update links anytime and track scans. Free for 14 days.",
+      `QR codes for hotel rooms: Wi-Fi, room service menus, guest guides and WhatsApp concierge. Update links anytime and track scans. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaHotel, label: "For hotels" },
     title: "Hotel",
     highlight: "QR Codes",

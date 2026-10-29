@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { isRateLimited } from "@/lib/rateLimit";
-import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd } from "@/lib/billing/activateBasicSubscription";
+import { activateBasicSubscriptionForUser, getRazorpayPeriodEnd, getPlanStart } from "@/lib/billing/activateBasicSubscription";
 import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
 import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
 import { verifySubscriptionPaymentSignature } from "@/lib/billing/razorpayVerify";
@@ -73,6 +73,8 @@ export default async function handler(req, res) {
       const activation = await activateBasicSubscriptionForUser({
         userId: subUser.id,
         periodEnd: getRazorpayPeriodEnd(subscription),
+        planStartsAt: getPlanStart(subscription),
+        planId: subscription.plan_id,
         razorpayCustomerId: subscription.customer_id || undefined,
         razorpaySubscriptionId: razorpay_subscription_id,
         razorpayPaymentId: razorpay_payment_id,
@@ -94,8 +96,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Basic Package activated successfully!",
+      message: "Your plan is active.",
       plan: "BASIC",
+      startsAt: getPlanStart(subscription),
       reactivatedCount,
     });
   } catch (err) {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FaQrcode, FaCheck, FaEnvelope, FaLock, FaArrowUp } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { SUPPORT_EMAIL, SITE_URL } from "@/lib/site";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 const SIGNUP_URL = `${SITE_URL}/auth/register`;
 
@@ -39,7 +40,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                 </h2>
                 <p className="mt-5 max-w-lg text-base leading-relaxed text-indigo-200 md:text-lg">
                   Dynamic QR codes you can edit after they&apos;re printed, with scan analytics built in.
-                  Try it free for 14 days, no card needed.
+                  Try it free for {TRIAL_DAYS} days, no card needed.
                 </p>
                 <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Link

@@ -30,7 +30,7 @@ function SummaryRow({ label, children }) {
 /**
  * Result popup for Razorpay checkout.
  * result: null (hidden)
- *   | { type: "success", paymentId?, endsAt?, reactivatedCount? }
+ *   | { type: "success", paymentId?, startsAt?, endsAt?, reactivatedCount? } (startsAt: paid months begin after the free days)
  *   | { type: "error", title, message?, note?, paymentId? }
  */
 export default function PaymentResultModal({ result, planName, priceLabel, onClose, onRetry }) {
@@ -50,6 +50,7 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
 
   const success = result.type === "success";
   const renewsOn = success ? formatDate(result.endsAt) : null;
+  const startsOn = success ? formatDate(result.startsAt) : null;
   const reactivated = success ? result.reactivatedCount || 0 : 0;
 
   return (
@@ -135,6 +136,11 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
                 </span>
                 . Thanks for subscribing.
               </p>
+              {startsOn && (
+                <p className="mx-auto mt-2 max-w-xs text-sm text-gray-600">
+                  Your free days carry on: your paid months start on <span className="font-semibold text-gray-900">{startsOn}</span>.
+                </p>
+              )}
 
               {reactivated > 0 && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
@@ -146,6 +152,7 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
               <dl className="mt-5 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-gray-50/70 text-left text-sm">
                 <SummaryRow label="Plan">{planName}</SummaryRow>
                 <SummaryRow label="Price">{priceLabel}</SummaryRow>
+                {startsOn && <SummaryRow label="Paid months start">{startsOn}</SummaryRow>}
                 {renewsOn && <SummaryRow label="Renews on">{renewsOn}</SummaryRow>}
                 {result.paymentId && (
                   <SummaryRow label="Payment ID">

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { FaCrown, FaChevronRight, FaSignOutAlt, FaPlus, FaQrcode, FaChartLine, FaUserCircle, FaCreditCard, FaLifeRing } from "react-icons/fa";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
+import { planNameFor } from "@/lib/billing/terms";
 
 const createItem = { href: "/dashboard/create-qr", label: "Create QR code", icon: FaPlus };
 const navGroups = [
@@ -24,8 +26,6 @@ const navGroups = [
   },
 ];
 const navItems = [createItem, ...navGroups.flatMap((group) => group.items)];
-
-const TRIAL_DAYS = 14;
 
 const upgradeLinkClass =
   "btn-shine mt-3 block rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 py-2 text-center text-sm font-semibold !text-white shadow-sm transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2";
@@ -54,7 +54,7 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
           <FaCrown className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-gray-900">Basic Package</span>
+          <span className="block truncate text-sm font-semibold text-gray-900">{planNameFor(user.subscriptionMonths)}</span>
           <span className="block truncate text-xs text-gray-500">
             {renews ? `${user.subscriptionCancelledAt ? "Ends" : "Renews"} ${renews}` : "Active"}
           </span>
@@ -66,7 +66,8 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
 
   if (status === "TRIAL_ACTIVE") {
     const daysLeft = subscriptionStatus.daysLeft ?? 0;
-    const pct = Math.max(4, Math.min(100, (daysLeft / TRIAL_DAYS) * 100));
+    // Accounts from before the trial was shortened keep their longer trial
+    const pct = Math.max(4, Math.min(100, (daysLeft / Math.max(TRIAL_DAYS, daysLeft)) * 100));
     return (
       <div className="rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 p-3">
         <div className="flex items-baseline justify-between gap-2">
@@ -79,7 +80,7 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
           <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" style={{ width: `${pct}%` }} />
         </div>
         <Link href="/dashboard/billing" onClick={onNavigate} className={upgradeLinkClass}>
-          Upgrade to Basic
+          Choose a plan
         </Link>
       </div>
     );
@@ -92,7 +93,7 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
       <p className="text-sm font-semibold text-amber-900">{title}</p>
       <p className="mt-0.5 text-xs text-amber-800">Your QR codes are paused.</p>
       <Link href="/dashboard/billing" onClick={onNavigate} className={upgradeLinkClass}>
-        Upgrade to Basic
+        Choose a plan
       </Link>
     </div>
   );

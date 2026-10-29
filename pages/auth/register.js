@@ -5,6 +5,7 @@ import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck, FaArrowRight, F
 import AuthShell, { AuthHeading, AuthInput, AuthAlert, AuthSubmit, AuthSwitch, PasswordStrength, FieldTick, passwordChecksPassed } from "@/components/auth/AuthShell";
 import SeoMeta from "@/components/layout/SeoMeta";
 import Turnstile from "@/components/auth/Turnstile";
+import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 // Cloudflare Turnstile bot check; skipped when no site key is configured
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
@@ -144,7 +145,7 @@ export default function Register() {
   return (
     <AuthShell
       panel={{
-        eyebrow: "Free for 14 days",
+        eyebrow: `Free for ${TRIAL_DAYS} days`,
         title: "Make QR codes you can change any time",
         text: "No card needed. Three quick steps and your first code is ready.",
         steps: ["Create your account", "Confirm your email", "Make your first QR code"],
@@ -153,11 +154,11 @@ export default function Register() {
     >
       <SeoMeta
         title="Create your account | QR-Genie"
-        description="Create a QR-Genie account and try dynamic QR codes with scan tracking free for 14 days."
+        description={`Create a QR-Genie account and try dynamic QR codes with scan tracking free for ${TRIAL_DAYS} days.`}
         path="/auth/register"
       />
       <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-5">
-        <AuthHeading title="Create your account">Start your free 14-day trial. No card needed.</AuthHeading>
+        <AuthHeading title="Create your account">Start your free {TRIAL_DAYS}-day trial. No card needed.</AuthHeading>
 
         <AuthAlert shakeKey={shakeKey}>{error}</AuthAlert>
 

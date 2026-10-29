@@ -35,11 +35,12 @@ model User {
   pendingEmail          String?   // new address waiting for its code (account page); `email` changes only once confirmed
   termsAcceptedAt       DateTime? // when they ticked "I agree to the Terms of Service and Privacy Policy"
   sessionVersion        Int       @default(0) // bumped on password change/reset to sign out every existing session
-  subscriptionPlan      String    @default("EXPIRED") // TRIAL | BASIC | EXPIRED
+  subscriptionPlan      String    @default("EXPIRED") // TRIAL | BASIC (any paid plan) | EXPIRED
+  subscriptionMonths    Int?      // length of the paid plan: 3, 6 or 12 (lib/billing/terms.js); null before the first payment
   trialStartedAt        DateTime?
   subscriptionStartedAt DateTime?
   subscriptionEndsAt    DateTime?
-  subscriptionCancelledAt DateTime? // set when the Basic subscription was cancelled; it runs to subscriptionEndsAt and won't renew
+  subscriptionCancelledAt DateTime? // set when the subscription was cancelled; it runs to subscriptionEndsAt and won't renew
   cancellationReason    String?   // what the customer said when cancelling (optional)
 
   // Razorpay subscription linkage (optional)
