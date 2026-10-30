@@ -153,6 +153,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                 <h3 id="footer-qr-codes" className="text-sm font-semibold text-gray-900">QR codes</h3>
                 <ul className="mt-4 space-y-3 text-sm">
                   <li><Link href="/website-qr-code" className={footerLink}>Website</Link></li>
+                  <li><Link href="/multiple-links-qr-code" className={footerLink}>List of links</Link></li>
                   <li><Link href="/wifi-qr-code" className={footerLink}>Wi-Fi</Link></li>
                   <li><Link href="/whatsapp-qr-code" className={footerLink}>WhatsApp</Link></li>
                   <li><Link href="/instagram-qr-code" className={footerLink}>Instagram</Link></li>

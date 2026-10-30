@@ -33,6 +33,7 @@ import {
   FaWhatsapp,
   FaPinterest,
   FaSnapchat,
+  FaUserCircle,
 } from "react-icons/fa";
 import {
   InputField,
@@ -47,6 +48,7 @@ import {
   IconSelectorField,
   FolderField,
 } from "./FieldComponents";
+import { ImageField, LinkListField, ThemeField } from "./PageFields";
 
 // Icon mapping
 const iconMap = {
@@ -79,6 +81,7 @@ const iconMap = {
   FaWhatsapp,
   FaPinterest,
   FaSnapchat,
+  FaUserCircle,
 };
 
 // Collapsible Section Component
@@ -264,6 +267,15 @@ const CollapsibleSection = ({
           />
         );
 
+      case "image":
+        return <ImageField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "linkList":
+        return <LinkListField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "theme":
+        return <ThemeField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
       case "section":
         return (
           <div key={field.id} className="space-y-3">
@@ -403,13 +415,9 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
     if (fieldId === "name" || fieldId === "folder") {
       return fieldId;
     }
-    
-    // Types that have nested structure in formData
-    const nestedTypes = ["links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
-    if (nestedTypes.includes(type)) {
-      return `${type}.${fieldId}`;
-    }
-    return fieldId;
+
+    // Every type except Website keeps its fields under its own name (formData.links.title, formData.wifi.ssid, ...)
+    return type === "website" ? fieldId : `${type}.${fieldId}`;
   };
   const [expandedSections, setExpandedSections] = useState(() => {
     const initial = {};

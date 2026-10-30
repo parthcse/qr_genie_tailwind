@@ -4,6 +4,7 @@ import { getUserFromRequest, VERIFY_EMAIL_FIRST } from "@/lib/auth";
 import { isRateLimited } from "@/lib/rateLimit";
 import { checkQRCodeLimit } from "@/lib/billing/subscription";
 import { nanoid } from "nanoid";
+import { isPageType } from "@/lib/qr/qrTypes";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -54,13 +55,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // Create a duplicate with new slug (same linkType, fresh ACTIVE status)
+    // Create a duplicate with new slug (same linkType, fresh ACTIVE status). A hosted page's "target" is its own
+    // short link, so the copy gets its new one.
     const newSlug = nanoid(6);
+    const base = (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
     const duplicateQR = await prisma.qRCode.create({
       data: {
         slug: newSlug,
         type: originalQR.type,
-        targetUrl: originalQR.targetUrl,
+        targetUrl: isPageType(originalQR.type) ? `${base}/r/${newSlug}` : originalQR.targetUrl,
         name: `${originalQR.name || 'QR Code'} (Copy)`,
         qrColor: originalQR.qrColor,
         bgColor: originalQR.bgColor,

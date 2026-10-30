@@ -32,7 +32,8 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
  * Content of the QR type and industry pages (rendered by LandingPage.js). Each page targets one search phrase from
  * the SEO plan: the title, h1 and first paragraph use it. Only promise what the product does today (see
  * DEVELOPER_GUIDE "QR codes"): Wi-Fi codes are static (no tracking, can't be edited), passwords only on website codes,
- * and QR-Genie doesn't host menus or forms; codes point to pages people already have.
+ * and the only pages QR-Genie hosts are the released "page" types (list of links); menus, forms and files still
+ * live on pages people already have.
  *
  * Fields: path, crumb (breadcrumb name), seoTitle (≤ 60 characters), description (≤ 160), eyebrow { icon, label },
  * title + highlight (in the gradient) + subtitle (the h1), summary (one sentence under the h1 in the banner), intro (the overview below the banner), createType (preselected type on the create page, or null), cta, preview (the banner picture: qrColor, card (name, what it opens,
@@ -43,6 +44,7 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
 // Short labels and pages of the QR types, for the badges on ideas and the related links
 export const TYPE_PAGES = {
   website: { label: "Website QR code", path: "/website-qr-code" },
+  links: { label: "List of links QR code", path: "/multiple-links-qr-code" },
   wifi: { label: "Wi-Fi QR code", path: "/wifi-qr-code" },
   whatsapp: { label: "WhatsApp QR code", path: "/whatsapp-qr-code" },
   instagram: { label: "Instagram QR code", path: "/instagram-qr-code" },
@@ -51,6 +53,7 @@ export const TYPE_PAGES = {
 // The pages for the related links (long, descriptive label) and the footer (short label)
 export const LANDING_LINKS = {
   "/website-qr-code": { label: "Website QR code", long: "Website QR code generator" },
+  "/multiple-links-qr-code": { label: "List of links", long: "QR code for multiple links" },
   "/wifi-qr-code": { label: "Wi-Fi QR code", long: "Wi-Fi QR code generator" },
   "/whatsapp-qr-code": { label: "WhatsApp QR code", long: "WhatsApp QR code generator" },
   "/instagram-qr-code": { label: "Instagram QR code", long: "Instagram QR code generator" },
@@ -147,7 +150,91 @@ export const LANDING_PAGES = {
           "Dynamic codes work while your trial or subscription is active. If your plan ends they're paused, not deleted, and they work again with the same link as soon as you subscribe. Static codes keep working regardless.",
       },
     ],
-    related: ["/wifi-qr-code", "/whatsapp-qr-code", "/instagram-qr-code", "/restaurant-menu-qr-code", "/pricing"],
+    related: ["/multiple-links-qr-code", "/wifi-qr-code", "/whatsapp-qr-code", "/instagram-qr-code", "/pricing"],
+  },
+
+  links: {
+    path: "/multiple-links-qr-code",
+    crumb: "List of links QR code",
+    seoTitle: "QR Code for Multiple Links: One Scan, Every Link | QR-Genie",
+    description: `Share all your links with one QR code: a mobile page with your photo and a button for each link. Edit it after printing. Free for ${TRIAL_DAYS} days.`,
+    eyebrow: { icon: FaLink, label: "List of links QR code" },
+    title: "Multiple Links QR Code",
+    highlight: "Generator",
+    subtitle: "One scan, all your links",
+    summary: "One QR code that opens a page with all your links, which you can change after printing.",
+    intro:
+      "Put your menu, booking page, shop, reviews and social profiles behind a single QR code. People who scan it see a clean mobile page with your photo, a short description and a button for each link. QR-Genie hosts the page, so there's nothing to build, and you can change it whenever you like.",
+    createType: "links",
+    cta: "Create a list of links",
+    preview: {
+      qrColor: "#6d28d9",
+      card: { title: "List of links", detail: "Café Aroma · 4 links", stat: "312 scans this week" },
+      note: { icon: FaPen, title: "Page updated", text: "Same printed code" },
+    },
+    benefits: {
+      title: "Why use a QR code for multiple links",
+      description: "One code on your counter, card or poster, and people choose where to go.",
+      items: [
+        { icon: <FaLink className="h-5 w-5" />, title: "Every link in one place", description: "Up to 20 buttons for your menu, bookings, shop, reviews, social profiles or anything else with a web address." },
+        { icon: <FaSyncAlt className="h-5 w-5" />, title: "Change it after printing", description: "Add, remove or reorder links, or change the text and photo, whenever you like. The printed code stays the same." },
+        { icon: <FaMobileAlt className="h-5 w-5" />, title: "Made for phones", description: "A fast, clean page that opens straight from the camera, with no app to install and nothing to sign in to." },
+        { icon: <FaPalette className="h-5 w-5" />, title: "Your look", description: "Your photo or logo, a title and a short description, in one of eight colour themes. The code itself gets your colours and logo too." },
+        { icon: <FaChartLine className="h-5 w-5" />, title: "See every scan", description: "Scans by day, country, city and device, unique visitors and your busiest hours, with CSV export." },
+        { icon: <FaBolt className="h-5 w-5" />, title: "Nothing to build", description: "We host the page for you. No website, domain or hosting needed: it's ready the moment you create the code." },
+      ],
+    },
+    steps: {
+      title: "How to create a QR code for multiple links",
+      items: [
+        signUpStep,
+        { icon: <FaLink className="h-6 w-6" />, title: "Add your links", description: "Choose List of links, add a title, your photo and a button for each link, and pick a colour theme." },
+        { icon: <FaPalette className="h-6 w-6" />, title: "Design the code", description: "Give the code your colours and logo, and a frame with a call to action such as Scan for all our links." },
+        { icon: <FaDownload className="h-6 w-6" />, title: "Download and print", description: "Print it anywhere. Edit the page later from your dashboard; the code doesn't change." },
+      ],
+    },
+    ideas: {
+      title: "Ideas for your list of links",
+      items: [
+        { title: "Cafés and restaurants", description: "Your menu, delivery apps, table booking, reviews and Instagram behind one code on the table." },
+        { title: "Shop windows and counters", description: "Opening hours, your online shop, offers and directions, even when you're closed." },
+        { title: "Business cards", description: "Your website, portfolio, LinkedIn and a WhatsApp chat, all from one small code." },
+        { title: "Events", description: "The schedule, tickets, the venue map and the after-party, updated as plans change." },
+        { title: "Creators and artists", description: "Your latest work, shop, newsletter and social profiles in one scan." },
+        { title: "Product packaging", description: "Instructions, recipes, the reorder page and support, changed for each new batch." },
+      ],
+    },
+    faqs: [
+      {
+        question: "What is a QR code for multiple links?",
+        answer:
+          "It's one QR code that opens a mobile page with a button for each of your links. People who scan it choose where to go: your menu, your shop, your social profiles and so on.",
+      },
+      {
+        question: "Do I need my own website?",
+        answer:
+          "No. QR-Genie hosts the page for you. Add a title, an optional photo or logo and your links, and the page is ready as soon as you create the code.",
+      },
+      {
+        question: "Can I change the links after printing?",
+        answer:
+          "Yes. Open the code in your dashboard and choose Edit page. Add, remove or reorder links, or change the photo, text and colours; the printed code stays the same.",
+      },
+      {
+        question: "How many links can I add?",
+        answer: "Up to 20 links per page, each with its own button and the text you choose.",
+      },
+      {
+        question: "Is a QR code for multiple links free?",
+        answer: `You can try it free for ${TRIAL_DAYS} days with up to 2 QR codes, no card needed. After that a 3, 6 or 12-month plan gives you unlimited codes; the pricing page shows the prices in your currency.`,
+      },
+      {
+        question: "Can I see how many people scan it?",
+        answer:
+          "Yes. Every scan is counted, with the day and hour, country and city, device, operating system and browser, and you can export the data as a CSV file.",
+      },
+    ],
+    related: ["/website-qr-code", "/instagram-qr-code", "/whatsapp-qr-code", "/restaurant-menu-qr-code", "/pricing"],
   },
 
   wifi: {
@@ -441,10 +528,10 @@ export const LANDING_PAGES = {
       title: "QR codes around your restaurant",
       items: [
         { title: "Table tents and stickers", description: "The menu on every table, readable on any phone.", type: "website" },
-        { title: "Front window", description: "Let passers-by check the menu and prices before they come in.", type: "website" },
         { title: "Takeaway bags and boxes", description: "Reorders and feedback on WhatsApp.", type: "whatsapp" },
         { title: "Guest Wi-Fi", description: "A Wi-Fi code on table cards or at the counter.", type: "wifi" },
         { title: "Instagram", description: "Turn diners into followers with a code by the till or in the bill folder.", type: "instagram" },
+        { title: "Everything in one code", description: "Menu, delivery apps, bookings and your Instagram on one page, from a single code at the till.", type: "links" },
         { title: "Reviews", description: "Link the receipt or bill folder to your Google review page.", type: "website" },
       ],
     },

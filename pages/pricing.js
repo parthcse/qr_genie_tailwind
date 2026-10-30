@@ -11,6 +11,7 @@ import PricingCards, { PricingFootnote, AllPlansInclude, PaymentMethods } from "
 import { container, sectionSpacing, SectionHeading, FeatureGrid, FaqList } from "@/components/landing/LandingUi";
 import { formatPrice, formatMonthly, formatBilled, monthlyAmount, cheapestPlan, savingsFor } from "@/lib/billing/price";
 import { BEST_VALUE_TERM, termById } from "@/lib/billing/terms";
+import { releasedTypeNames } from "@/lib/qr/qrTypes";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema } from "@/lib/seo";
 
@@ -105,7 +106,7 @@ function comparisonGroups(prices) {
       rows: [
         ["Dynamic QR codes", "Up to 2", ...all("Unlimited")],
         ["Scans", "Unlimited", ...all("Unlimited")],
-        ["Website, Wi-Fi, WhatsApp and Instagram codes", true, ...all(true)],
+        [`${releasedTypeNames()[0].toUpperCase()}${releasedTypeNames().slice(1)} codes`, true, ...all(true)],
         ["Change links after printing", true, ...all(true)],
         ["Pause and resume, with your own message", true, ...all(true)],
         ["Password protection", true, ...all(true)],

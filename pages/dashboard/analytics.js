@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { QR_TYPES } from "@/lib/qr/qrTypes";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import {
   FaChartLine,
@@ -41,7 +42,7 @@ const PERIODS = [
 ];
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DEVICE_COLORS = { Mobile: "#6366f1", Desktop: "#a855f7", Tablet: "#0ea5e9", Unknown: "#cbd5e1" };
-const TYPE_LABELS = { website: "Website", wifi: "WiFi", whatsapp: "WhatsApp", instagram: "Instagram" };
+const TYPE_LABELS = Object.fromEntries(QR_TYPES.map((type) => [type.id, type.label]));
 
 const fmt = (n) => (n || 0).toLocaleString("en-US");
 const dayLabel = (key, withYear = false) =>

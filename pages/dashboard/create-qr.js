@@ -10,6 +10,10 @@ import { getSchemaForType } from "@/lib/qr/qrSchemas";
 import { createQRConfig } from "@/lib/qr/qrConfig";
 import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
+import { QR_TYPES, QR_TYPE_CATEGORIES, qrTypeById, isPageType } from "@/lib/qr/qrTypes";
+import { emptyContent, normalizeContent } from "@/lib/qr/qrContent";
+import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
+import QrLanding from "@/components/qr/landing/QrLanding";
 import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
 import { jsPDF } from "jspdf";
 
@@ -132,158 +136,24 @@ import {
   FaLightbulb,
 } from "react-icons/fa";
 
-// QR Type definitions with icons and field schemas
-const qrTypes = [
-  {
-    id: "website",
-    label: "Website",
-    description: "Open any web page",
-    hint: "Editable link, scan stats, optional password",
-    icon: FaGlobe,
-    active: true,
-    color: "indigo"
-  },
-  {
-
-    id: "wifi",
-    label: "WiFi",
-    description: "Join a Wi-Fi network in one scan",
-    hint: "No typing passwords",
-    icon: FaWifi,
-    active: true,
-    color: "cyan"
-  },
-  {
-    id: "whatsapp",
-    label: "WhatsApp",
-    description: "Start a WhatsApp chat with you",
-    hint: "Optional pre-filled message",
-    icon: FaWhatsapp,
-    active: true,
-    color: "emerald"
-  },
-  {
-
-    id: "instagram",
-    label: "Instagram",
-    description: "Open your Instagram profile",
-    hint: "Grow your followers",
-    icon: FaInstagram,
-    active: true,
-    color: "pink"
-  },
-  {
-    id: "links",
-    label: "List of Links",
-    description: "Share multiple links",
-    icon: FaLink,
-    active: false,
-    color: "purple"
-  },
-  {
-    id: "business",
-    label: "Business",
-    description: "Share info about your business",
-    icon: FaBuilding,
-    active: false,
-    color: "slate"
-  },
-  {
-    id: "video",
-    label: "Video",
-    description: "Show a video",
-    icon: FaVideo,
-    active: false,
-    color: "pink"
-  },
-  {
-    id: "images",
-    label: "Images",
-    description: "Show multiple images",
-    icon: FaImages,
-    active: false,
-    color: "emerald"
-  },
-  {
-    id: "facebook",
-    label: "Facebook",
-    description: "Share your Facebook page",
-    icon: FaFacebook,
-    active: false,
-    color: "blue"
-  },
-  {
-    id: "social",
-    label: "Social Media",
-    description: "Share social channels",
-    icon: FaShareAlt,
-
-    active: false,
-    color: "indigo"
-  },
-  {
-    id: "mp3",
-    label: "MP3",
-    description: "Share an audio file",
-    icon: FaMusic,
-
-    active: false,
-    color: "yellow"
-  },
-  {
-    id: "menu",
-    label: "Menu",
-    description: "Create a restaurant menu",
-    icon: FaUtensils,
-
-    active: false,
-    color: "orange"
-  },
-  {
-    id: "apps",
-    label: "Apps",
-    description: "Redirect to an app store",
-    icon: FaMobileAlt,
-
-    active: false,
-    color: "slate"
-  },
-  {
-    id: "coupon",
-    label: "Coupon",
-    description: "Share a coupon",
-    icon: FaTicketAlt,
-
-    active: false,
-    color: "amber"
-  },
-];
-
-// Icon colours for the released QR types
-const TYPE_ACCENTS = {
-  website: "bg-sky-50 text-sky-600",
-  wifi: "bg-cyan-50 text-cyan-600",
-  whatsapp: "bg-emerald-50 text-emerald-600",
-  instagram: "bg-pink-50 text-pink-600",
-};
+// The QR types (lib/qr/qrTypes.js) with their icons and colours; only released ones can be picked
+const qrTypes = QR_TYPES.map((type) => ({ ...type, active: type.released, icon: qrTypeVisual(type.id).icon }));
+const typeAccent = (id) => qrTypeVisual(id).accent;
 
 // Helper function to generate preview URL based on QR type and form data
 const generatePreviewUrl = (qrType, formData) => {
   if (!qrType) return null;
 
-  const baseUrl = typeof window !== "undefined" 
-    ? window.location.origin 
+  const baseUrl = typeof window !== "undefined"
+    ? window.location.origin
     : process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co";
+
+  // Hosted pages live at the code's own short link, made when the code is created
+  if (isPageType(qrType)) return `${baseUrl}/r/preview`;
 
   switch (qrType) {
     case "website":
       return formData.url || "https://example.com";
-    case "links":
-      return formData.links?.buttons?.[0]?.url || "https://example.com";
-    case "business":
-      return formData.business?.website || "https://example.com";
-    case "video":
-      return formData.videoUrl || "https://example.com/video";
     case "whatsapp":
       const countryCode = formData.whatsapp?.countryCode || "+91";
       const phone = formData.whatsapp?.phone || "";
@@ -433,53 +303,6 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 
 // Mobile Preview Component
 const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef }) => {
-  // State to store image previews for uploaded files
-  const [imagePreviews, setImagePreviews] = useState({});
-  const [profileImagePreview, setProfileImagePreview] = useState(null);
-  
-  // Convert File objects to data URLs for preview - Profile Image
-  useEffect(() => {
-    if (qrType === "links" && formData?.links?.profileImage) {
-      if (formData.links.profileImage instanceof File) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfileImagePreview(reader.result);
-        };
-        reader.readAsDataURL(formData.links.profileImage);
-      } else if (typeof formData.links.profileImage === "string" && formData.links.profileImage.startsWith("data:image")) {
-        setProfileImagePreview(formData.links.profileImage);
-      } else {
-        setProfileImagePreview(null);
-      }
-    } else {
-      setProfileImagePreview(null);
-    }
-  }, [qrType, formData?.links?.profileImage]);
-  
-  // Convert File objects to data URLs for preview - Button Icons
-  useEffect(() => {
-    if (qrType === "links" && formData?.links?.buttons) {
-      const newPreviews = {};
-      formData.links.buttons.forEach((button, index) => {
-        if (button.icon instanceof File) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setImagePreviews(prev => ({
-              ...prev,
-              [`button-${index}`]: reader.result
-            }));
-          };
-          reader.readAsDataURL(button.icon);
-        } else if (typeof button.icon === "string" && button.icon.startsWith("data:image")) {
-          newPreviews[`button-${index}`] = button.icon;
-        }
-      });
-      if (Object.keys(newPreviews).length > 0) {
-        setImagePreviews(prev => ({ ...prev, ...newPreviews }));
-      }
-    }
-  }, [qrType, formData?.links?.buttons]);
-
   const renderPreview = () => {
     if (previewMode === "qr") {
       // Show real QR code with blueprint/design
@@ -824,248 +647,6 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
           </div>
         );
-      case "links":
-        const linksData = formData.links || {};
-        const profileName = linksData.name || "Julia Anderson";
-        const profileDescription = linksData.description || "Connect with me on social media to get my latest fitness advice and fun content!";
-        
-        // Use preview if available, otherwise use provided URL or default
-        const profileImageUrl = profileImagePreview || linksData.profileImage || "https://i.pravatar.cc/150?img=68";
-        
-        const linkButtons = linksData.buttons || [];
-        const socialLinks = formData.socialNetworks?.socialLinks || [];
-        
-        // Combine regular links and social links for display
-        const allLinks = [
-          ...linkButtons.map(btn => ({ ...btn, type: 'link' })),
-          ...socialLinks.map(social => ({
-            title: social.text || social.userId || social.url || '',
-            url: social.url || (social.userId ? `https://${social.icon}.com/${social.userId}` : ''),
-            icon: social.icon,
-            type: 'social'
-          }))
-        ];
-        
-        // Icon mapping for common services
-        const getIconForLink = (icon, title, url, buttonIndex, linkType) => {
-          // For social networks, use the icon ID directly
-          if (linkType === 'social' && icon) {
-            return icon;
-          }
-          // Check if icon is a File object or data URL
-          if (icon instanceof File || (typeof icon === "string" && icon.startsWith("data:image"))) {
-            return "custom-image";
-          }
-          
-          // Check if we have a preview for this button
-          if (imagePreviews[`button-${buttonIndex}`]) {
-            return "custom-image";
-          }
-          
-          // Fallback to URL-based detection
-          const urlLower = url?.toLowerCase() || "";
-          const titleLower = title?.toLowerCase() || "";
-          
-          if (urlLower.includes("youtube") || titleLower.includes("youtube")) {
-            return "youtube";
-          } else if (urlLower.includes("tiktok") || titleLower.includes("tiktok")) {
-            return "tiktok";
-          } else if (urlLower.includes("instagram") || titleLower.includes("instagram")) {
-            return "instagram";
-          } else if (urlLower.includes("facebook") || titleLower.includes("facebook")) {
-            return "facebook";
-          } else if (urlLower.includes("twitter") || titleLower.includes("twitter")) {
-            return "twitter";
-          } else if (urlLower.includes("linkedin") || titleLower.includes("linkedin")) {
-            return "linkedin";
-          }
-          return "link";
-        };
-        
-        // Helper to get image source for button icon
-        const getButtonImageSrc = (icon, buttonIndex) => {
-          if (icon instanceof File) {
-            return imagePreviews[`button-${buttonIndex}`] || null;
-          } else if (typeof icon === "string" && icon.startsWith("data:image")) {
-            return icon;
-          } else if (imagePreviews[`button-${buttonIndex}`]) {
-            return imagePreviews[`button-${buttonIndex}`];
-          }
-          return null;
-        };
-        
-        return (
-          <div className="h-full bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-auto px-4 py-6">
-              {/* Profile Card */}
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                {/* Profile Picture and Name Section */}
-                <div className="pt-8 pb-6 px-6 text-center">
-                  {/* Profile Picture */}
-                  <div className="mb-4">
-                    {profileImageUrl && (
-                      <img 
-                        src={profileImageUrl}
-                        alt={profileName}
-                        className="w-24 h-24 rounded-full mx-auto border-4 border-gray-100 shadow-md object-cover"
-                        onError={(e) => {
-                          e.target.src = "https://i.pravatar.cc/150?img=68";
-                        }}
-                      />
-                    )}
-                  </div>
-                  
-                  {/* Name */}
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    {profileName}
-                  </h1>
-                  
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 leading-relaxed max-w-xs mx-auto">
-                    {profileDescription}
-                  </p>
-                </div>
-                
-                {/* Links List */}
-                <div className="px-4 pb-6 space-y-3">
-                  {allLinks.filter(btn => btn.title && (btn.url || btn.userId)).length > 0 ? (
-                    allLinks
-                      .filter(btn => btn.title && (btn.url || btn.userId))
-                      .map((button, index) => {
-                        const iconType = getIconForLink(button.icon, button.title, button.url, index, button.type);
-                        const buttonImageSrc = getButtonImageSrc(button.icon, index);
-                        
-                        // Get icon component for social networks
-                        const getSocialIcon = (iconId) => {
-                          const iconMap = {
-                            'globe': FaGlobe,
-                            'dribbble': FaLink,
-                            'facebook': FaFacebook,
-                            'instagram': FaInstagram,
-                            'twitter': FaTwitter,
-                            'linkedin': FaLinkedin,
-                            'youtube': FaYoutube,
-                            'tiktok': FaTiktok,
-                            'pinterest': FaPinterest,
-                            'snapchat': FaSnapchat,
-                            'whatsapp': FaWhatsapp,
-                            'telegram': FaLink,
-                            'spotify': FaLink,
-                            'github': FaLink,
-                            'google': FaLink,
-                            'reddit': FaLink,
-                            'skype': FaLink,
-                            'tumblr': FaLink,
-                            'vimeo': FaLink,
-                            'vk': FaLink,
-                            'link': FaLink,
-                          };
-                          return iconMap[iconId] || FaLink;
-                        };
-                        
-                        return (
-                          <button
-                            key={index}
-                            className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-indigo-300 hover:shadow-md transition-all duration-200 active:bg-gray-50"
-                          >
-                            {/* Icon/Thumbnail */}
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                              {button.type === 'social' && iconType ? (
-                                (() => {
-                                  const SocialIcon = getSocialIcon(iconType);
-                                  return <SocialIcon className="w-5 h-5 text-gray-700" />;
-                                })()
-                              ) : iconType === "custom-image" && buttonImageSrc ? (
-                                <img 
-                                  src={buttonImageSrc}
-                                  alt={button.title || "Link icon"}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    // Fallback if image fails to load
-                                    e.target.style.display = 'none';
-                                  }}
-                                />
-                              ) : iconType === "youtube" ? (
-                                <div className="w-full h-full bg-red-500 flex items-center justify-center">
-                                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                  </svg>
-                                </div>
-                              ) : iconType === "tiktok" ? (
-                                <div className="w-full h-full bg-black flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                                  </svg>
-                                </div>
-                              ) : iconType === "instagram" ? (
-                                <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
-                                  <FaInstagram className="w-5 h-5 text-white" />
-                                </div>
-                              ) : iconType === "facebook" ? (
-                                <div className="w-full h-full bg-indigo-600 flex items-center justify-center">
-                                  <FaFacebook className="w-5 h-5 text-white" />
-                                </div>
-                              ) : iconType === "twitter" ? (
-                                <div className="w-full h-full bg-indigo-400 flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                                  </svg>
-                                </div>
-                              ) : iconType === "linkedin" ? (
-                                <div className="w-full h-full bg-indigo-700 flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                                  </svg>
-                                </div>
-                              ) : iconType === "link" ? (
-                                <FaLink className="w-5 h-5 text-gray-400" />
-                              ) : (
-                                <FaLink className="w-5 h-5 text-gray-400" />
-                              )}
-                            </div>
-                            
-                            {/* Link Title */}
-                            <div className="flex-1 text-left">
-                              <span className="text-sm font-semibold text-gray-900">
-                                {button.title}
-                              </span>
-                            </div>
-                            
-                            {/* Arrow Icon */}
-                            <div className="flex-shrink-0">
-                              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </button>
-                        );
-                      })
-                  ) : (
-                    <div className="text-center py-8">
-                      <FaLink className="text-4xl text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No links added yet</p>
-                      <p className="text-xs text-gray-400 mt-1">Add links in the form to see them here</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Safari Browser Bottom Navigation Bar */}
-            <div className="bg-slate-50 border-t border-slate-200 flex-shrink-0 relative">
-              <div className="px-3 py-2 flex items-center gap-1.5" style={{ 
-                minHeight: '34px',
-                paddingBottom: 'max(6px, calc(env(safe-area-inset-bottom, 0px) + 6px))'
-              }}>
-                <FaGlobe className="text-[10px] text-slate-500 flex-shrink-0" />
-                <span className="text-[10px] text-slate-600 font-normal truncate flex-1 leading-tight">
-                  {linksData.name ? `${linksData.name.toLowerCase().replace(/\s+/g, '')}.com` : "links.example.com"}
-                </span>
-              </div>
-            </div>
-          </div>
-        );
       case "wifi":
         const wifiData = formData.wifi || {};
         const ssid = wifiData.ssid || "";
@@ -1362,6 +943,14 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           </div>
         );
       default:
+        // Hosted page types (list of links, ...): the real page, drawn from the form as it's filled in
+        if (isPageType(qrType)) {
+          return (
+            <div className="h-full overflow-y-auto">
+              <QrLanding type={qrType} content={formData[qrType]} preview />
+            </div>
+          );
+        }
         return (
           <div className="h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
             <div className="text-center max-w-xs">
@@ -1553,40 +1142,8 @@ const INITIAL_FORM_DATA = {
 
   passwordEnabled: false,
   folder: "",
-  // Shared by several types
-  title: "",
-  company: "",
-  description: "",
-  website: "",
-  primaryColor: "#527AC9",
-  secondaryColor: "#7EC09F",
-  // List of Links
-  links: {
-    profileImage: null,
-    name: "",
-    description: "",
-    buttons: [{ title: "", url: "", icon: "" }],
-  },
-  // Business
-  business: {
-    name: "",
-    description: "",
-    phone: "",
-    email: "",
-    address: "",
-    website: "",
-  },
-  // Video
-  videoUrl: "",
-  // Images
-  images: [],
-  // Social Media
-  social: {
-    facebook: "",
-    instagram: "",
-    twitter: "",
-    linkedin: "",
-  },
+  // Hosted pages start from their blank content (lib/qr/qrContent.js)
+  links: emptyContent("links"),
   // WhatsApp
   whatsapp: {
 
@@ -1597,25 +1154,6 @@ const INITIAL_FORM_DATA = {
   // Instagram
   instagram: {
     username: "",
-  },
-  // MP3
-  mp3Url: "",
-  // Menu
-  menu: {
-    restaurantName: "",
-    items: [],
-  },
-  // Apps
-  apps: {
-    ios: "",
-    android: "",
-  },
-  // Coupon
-  coupon: {
-    title: "",
-    description: "",
-    code: "",
-    expiry: "",
   },
   // WiFi
   wifi: {
@@ -1737,6 +1275,69 @@ export default function CreateQrPage() {
   const [downloadSize, setDownloadSize] = useState("default");
   const qrPreviewRef = useRef(null);
 
+  // ?edit=<id>: change the content of an existing hosted page (list of links, ...). The printed code stays the same,
+  // so only the content step is shown; it's saved with PUT /api/qrs/[id].
+  const editId = router.isReady && typeof router.query.edit === "string" ? router.query.edit : null;
+  const [editing, setEditing] = useState(null); // { id, name, slug } once loaded
+  const [editState, setEditState] = useState("idle"); // idle | loading | ready | saved | failed
+  useEffect(() => {
+    if (!editId) return;
+    let cancelled = false;
+    setEditState("loading");
+    (async () => {
+      try {
+        const res = await fetch(`/api/qrs/${encodeURIComponent(editId)}`, { credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        const qr = data.qrCode;
+        if (cancelled) return;
+        if (!res.ok || !qr || !isPageType(qr.type) || !qr.content) {
+          setError(res.ok ? "This QR code doesn't have a page to edit." : data.error || "We couldn't open this QR code.");
+          setEditState("failed");
+          return;
+        }
+        setSelectedType(qr.type);
+        setFormData((prev) => ({ ...prev, [qr.type]: { ...emptyContent(qr.type), ...qr.content } }));
+        setEditing({ id: qr.id, name: qr.name || `QR code ${qr.slug}`, slug: qr.slug });
+        setPreviewMode("destination");
+        setStep(2);
+        setEditState("ready");
+      } catch {
+        if (!cancelled) {
+          setError("We couldn't open this QR code. Check your connection and try again.");
+          setEditState("failed");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId]);
+
+  const handleSaveEdit = async () => {
+    if (!editing || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/qrs/${encodeURIComponent(editing.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content: formData[selectedType] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Couldn't save your changes. Please try again.");
+        return;
+      }
+      setEditState("saved");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      setError("Couldn't save your changes. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Fetch folders on mount
   useEffect(() => {
     const fetchFolders = async () => {
@@ -1775,139 +1376,58 @@ export default function CreateQrPage() {
   }, [selectedType, hoveredType, formData]);
   // Validation
   const canContinueFromStep1 = !!selectedType;
+  // Hosted pages are checked with the same rules the server uses (lib/qr/qrContent.js)
+  const pageCheck = useMemo(
+    () => (selectedType && isPageType(selectedType) ? normalizeContent(selectedType, formData[selectedType]) : null),
+    [selectedType, formData]
+  );
+
   const canContinueFromStep2 = () => {
     if (!selectedType) return false;
-    const schema = getSchemaForType(selectedType);
+    if (pageCheck) return !pageCheck.error;
 
-
-    // For nested types, prefix field paths
-    const nestedTypes = ["links", "business", "whatsapp", "instagram", "menu", "apps", "coupon", "wifi"];
-    const getFieldPath = (fieldId) => {
-      if (nestedTypes.includes(selectedType)) {
-        return `${selectedType}.${fieldId}`;
-      }
-      return fieldId;
-    };
-
-    // Check required fields from schema
-    for (const section of schema.sections || []) {
-      for (const field of section.fields || []) {
-        if (field.required) {
-
-          const fieldPath = getFieldPath(field.id);
-          const value = getNestedValue(formData, fieldPath);
-          if (!value || (typeof value === "string" && !value.trim())) {
-            return false;
-          }
-        }
-      }
-    }
-
-    // Type-specific validation
     switch (selectedType) {
       case "website":
         if (formData.passwordEnabled && (formData.password || "").length < 4) return false;
-        return !!formData.url;
-      case "links":
-
-        return !!(formData.links?.name && formData.links?.buttons?.some(b => b.title && b.url));
-      case "wifi":
+        return !!formData.url?.trim();
+      case "wifi": {
         const wifiData = formData.wifi || {};
-        const wifiSsid = wifiData.ssid || "";
-        const wifiSecurity = wifiData.security || "WPA";
-        const wifiPassword = wifiData.password || "";
-        
-        // SSID is always required
-        if (!wifiSsid.trim()) {
-          return false;
-        }
-        
-        // Password is required for WPA, WEP, and WPA-EAP (not for nopass)
-        if (wifiSecurity !== "nopass" && !wifiPassword.trim()) {
-          return false;
-        }
-        
-        return true;
-      case "whatsapp":
-        return !!(formData.whatsapp?.countryCode && formData.whatsapp?.phone);
-      case "instagram":
-        return !!formData.instagram?.username;
-      default:
-        return true;
-    }
-  };
-
-  // Helper to get nested values
-  const getNestedValue = (obj, path) => {
-    const keys = path.split(".");
-    let current = obj;
-    for (const key of keys) {
-      if (current == null) return undefined;
-      current = current[key];
-    }
-    return current;
-  };
-
-
-  // Get required fields message for QR type
-  const getRequiredFieldsMessage = (qrType) => {
-    if (!qrType) return "Please select a QR code type first";
-    
-    const schema = getSchemaForType(qrType);
-    const requiredFields = [];
-    
-    // Collect required fields from schema
-    for (const section of schema.sections || []) {
-      for (const field of section.fields || []) {
-        if (field.required) {
-          requiredFields.push(field.label || field.id);
-        }
+        // The network name is always needed; a password too unless the network is open
+        if (!(wifiData.ssid || "").trim()) return false;
+        return (wifiData.security || "WPA") === "nopass" || !!(wifiData.password || "").trim();
       }
+      case "whatsapp":
+        return !!(formData.whatsapp?.countryCode && formData.whatsapp?.phone?.trim());
+      case "instagram":
+        return !!formData.instagram?.username?.trim();
+      default:
+        return false;
     }
-    
-    // Type-specific messages
+  };
+
+  // What's still missing, shown next to the disabled Next button
+  const getRequiredFieldsMessage = (qrType) => {
+    if (!qrType) return "Choose a QR code type first.";
+    if (isPageType(qrType)) {
+      return (qrType === selectedType ? pageCheck?.error : normalizeContent(qrType, formData[qrType]).error) || "";
+    }
+
     switch (qrType) {
       case "website":
         if (formData.url && formData.passwordEnabled && (formData.password || "").length < 4) {
           return "Add a password of at least 4 characters, or turn password protection off.";
         }
         return "Add the website address to continue.";
-      case "links":
-        return "Please fill data like Title* and at least one Link Button with Title* and URL*";
-      case "business":
-        return "Please fill data like Business Name*";
-      case "video":
-        return "Please fill data like Video URL*";
-      case "images":
-        return "Please upload at least one image*";
       case "whatsapp":
         return "Choose the country and add the phone number to continue.";
-      case "mp3":
-        return "Please fill data like MP3 URL*";
-      case "menu":
-        return "Please fill data like Restaurant Name* and Menu Items*";
       case "wifi":
-        const wifiDataCheck = formData.wifi || {};
-        const securityCheck = wifiDataCheck.security || "WPA";
-        if (securityCheck !== "nopass") {
-          return "Add the network name and password to continue.";
-        }
-        return "Add the network name to continue.";
-      case "apps":
-        return "Please fill data like iOS or Android App URL*";
-      case "coupon":
-        return "Please fill data like Coupon Title* and Code*";
-      case "facebook":
-        return "Please fill data like Facebook URL*";
+        return (formData.wifi?.security || "WPA") === "nopass"
+          ? "Add the network name to continue."
+          : "Add the network name and password to continue.";
       case "instagram":
         return "Add the Instagram username to continue.";
-      case "social":
-        return "Please fill data like at least one Social Media URL*";
       default:
-        if (requiredFields.length > 0) {
-          return `Please fill required fields: ${requiredFields.join(", ")}`;
-        }
-        return "Please fill the required data";
+        return "Fill in the required fields to continue.";
     }
   };
 
@@ -1951,9 +1471,10 @@ export default function CreateQrPage() {
         credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           qrType: selectedType,
-          ...formData, // Send all form data
+          // The form data, without other page types' content (a photo typed in for another type isn't sent)
+          ...Object.fromEntries(Object.entries(formData).filter(([key]) => !isPageType(key) || key === selectedType)),
           // WiFi codes are always static; a password only applies to website codes
-          linkType: selectedType === "wifi" ? "STATIC" : formData.linkType || "DYNAMIC",
+          linkType: selectedType === "wifi" ? "STATIC" : isPageType(selectedType) ? "DYNAMIC" : formData.linkType || "DYNAMIC",
           passwordEnabled: selectedType === "website" && !!formData.passwordEnabled,
           // Use pattern colors for QR, fallback to legacy qrColor
           qrColor: designData.patternColor || designData.qrColor || "#000000",
@@ -2007,54 +1528,71 @@ export default function CreateQrPage() {
     }
   };
 
-  // Render Step 1 - QR Type Selection
+  // Render Step 1 - QR Type Selection, grouped (lib/qr/qrTypes.js)
   const renderStep1 = () => {
-    const available = qrTypes.filter((type) => type.active !== false);
     const upcoming = qrTypes.filter((type) => type.active === false);
+    const groups = QR_TYPE_CATEGORIES.map((category) => ({
+      ...category,
+      types: qrTypes.filter((type) => type.active && type.category === category.id),
+    })).filter((group) => group.types.length > 0);
 
     return (
       <div>
         <h2 className="text-lg font-semibold text-gray-900">What should your QR code do?</h2>
         <p className="mt-1 text-sm text-gray-500">Pick a type. You'll add the details in the next step.</p>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {available.map((type) => {
-            const Icon = type.icon;
-            const isSelected = selectedType === type.id;
-            return (
-              <button
-                key={type.id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => {
-                  setSelectedType(type.id);
-                  setTimeout(() => setStep(2), 250);
-                }}
-                onMouseEnter={() => setHoveredType(type.id)}
-                onMouseLeave={() => setHoveredType(null)}
-                className={`group relative flex flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-5 ${
-                  isSelected
-                    ? "border-indigo-300 bg-indigo-50/50 ring-2 ring-indigo-500/20"
-                    : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5"
-                }`}
-              >
-                <span className="flex items-start justify-between">
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${TYPE_ACCENTS[type.id] || "bg-indigo-50 text-indigo-600"}`}>
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  {isSelected ? (
-                    <FaCheckCircle className="h-5 w-5 text-indigo-600" />
-                  ) : (
-                    <FaArrowRight className="mt-1 h-3.5 w-3.5 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500" />
-                  )}
-                </span>
-                <span className="mt-3 font-semibold text-gray-900">{type.label}</span>
-                <span className="mt-0.5 text-sm text-gray-500">{type.description}</span>
-                {type.hint && <span className="mt-2 text-xs text-gray-400">{type.hint}</span>}
-              </button>
-            );
-          })}
-        </div>
+        {groups.map((group) => (
+          <section key={group.id} className="mt-6 first-of-type:mt-5" aria-labelledby={`type-group-${group.id}`}>
+            <h3 id={`type-group-${group.id}`} className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {group.label}
+            </h3>
+            <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {group.types.map((type) => {
+                const Icon = type.icon;
+                const isSelected = selectedType === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setSelectedType(type.id);
+                      setTimeout(() => setStep(2), 250);
+                    }}
+                    onMouseEnter={() => setHoveredType(type.id)}
+                    onMouseLeave={() => setHoveredType(null)}
+                    className={`group relative flex flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-5 ${
+                      isSelected
+                        ? "border-indigo-300 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                        : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5"
+                    }`}
+                  >
+                    <span className="flex items-start justify-between">
+                      <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${typeAccent(type.id)}`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {type.isNew && (
+                          <span className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            New
+                          </span>
+                        )}
+                        {isSelected ? (
+                          <FaCheckCircle className="h-5 w-5 text-indigo-600" />
+                        ) : (
+                          <FaArrowRight className="h-3.5 w-3.5 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500" />
+                        )}
+                      </span>
+                    </span>
+                    <span className="mt-3 font-semibold text-gray-900">{type.label}</span>
+                    <span className="mt-0.5 text-sm text-gray-500">{type.description}</span>
+                    {type.hint && <span className="mt-2 text-xs text-gray-400">{type.hint}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
 
         {upcoming.length > 0 && (
           <div className="mt-8 border-t border-gray-100 pt-5">
@@ -2083,7 +1621,9 @@ export default function CreateQrPage() {
   const renderStep2 = () => {
     if (!selectedType) return null;
 
-    const schema = getSchemaForType(selectedType);
+    const fullSchema = getSchemaForType(selectedType);
+    // When editing a page only its content changes (the name and folder are changed on the details page)
+    const schema = editId ? { ...fullSchema, sections: fullSchema.sections.filter((section) => !["name", "folder"].includes(section.id)) } : fullSchema;
     const typeInfo = qrTypes.find((type) => type.id === selectedType);
     const TypeIcon = typeInfo?.icon || FaQrcode;
     const isWifi = selectedType === "wifi";
@@ -2120,17 +1660,21 @@ export default function CreateQrPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl ${TYPE_ACCENTS[selectedType] || "bg-indigo-50 text-indigo-600"}`}>
+            <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl ${typeAccent(selectedType)}`}>
               <TypeIcon className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Add your {typeInfo?.label || "QR code"} details</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editId ? `Edit your ${(typeInfo?.label || "page").toLowerCase()}` : `${typeInfo?.label || "QR code"} details`}
+              </h2>
               <p className="text-sm text-gray-500">Fields marked * are required.</p>
             </div>
           </div>
-          <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700">
-            Change type
-          </button>
+          {!editId && (
+            <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700">
+              Change type
+            </button>
+          )}
         </div>
 
         {isWifi ? (
@@ -2139,6 +1683,14 @@ export default function CreateQrPage() {
             <p className="text-sm leading-relaxed text-cyan-900">
               <span className="font-semibold">Wi-Fi codes are static.</span> Phones join the network straight from the camera, with no app or
               web page in between. Scans aren't counted, and if the network name or password changes you'll need a new code.
+            </p>
+          </div>
+        ) : isPageType(selectedType) ? (
+          <div className="flex gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+            <FaInfoCircle className="mt-0.5 h-4 w-4 flex-none text-indigo-600" />
+            <p className="text-sm leading-relaxed text-indigo-900">
+              <span className="font-semibold">We host this page for you.</span> It opens when your code is scanned, and you can change
+              anything on it later, even after printing. Every scan is counted.
             </p>
           </div>
         ) : (
@@ -2817,7 +2369,8 @@ export default function CreateQrPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (subscriptionStatus !== null && !canCreate) {
+  // Editing an existing page is allowed whatever the plan; creating needs an active trial or plan
+  if (subscriptionStatus !== null && !canCreate && !editId) {
     const trialEnded = subscriptionStatus.status === "TRIAL_EXPIRED";
     return (
       <DashboardLayout title="Create a QR code" description="">
@@ -2845,16 +2398,62 @@ export default function CreateQrPage() {
   const nextDisabled = (step === 1 && !canContinueFromStep1) || (step === 2 && !canContinueFromStep2());
   const qrPreviewAvailable = !!success || canGenerateQR;
   const isWifi = selectedType === "wifi";
-  const willBeDynamic = !isWifi && (formData.linkType || "DYNAMIC") === "DYNAMIC";
+  const willBeDynamic = !isWifi && (isPageType(selectedType) || (formData.linkType || "DYNAMIC") === "DYNAMIC");
 
   return (
-    <DashboardLayout title="Create a QR code" description="Choose a type, add your content and make it yours.">
+    <DashboardLayout
+      title={editId ? "Edit page" : "Create a QR code"}
+      description={editId ? "Change what people see when they scan. Your printed code stays the same." : "Choose a type, add your content and make it yours."}
+    >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* Left: steps */}
         <div className="min-w-0 space-y-5">
-          <StepIndicator currentStep={step} allDone={!!success} onStepClick={(s) => setStep(s)} />
+          {editId ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+              <p className="min-w-0 truncate text-sm text-gray-600">
+                Editing <span className="font-semibold text-gray-900">{editing?.name || "your page"}</span>
+              </p>
+              <Link href={`/dashboard/qrs/${editId}`} className="text-sm font-medium !text-indigo-600 hover:!text-indigo-700">
+                Back to details
+              </Link>
+            </div>
+          ) : (
+            <StepIndicator currentStep={step} allDone={!!success} onStepClick={(s) => setStep(s)} />
+          )}
 
-          {success ? (
+          {editId && editState === "loading" ? (
+            <div className="h-72 animate-pulse rounded-2xl border border-gray-200 bg-gray-50" aria-label="Loading" />
+          ) : editId && editState === "failed" ? (
+            <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+              <FaExclamationTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
+              {error}
+            </div>
+          ) : editId && editState === "saved" ? (
+            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
+                <FaCheck className="h-6 w-6" />
+              </span>
+              <h2 className="mt-5 text-2xl font-bold text-gray-900">Your page is updated</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-600">
+                People who scan your code see the new version straight away. Nothing needs reprinting.
+              </p>
+              <div className="mt-7 flex flex-col justify-center gap-2 whitespace-nowrap sm:flex-row">
+                <Link
+                  href={`/dashboard/qrs/${editId}`}
+                  className="btn-shine inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700"
+                >
+                  View details
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setEditState("ready")}
+                  className="btn-shine btn-shine-soft inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          ) : success ? (
             <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
                 <FaCheck className="h-6 w-6" />
@@ -2865,7 +2464,9 @@ export default function CreateQrPage() {
                   ? isWifi
                     ? "Print it where guests can see it: their phone joins the network as soon as they scan it."
                     : "It holds your content directly, so it keeps working even without QR Genie."
-                  : "Download it and print it. You can change where it points, pause it or check its scans at any time."}
+                  : isPageType(selectedType)
+                    ? "Download it and print it. You can edit your page, pause it or check its scans at any time."
+                    : "Download it and print it. You can change where it points, pause it or check its scans at any time."}
               </p>
 
               {finalShortLink && (
@@ -2924,8 +2525,9 @@ export default function CreateQrPage() {
               className="space-y-5"
               onSubmit={(e) => {
                 // Enter in a field only moves forward; the code is created by the Create QR code button alone
+                // (and an edited page is saved by Save changes alone)
                 e.preventDefault();
-                if (step < 3) goNext();
+                if (step < 3 && !editId) goNext();
               }}
             >
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
@@ -2943,21 +2545,41 @@ export default function CreateQrPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className={`btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
-                    step === 1 ? "invisible" : ""
-                  }`}
-                >
-                  <FaArrowLeft className="h-3 w-3" />
-                  Back
-                </button>
+                {editId ? (
+                  <Link
+                    href={`/dashboard/qrs/${editId}`}
+                    className="btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium !text-gray-700 shadow-sm transition hover:border-indigo-300 hover:!text-indigo-700"
+                  >
+                    Cancel
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className={`btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
+                      step === 1 ? "invisible" : ""
+                    }`}
+                  >
+                    <FaArrowLeft className="h-3 w-3" />
+                    Back
+                  </button>
+                )}
 
                 <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3">
                   {step === 2 && nextDisabled && <p className="text-right text-xs text-gray-500">{getRequiredFieldsMessage(selectedType)}</p>}
                   {/* Separate keys: React must not turn the clicked Next button into the Create button mid-click */}
-                  {step < 3 ? (
+                  {editId ? (
+                    <button
+                      key="save"
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={saving || nextDisabled}
+                      className="btn-shine inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                    >
+                      {saving ? "Saving…" : "Save changes"}
+                      {!saving && <FaCheck className="h-3 w-3" />}
+                    </button>
+                  ) : step < 3 ? (
                     <button
                       key="next"
                       type="button"
@@ -2996,7 +2618,8 @@ export default function CreateQrPage() {
                   {previewMode === "qr" ? (success ? "Your finished QR code" : "How your code will look") : "What people see after scanning"}
                 </p>
               </div>
-              <div role="tablist" aria-label="Preview" className="inline-flex flex-none rounded-lg bg-gray-100 p-0.5">
+              {/* Editing a page doesn't change the printed code, so there's only the page to preview */}
+              <div role="tablist" aria-label="Preview" className={`inline-flex flex-none rounded-lg bg-gray-100 p-0.5 ${editId ? "hidden" : ""}`}>
                 <button
                   type="button"
                   role="tab"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import DesignedQRCode from "./DesignedQRCode";
 import { createQRConfig } from "@/lib/qr/qrConfig";
 import { downloadDesignedQR } from "@/lib/qr/qrDownload";
+import { qrTypeLabel } from "@/lib/qr/qrTypes";
 
 // QR Type icon mapping
 const getTypeIcon = (type) => {
@@ -167,7 +168,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
                   <div className="flex items-center gap-2 mt-1">
                     <TypeIcon className="w-5 h-5 text-gray-600" />
                     <p className="text-sm text-gray-900">
-                      {qrCode.type || "Website"}
+                      {qrTypeLabel(qrCode.type || "website")}
                     </p>
                   </div>
                 </div>

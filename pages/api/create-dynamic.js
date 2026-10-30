@@ -8,14 +8,14 @@ import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
 import { qrPasswordProblem, hashQrPassword } from "@/lib/qr/qrPassword";
 import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { sanitizeDesign } from "@/lib/qr/qrConfig";
+import { qrTypeById } from "@/lib/qr/qrTypes";
+import { normalizeContent } from "@/lib/qr/qrContent";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "@/lib/billing/subscription";
-// QR types open for new codes; the others stay in the code for a later launch
-const ENABLED_TYPES = new Set(["website", "wifi", "whatsapp", "instagram"]);
 const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-// The design is saved in the database: a logo of up to 150 KB (as a data URL) plus the other settings
-const MAX_META_LENGTH = MAX_IMAGE_DATA_URL_LENGTH + 50_000;
+// Saved in the database: the design's logo and a hosted page's photo (each up to 150 KB as a data URL) plus the rest
+const MAX_META_LENGTH = 2 * MAX_IMAGE_DATA_URL_LENGTH + 60_000;
 
 function normalizeUrl(u) {
   if (!u || typeof u !== "string") return "";
@@ -26,8 +26,8 @@ function normalizeUrl(u) {
   return "https://" + trimmed;
 }
 
-// Refuse oversized requests before reading them (a 150 KB logo plus the form fits comfortably)
-export const config = { api: { bodyParser: { sizeLimit: "400kb" } } };
+// Refuse oversized requests before reading them (a 150 KB logo, a 150 KB page photo and the form fit comfortably)
+export const config = { api: { bodyParser: { sizeLimit: "600kb" } } };
 
 export default async function handler(req, res) {
   // Set Content-Type header to ensure JSON response
@@ -109,7 +109,8 @@ export default async function handler(req, res) {
       ? bgColor
       : "#ffffff";
 
-  if (!ENABLED_TYPES.has(qrType)) {
+  const typeInfo = qrTypeById(qrType);
+  if (!typeInfo?.released) {
     return res.status(400).json({ error: "This QR code type isn't available yet." });
   }
 
@@ -119,7 +120,15 @@ export default async function handler(req, res) {
 
   // ----- TYPE LOGIC -----
 
-  if (type === "website") {
+  if (typeInfo.kind === "page") {
+    // A page QR-Genie hosts: the cleaned content is saved and shown at the short link, which is also the "target"
+    const { content, error } = normalizeContent(type, req.body?.[type]);
+    if (error) {
+      return res.status(400).json({ error });
+    }
+    metaObj = { content };
+    targetUrl = `${baseNoSlash}/r/${slug}`;
+  } else if (type === "website") {
     const finalUrl = normalizeUrl(url);
     if (!finalUrl) {
       return res
@@ -252,13 +261,14 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: "The QR design is too large. Please use a smaller logo." });
   }
 
-  // WiFi codes are always static: a phone's camera joins the network straight from the code,
-  // which a web page (dynamic code) can't do
-  const linkType = type === "wifi" ? "STATIC" : requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
+  // WiFi codes are always static: a phone's camera joins the network straight from the code, which a web page
+  // (dynamic code) can't do. Hosted pages are always dynamic: the page lives at the short link.
+  const linkType =
+    typeInfo.kind === "static" ? "STATIC" : typeInfo.kind === "page" ? "DYNAMIC" : requestedLinkType === "STATIC" ? "STATIC" : "DYNAMIC";
 
-  // Password protection works only through the short link, so only on dynamic codes
+  // Password protection works only through the short link, so only on dynamic codes that forward to an address
   let passwordHash = null;
-  if ((passwordEnabled === true || passwordEnabled === "true") && type !== "wifi") {
+  if ((passwordEnabled === true || passwordEnabled === "true") && typeInfo.kind === "redirect") {
     if (linkType === "STATIC") {
       return res.status(400).json({ error: "Password protection needs a dynamic QR code. Switch to Dynamic or turn the password off." });
     }

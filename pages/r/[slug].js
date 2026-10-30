@@ -1,10 +1,12 @@
 /**
  * Redirect handler: GET /r/:slug — every dynamic QR code points here.
  * Not found or DELETED → "QR not found or removed". PAUSED (or the owner's plan ended) → paused page, no scan logged.
- * ACTIVE → log the scan, then: password-protected → ask for the password; WiFi → network details; otherwise 302 redirect.
+ * ACTIVE → log the scan, then: a hosted page type (list of links, ...) → that page; WiFi → network details;
+ * password-protected → ask for the password; otherwise 302 redirect.
  */
 // pages/r/[slug].js
 import { useState } from "react";
+import Head from "next/head";
 import { FaLock, FaWifi, FaCopy, FaCheck, FaEye, FaEyeSlash, FaArrowRight, FaPauseCircle, FaQuestionCircle } from "react-icons/fa";
 import prisma from "@/lib/prisma";
 import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
@@ -15,6 +17,9 @@ import { getQrPauseReason, PLAN_STATUS_FIELDS } from "@/lib/billing/subscription
 import { pauseActiveQrCodes } from "@/lib/billing/subscriptionSync";
 import { getClientIp } from "@/lib/clientIp";
 import { parseWifiString } from "@/lib/qr/qrPassword";
+import { isPageType } from "@/lib/qr/qrTypes";
+import { normalizeContent } from "@/lib/qr/qrContent";
+import QrLanding, { hasLandingPage } from "@/components/qr/landing/QrLanding";
 
 export async function getServerSideProps({ params, req }) {
   const slug = String(params.slug);
@@ -74,6 +79,22 @@ export async function getServerSideProps({ params, req }) {
     await prisma.qRCode.update({ where: { id: qr.id }, data: { scanCount: { increment: 1 } } });
   } catch (e) {
     console.error("Scan logging error:", e);
+  }
+
+  // A page QR-Genie hosts: show it from the saved content, cleaned again so only checked values reach the page
+  if (isPageType(qr.type)) {
+    let saved = null;
+    try {
+      saved = qr.meta ? JSON.parse(qr.meta).content : null;
+    } catch {
+      saved = null;
+    }
+    const { content, error } = normalizeContent(qr.type, saved);
+    if (error || !hasLandingPage(qr.type)) {
+      console.error(`QR code ${qr.slug}: page content can't be shown (${error || "no page for this type"})`);
+      return { props: { view: "not_found" } };
+    }
+    return { props: { view: "page", pageType: qr.type, content } };
   }
 
   // WiFi (codes made before WiFi became static-only): show the network so people can join by hand
@@ -308,7 +329,18 @@ function WifiView({ wifi }) {
   );
 }
 
-export default function RedirectPage({ view, pausedMessage, reason, slug, wifi }) {
+export default function RedirectPage({ view, pausedMessage, reason, slug, wifi, pageType, content }) {
+  if (view === "page") {
+    return (
+      <>
+        <Head>
+          <title>{content?.title || "QR-Genie"}</title>
+          <meta name="robots" content="noindex" />
+        </Head>
+        <QrLanding type={pageType} content={content} />
+      </>
+    );
+  }
   if (view === "password") return <PasswordView slug={slug} />;
   if (view === "wifi") return <WifiView wifi={wifi} />;
 

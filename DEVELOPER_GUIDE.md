@@ -16,18 +16,18 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 |---|---|
 | `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for the released types, each with a phone preview of what a scan does, a button to create one and a link to its page; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **Pricing** and **Contact** open their own pages (underlined there). |
 | `/pricing` | The plan cards (3 \| 12 \| 6 months, the 12-month plan featured as *Best value*; same as the landing page, in the visitor's currency), **Payment methods** (logos of the ways to pay a subscription in that currency: Visa, Mastercard, RuPay, UPI AutoPay and net banking in India; Visa and Mastercard elsewhere), **All plans include** (a grid of what every plan has), **Compare all plans** (free trial, 3, 6 and 12 months side by side: price, billing and every feature, with a button per plan; it scrolls sideways on phones with the feature column fixed), how billing works and a pricing FAQ. |
-| `/website-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
+| `/website-qr-code`, `/multiple-links-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
 | `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: a medium-height banner (`PageBanner`: title, tagline and a one-line summary beside a picture of the code as it looks in the dashboard, with its scans and a note; a compact version on phones and tablets; sized so nothing is cut off), the breadcrumb, an overview with the buttons, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. Inner pages use this calmer banner on purpose; only the home page has the large hero. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 7-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/auth/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
-| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the four released types; the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static — and, for websites, an optional password) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or `wifi`, `whatsapp`, `instagram`) opens straight at step 2 with that type chosen; the landing page links there. |
-| `/dashboard/qrs/[id]` | One code: details, change the destination, add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
+| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the released types in groups: Links and pages, Social and chat, Business, Media; new ones are marked *New* and the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static, hosted pages always dynamic — and, for websites, an optional password; for a hosted page such as **List of links** the preview is the real page as it's typed) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or another released type) opens straight at step 2 with that type chosen; the landing page links there. `?edit=<id>` edits an existing hosted page: only the content step, saved with **Save changes** (`PUT api/qrs/[id]` with `content`); the printed code doesn't change. |
+| `/dashboard/qrs/[id]` | One code: details, change the destination (for a hosted page: **Edit page**, which opens the create page with `?edit=`), add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
 | `/dashboard/account` | Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/auth/AuthShell.js`). |
 | `/dashboard/billing` | Current plan (name, price, renewal date, and *Paid months start* for a plan bought during the free days), trial countdown, the three plan cards with Razorpay checkout in the visitor's currency, payment methods, and **Cancel subscription** on the plan card (a confirmation window with an optional reason; the card then shows *Cancelled* and the end date; during the free days it says the payment will be refunded in full). `?plan=3m` / `6m` / `12m` (from **Subscribe** on the public pages) opens that plan's checkout straight away. |
 | `/contact` | Contact form (saved to the database and emailed to support): name, email, the topic as cards (with a tip for billing, cancellation, refund and "something isn't working" messages), message. `?topic=billing` (or another topic value from `lib/site.js`) preselects a topic. Beside it: the support email with a copy button, billing guidance and policy links. |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
-| `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects (after asking for the password when the code is protected). |
+| `/r/<slug>` | Where every dynamic QR code points: logs the scan and redirects (after asking for the password when the code is protected), or shows the hosted page for page types such as List of links. |
 | `/admin` | Totals and latest codes, for users with the admin role only. |
 | `/robots.txt`, `/sitemap.xml` | For search engines, generated by `pages/robots.txt.js` and `pages/sitemap.xml.js` (see "Search engines" under Coding conventions). |
 
@@ -68,14 +68,17 @@ components/
                        (the QR type and industry pages and their content), TypeScreen (phone previews), PricingCards
                        (plan cards, PricingFootnote, PaymentMethods, AllPlansInclude)
   auth/                AuthShell (sign-in page shell and form fields), CodeInput, Turnstile
-  qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal
-  qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents)
+  qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal, qrTypeVisuals (icon and colours per type)
+  qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields)
+  qr/landing/          the pages QR-Genie hosts for "page" types (LandingShell, LinksLanding, QrLanding),
+                       shown at /r/<slug> and as the create page's live preview
   billing/             PaymentResultModal, CancelSubscriptionModal
   dashboard/           FolderHeader
 lib/                   shared helpers at the top level; one folder per domain below
   billing/             plans, prices, plan rules, Razorpay, plan emails
   invoices/            GST invoices: numbering, tax, PDF, email
-  qr/                  QR form definitions, design config, downloads, passwords, image limits, redirect checks
+  qr/                  QR types, content rules, page themes, form definitions, design config, downloads, passwords,
+                       image limits, redirect checks
 prisma/                schema.prisma and migrations/
 scripts/               deploy.sh (production deploy), backup-db.sh (database backup), test-email.mjs
 assets/fonts/          Inter and Plus Jakarta Sans TTF files for invoice PDFs (SIL Open Font License, texts alongside)
@@ -112,6 +115,9 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `invoices/invoices.js` | `issueInvoiceForPayment`: creates the GST invoice for a payment (once, numbered) and emails it with the PDF; `sellerDetails` reads the `INVOICE_*` settings. |
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
+| `qr/qrTypes.js` | The list of QR types: label, sentence name, group, `kind` (`redirect`, `page` or `static`) and whether it's `released`. Everything that lists or checks types reads it, including the API. `releasedTypeNames()` gives copy such as "website, list of links, Wi-Fi, WhatsApp and Instagram". |
+| `qr/qrContent.js` | Content rules for hosted pages: `emptyContent`, `normalizeContent` (cleans and checks; returns `{ content }` or `{ error }` with the message to show) and `contentSummary` ("4 links"). Shared by the create page and the server, which always re-checks. |
+| `qr/landingThemes.js` | The colour themes of hosted pages (plain colours, applied as inline styles). |
 | `qr/qrSchemas.js` | Form definitions for each QR type. |
 | `qr/qrConfig.js` | `createQRConfig`: the qr-code-styling options for a design, shared by the on-screen code and the downloads. |
 | `qr/qrDownload.js` | PNG / JPG / SVG / PDF / print export of a designed code, in the browser. |
@@ -204,7 +210,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `Invoice` | One GST invoice per Razorpay payment (`razorpayPaymentId` is unique): number, financial year and sequence, amounts in paise / cents (`total`, `taxableValue`, `cgst`, `sgst`, `igst`), `supplyType`, place of supply, service period, `seller` and `customer` as printed (JSON), `emailedAt`. Kept when the account is deleted (`userId` becomes empty). |
 | `InvoiceCounter` | The last invoice number used in each financial year. |
 
-- **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
+- **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message; for a hosted page, its cleaned `content`, including its photo as a data URL of at most 150 KB) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
 - **Deleting a QR code** sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
 - **Deleting a folder** moves its codes to "no folder".
 - **Secrets are left out of every query by default** (`omit` in `lib/prisma.js`): `QRCode.passwordHash`, and `User.password`, `resetToken` and `emailCodeHash`. Login asks for the password hash with `omit: { password: false }`; password and email changes `select` it. For `passwordHash`: code that checks a password asks for it with `omit: { passwordHash: false }`; API responses only ever say `hasPassword: true/false`.
@@ -247,7 +253,14 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, WiFi, WhatsApp, Instagram. The create form also contains definitions for other types (links, menus, video, …) that aren't released. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch; the API only accepts the open types (`ENABLED_TYPES` in `api/create-dynamic.js`).
+**Open types:** Website, List of links, WiFi, WhatsApp, Instagram (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (social media, Facebook, business, coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+
+**Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
+- **redirect** (Website, WhatsApp, Instagram): the short link forwards to an address made from the content, saved in `targetUrl`.
+- **page** (List of links): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **static** (WiFi): the content is printed into the code.
+
+**List of links:** a title (required, 80 characters), an optional photo or logo (shrunk in the browser to 150 KB), a description (300), up to 20 buttons (title of 60 characters + an http(s) address; blank rows are left out) and one of eight colour themes. Links open in the same tab with `rel="noopener noreferrer nofollow"`.
 
 **Dynamic vs static**
 - **Dynamic** (default): the code holds the short link `/r/<slug>`. The destination can be changed any time, scans are counted, and the code can be paused.
@@ -261,17 +274,17 @@ All are listed with comments in `.env.example`. Values never go into git.
 - A static code can't be protected (there's no page in between), so the form switches to Dynamic when the password is turned on.
 - The owner can add, change or remove the password on the code's details page; duplicating a code copies its password.
 
-**Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colors must be hex, Instagram usernames and WhatsApp numbers must be valid, names have length limits, a logo may be at most 150 KB and the whole request 400 KB), then saves the code with a random 6-character slug.
+**Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colors must be hex, Instagram usernames and WhatsApp numbers must be valid, hosted pages go through `normalizeContent`, names have length limits, a logo and a page photo may each be at most 150 KB and the whole request 600 KB), then saves the code with a random 6-character slug. The create page sends only the chosen type's page content.
 
-**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle).
+**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle) and, for hosted pages, `components/qr/fields/PageFields.js` (image, linkList, theme). Every type except Website keeps its fields under its own name in the form data (`formData.links.title`).
 
 **Releasing another type:**
-1. Mark it `active` in `qrTypes` in `pages/dashboard/create-qr.js` and check its preview.
-2. Review its fields in `lib/qr/qrSchemas.js`.
-3. Add it to `ENABLED_TYPES` in `api/create-dynamic.js` with input validation like the open types have.
+1. Set `released: true` (and `isNew: true` for the *New* badge) in `lib/qr/qrTypes.js`; its icon and colours are in `components/qr/qrTypeVisuals.js`.
+2. Write its fields in `lib/qr/qrSchemas.js`.
+3. A hosted page: add its rules to `RULES` in `lib/qr/qrContent.js` and its page to `components/qr/landing/` (registered in `QrLanding.js`); the API, scan page, preview and editing then work without further changes. A redirect type: add its validation to `api/create-dynamic.js` and its preview to `MobilePreview` in `pages/dashboard/create-qr.js`.
 4. If the type uploads files (PDFs, videos, audio), store them outside the database (e.g. object storage) first; the forms only keep images, and those are capped at 150 KB.
 5. If it needs its own landing page or file, make sure it escapes everything it shows (React does this for text; anything built by hand, such as a downloadable file, must strip line breaks and markup), and that a password-protected code can't be opened there directly, bypassing `/r/<slug>`.
-6. Update the landing page and pricing copy, and add the type to `qrTypeShowcase` in `pages/index.js` (the "QR code types" tabs only list released types). Give it its own page (see "A new QR type or industry page" under Coding conventions) and a phone screen in `components/landing/TypeScreen.js`.
+6. Add the type to `qrTypeShowcase` in `pages/index.js` (the "QR code types" tabs only list released types) with a phone screen in `components/landing/TypeScreen.js`, and give it its own page (see "A new QR type or industry page" under Coding conventions). Copy that lists the types (pricing, home, dashboard) uses `releasedTypeNames()` and updates itself.
 
 **Downloads** are made in the browser (`lib/qr/qrDownload.js`, and the create page's own export) using the address of the page you're on, so download codes from the live site, not from localhost. On the create page, downloading is only offered after the code is created, so the file always holds the real short link (for dynamic codes) or the final content (for static ones).
 
@@ -285,6 +298,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
+| Hosted page (List of links) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.

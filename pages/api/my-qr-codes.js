@@ -1,6 +1,7 @@
 
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import { contentSummary } from "@/lib/qr/qrContent";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -34,6 +35,11 @@ export default async function handler(req, res) {
         parsedMeta = typeof code.meta === "string" ? JSON.parse(code.meta) : code.meta;
         if (parsedMeta && parsedMeta.designConfig) {
           designConfig = parsedMeta.designConfig;
+        }
+        // A hosted page's content (with its photo) isn't needed in the list: just its title and a summary
+        if (parsedMeta && parsedMeta.content) {
+          const { content, ...rest } = parsedMeta;
+          parsedMeta = { ...rest, page: { title: content.title || "", summary: contentSummary(code.type, content) } };
         }
       } catch (e) {
         console.error("Error parsing meta for QR code:", code.id, e);

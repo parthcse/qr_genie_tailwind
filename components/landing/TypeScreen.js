@@ -1,6 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import { FaCheck, FaLock, FaPaperPlane, FaWifi } from "react-icons/fa";
 import { SITE_URL } from "@/lib/site";
+import { landingTheme } from "@/lib/qr/landingThemes";
 
 // Banner colours for the website screen
 const BANNERS = {
@@ -17,8 +18,35 @@ const BANNERS = {
  * - wifi: { network }
  * - whatsapp: { name, initials, greeting, message }
  * - instagram: { handle, name, bio }
+ * - links: { initials, title, bio, links: [labels], theme } (a small copy of the real page, LinksLanding)
  */
 export function TypeScreen({ type, screen = {} }) {
+  if (type === "links") {
+    const theme = landingTheme(screen.theme || "indigo");
+    const links = screen.links || ["Today's menu", "Book a table", "Instagram", "Leave a review"];
+    return (
+      <div className="flex h-full flex-col items-center px-4 pb-3 pt-10 text-center" style={{ background: theme.background, color: theme.text }}>
+        <span className="flex h-12 w-12 items-center justify-center rounded-full font-display text-sm font-bold shadow-md" style={{ background: theme.button, color: theme.buttonText }}>
+          {screen.initials || "CA"}
+        </span>
+        <p className="mt-2.5 font-display text-sm font-bold">{screen.title || "Café Aroma"}</p>
+        <p className="mt-0.5 text-[10px]" style={{ color: theme.muted }}>
+          {screen.bio || "Coffee and cakes · open daily"}
+        </p>
+        <div className="mt-4 w-full space-y-2">
+          {links.map((label) => (
+            <div key={label} className="rounded-xl py-2 text-[11px] font-semibold shadow-sm" style={{ background: theme.button, color: theme.buttonText }}>
+              {label}
+            </div>
+          ))}
+        </div>
+        <p className="mt-auto text-[9px]" style={{ color: theme.muted }}>
+          Made with QR-Genie
+        </p>
+      </div>
+    );
+  }
+
   if (type === "wifi") {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-gradient-to-b from-slate-100 to-slate-200 px-4">

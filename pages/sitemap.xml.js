@@ -5,6 +5,7 @@ const PAGES = [
   "/",
   "/pricing",
   "/website-qr-code",
+  "/multiple-links-qr-code",
   "/wifi-qr-code",
   "/whatsapp-qr-code",
   "/instagram-qr-code",

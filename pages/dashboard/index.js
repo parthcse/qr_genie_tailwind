@@ -8,6 +8,8 @@ import QrDownloadModal from "@/components/qr/QrDownloadModal";
 import DesignedQRCode from "@/components/qr/DesignedQRCode";
 import FolderHeader from "@/components/dashboard/FolderHeader";
 import { TRIAL_QR_LIMIT } from "@/lib/billing/subscription";
+import { qrTypeById, isPageType, qrTypeLabel, releasedTypeNames } from "@/lib/qr/qrTypes";
+import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 import {
   FaQrcode,
   FaDownload,
@@ -26,10 +28,6 @@ import {
   FaTimes,
   FaCheck,
   FaRegClone,
-  FaGlobe,
-  FaWifi,
-  FaWhatsapp,
-  FaInstagram,
   FaEye,
   FaPlus,
   FaLink,
@@ -51,15 +49,11 @@ export async function getServerSideProps(context) {
   return { props: {} };
 }
 
-// How each QR type is labelled and coloured in the list
-const TYPE_META = {
-  website: { label: "Website", icon: FaGlobe, chip: "bg-sky-50 text-sky-700 ring-sky-600/20" },
-  wifi: { label: "WiFi", icon: FaWifi, chip: "bg-cyan-50 text-cyan-700 ring-cyan-600/20" },
-  whatsapp: { label: "WhatsApp", icon: FaWhatsapp, chip: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
-  instagram: { label: "Instagram", icon: FaInstagram, chip: "bg-pink-50 text-pink-700 ring-pink-600/20" },
+// How each QR type is labelled and coloured in the list (lib/qr/qrTypes.js, components/qr/qrTypeVisuals.js)
+const typeMeta = (type) => {
+  const visual = qrTypeVisual(type?.toLowerCase());
+  return { label: qrTypeById(type?.toLowerCase())?.label || type || "QR code", icon: visual.icon, chip: visual.chip };
 };
-const typeMeta = (type) =>
-  TYPE_META[type?.toLowerCase()] || { label: type || "QR code", icon: FaQrcode, chip: "bg-gray-50 text-gray-700 ring-gray-500/20" };
 
 const STATUS_FILTERS = ["All", "Active", "Paused"];
 const SORTS = ["Most Recent", "Oldest", "Most Scans", "Name A-Z", "Name Z-A"];
@@ -97,6 +91,11 @@ function designFor(code) {
 function destinationOf(code) {
   const meta = metaOf(code);
   const href = /^https?:\/\//i.test(code.targetUrl || "") ? code.targetUrl : null;
+  // A hosted page: its title and a summary, e.g. "Café Aroma · 4 links" (the list API sends meta.page)
+  if (isPageType(code.type)) {
+    const page = meta.page || {};
+    return { label: [page.title, page.summary].filter(Boolean).join(" · ") || qrTypeLabel(code.type), href };
+  }
   switch (code.type) {
     case "wifi":
       return { label: meta.ssid ? `Network: ${meta.ssid}` : "Wi-Fi network", href: null };
@@ -866,7 +865,7 @@ export default function Dashboard() {
     status === "TRIAL_ACTIVE"
       ? `${trialLeft} of ${TRIAL_QR_LIMIT} left on your free trial`
       : status === "SUBSCRIPTION_ACTIVE"
-        ? "Unlimited on Basic"
+        ? "Unlimited on your plan"
         : null;
   const expiredTitle =
     status === "TRIAL_EXPIRED" ? "Your free trial has ended" : status === "SUBSCRIPTION_EXPIRED" ? "Your subscription has ended" : "No active plan";
@@ -1028,7 +1027,7 @@ export default function Dashboard() {
           </div>
           <h3 className="mt-5 text-lg font-semibold text-gray-900">Create your first QR code</h3>
           <p className="mx-auto mt-1 max-w-sm text-sm text-gray-600">
-            Point it at a website, Wi-Fi network, WhatsApp chat or Instagram profile. Dynamic codes can be changed any time after printing.
+            Choose from {releasedTypeNames()} codes. Dynamic codes can be changed any time after printing.
           </p>
           <Link
             href="/dashboard/create-qr"

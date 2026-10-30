@@ -48,6 +48,7 @@ import {
 } from "@/components/landing/LandingUi";
 import { formatMonthly, cheapestPlan } from "@/lib/billing/price";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
+import { releasedTypeNames } from "@/lib/qr/qrTypes";
 import { SITE_URL } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
 
@@ -122,7 +123,7 @@ const howItWorks = [
   },
   {
     title: 'Create QR Codes',
-    description: 'Make QR codes for your website, Wi-Fi, WhatsApp or Instagram in a few clicks.',
+    description: `Make QR codes for your ${releasedTypeNames("or")} in a few clicks.`,
     icon: <FaQrcode className="h-6 w-6" />
   },
   {
@@ -298,6 +299,37 @@ const qrTypeShowcase = [
     ],
     cta: "Create a website QR code",
     page: "/website-qr-code",
+  },
+  {
+    id: "links",
+    label: "List of links",
+    tagline: "All your links on one page",
+    icon: FaLink,
+    accent: "bg-violet-50 text-violet-700 ring-violet-100",
+    qrColor: "#6d28d9",
+    tab: {
+      hover: "hover:ring-violet-300 hover:shadow-violet-500/15",
+      selected: "ring-2 ring-violet-500 shadow-violet-500/20",
+      tint: "from-violet-50",
+      chipHover: "group-hover:from-violet-500 group-hover:to-fuchsia-600 group-hover:shadow-violet-500/30",
+      chipSelected: "from-violet-500 to-fuchsia-600 shadow-violet-500/30",
+      label: "text-violet-700",
+      labelHover: "group-hover:text-violet-700",
+      bar: "from-violet-500 to-fuchsia-500",
+    },
+    kind: "Dynamic",
+    title: "List of links QR code",
+    description:
+      "One code for everything you want to share: your menu, bookings, shop, reviews and social profiles. We host a mobile page with your photo and a button for each link, and you can change it any time after printing.",
+    points: [
+      "Your photo or logo, a title and a short description",
+      "Up to 20 buttons, in the order you choose",
+      "Eight colour themes to match your brand",
+      "Edit the page any time; every scan is counted",
+    ],
+    cta: "Create a list of links",
+    more: "More about QR codes for multiple links",
+    page: "/multiple-links-qr-code",
   },
   {
     id: "wifi",
@@ -533,7 +565,7 @@ function QrTypesShowcase({ isAuthenticated }) {
 
   return (
     <>
-      <div role="tablist" aria-label="QR code types" className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-14">
+      <div role="tablist" aria-label="QR code types" className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:mt-14 lg:grid-cols-5">
         {qrTypeShowcase.map((type, index) => {
           const selected = type.id === active;
           const Icon = type.icon;
@@ -642,7 +674,7 @@ function QrTypesShowcase({ isAuthenticated }) {
                       href={type.page}
                       className="group/more inline-flex items-center justify-center gap-1.5 text-[15px] font-semibold !text-indigo-700 transition-colors hover:!text-purple-700"
                     >
-                      More about {type.label} QR codes
+                      {type.more || `More about ${type.label} QR codes`}
                       <FaArrowRight className="h-3 w-3 transition-transform group-hover/more:translate-x-1 motion-reduce:transform-none" />
                     </Link>
                   </div>
@@ -865,8 +897,8 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
           <div className={container}>
             <SectionHeading
               eyebrow="QR code types"
-              title="Create website, Wi-Fi, WhatsApp and Instagram QR codes"
-              description="Choose what happens when someone scans: open your website, join your Wi-Fi, start a WhatsApp chat or visit your Instagram. Every type is styled with your own colours and logo."
+              title={`Create ${releasedTypeNames()} QR codes`}
+              description="Choose what happens when someone scans: open your website, show a page with all your links, join your Wi-Fi, start a WhatsApp chat or visit your Instagram. Every type is styled with your own colours and logo."
             />
             <QrTypesShowcase isAuthenticated={isAuthenticated} />
           </div>
