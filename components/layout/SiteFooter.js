@@ -177,6 +177,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                   <li><Link href="/pricing" className={footerLink}>Pricing</Link></li>
                   <li><Link href="/#testimonials" className={footerLink}>Testimonials</Link></li>
                   <li><Link href="/#faq" className={footerLink}>FAQ</Link></li>
+                  <li><Link href="/blog" className={footerLink}>Blog</Link></li>
                 </ul>
               </nav>
               <nav aria-labelledby="footer-account">

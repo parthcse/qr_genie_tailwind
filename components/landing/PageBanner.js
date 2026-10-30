@@ -10,11 +10,10 @@ import { container, HeroTitle } from "./LandingUi";
  * - visual: the picture on the right (decorative). On large screens it sits in a box as tall as the banner (at least
  *   26rem), so a picture centred in it fits without being cut off. visualClassName: that box's height per screen
  *   size (or "hidden lg:block" to leave the picture out on phones)
- * - crumbs: [{ name, path }] after Home; the last one is the current page
+ * - crumbs: [{ name, path }] after Home; the last one is the current page (see BreadcrumbBar)
  */
 export default function PageBanner({ eyebrow, title, highlight, subtitle, summary, visual, visualClassName = "h-48 sm:h-64 lg:h-auto", crumbs }) {
   const Icon = eyebrow.icon;
-  const current = crumbs[crumbs.length - 1];
 
   return (
     <>
@@ -36,29 +35,40 @@ export default function PageBanner({ eyebrow, title, highlight, subtitle, summar
         </div>
       </section>
 
-      <nav aria-label="Breadcrumb" className="border-b border-slate-100 bg-white">
-        <ol className={`${container} flex items-center gap-2 py-3.5 text-sm text-slate-500`}>
-          <li>
-            <Link href="/" className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
-              Home
-            </Link>
-          </li>
-          {crumbs.map((crumb) => (
-            <li key={crumb.path} className="flex items-center gap-2">
-              <FaChevronRight className="h-2.5 w-2.5 text-slate-400" aria-hidden="true" />
-              {crumb === current ? (
-                <span aria-current="page" className="font-medium text-slate-700">
-                  {crumb.name}
-                </span>
-              ) : (
-                <Link href={crumb.path} className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
-                  {crumb.name}
-                </Link>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <BreadcrumbBar crumbs={crumbs} />
     </>
+  );
+}
+
+/**
+ * The breadcrumb on its own row under a banner (PageBanner, blog articles): Home, then crumbs ([{ name, path }]); the
+ * last one is the current page, cut short with "…" when it doesn't fit on one line.
+ */
+export function BreadcrumbBar({ crumbs }) {
+  const current = crumbs[crumbs.length - 1];
+  return (
+    <nav aria-label="Breadcrumb" className="border-b border-slate-100 bg-white">
+      <ol className={`${container} flex items-center gap-2 py-3.5 text-sm text-slate-500`}>
+        <li className="flex-none">
+          <Link href="/" className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
+            Home
+          </Link>
+        </li>
+        {crumbs.map((crumb) => (
+          <li key={crumb.path} className={`flex items-center gap-2 ${crumb === current ? "min-w-0" : "flex-none"}`}>
+            <FaChevronRight className="h-2.5 w-2.5 flex-none text-slate-400" aria-hidden="true" />
+            {crumb === current ? (
+              <span aria-current="page" className="truncate font-medium text-slate-700">
+                {crumb.name}
+              </span>
+            ) : (
+              <Link href={crumb.path} className="font-medium !text-slate-500 transition-colors hover:!text-indigo-700">
+                {crumb.name}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

@@ -4,7 +4,7 @@ How QR Genie works and how to build, test and ship changes. The [README](README.
 
 > This repository is public. Keep passwords, keys, server addresses and other private details out of this file and out of git: they belong in `.env` files and the team's password manager.
 
-**Contents:** [What the app does](#what-the-app-does) · [Stack](#stack) · [Project layout](#project-layout) · [Local development](#local-development) · [Environment variables](#environment-variables) · [Data model](#data-model) · [Accounts and sign-in](#accounts-and-sign-in) · [Plans and the free trial](#plans-and-the-free-trial) · [QR codes](#qr-codes) · [Scanning and analytics](#scanning-and-analytics) · [Payments](#payments-razorpay) · [Email](#email) · [Coding conventions](#coding-conventions) · [Deploying](#deploying) · [Production](#production) · [Troubleshooting](#troubleshooting) · [Not built yet](#not-built-yet)
+**Contents:** [What the app does](#what-the-app-does) · [Stack](#stack) · [Project layout](#project-layout) · [Local development](#local-development) · [Environment variables](#environment-variables) · [Data model](#data-model) · [Accounts and sign-in](#accounts-and-sign-in) · [Plans and the free trial](#plans-and-the-free-trial) · [QR codes](#qr-codes) · [Scanning and analytics](#scanning-and-analytics) · [Payments](#payments-razorpay) · [Email](#email) · [Blog](#blog-wordpress) · [Coding conventions](#coding-conventions) · [Deploying](#deploying) · [Production](#production) · [Troubleshooting](#troubleshooting) · [Not built yet](#not-built-yet)
 
 ---
 
@@ -14,11 +14,13 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 
 | Page | What's there |
 |---|---|
-| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for four popular types — Website, List of links, WhatsApp, Instagram — each with a phone preview of what a scan does, a button to create one and a link to its page, then an **All QR code types** box linking to `/qr-code-types`; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **Pricing** and **Contact** open their own pages (underlined there). |
+| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for four popular types — Website, List of links, WhatsApp, Instagram — each with a phone preview of what a scan does, a button to create one and a link to its page, then an **All QR code types** box linking to `/qr-code-types`; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **QR types**, **Pricing**, **Blog** and **Contact** open their own pages (underlined there, and **Blog** on every article too). |
 | `/pricing` | The plan cards (3 \| 12 \| 6 months, the 12-month plan featured as *Best value*; same as the landing page, in the visitor's currency), **Payment methods** (logos of the ways to pay a subscription in that currency: Visa, Mastercard, RuPay, UPI AutoPay and net banking in India; Visa and Mastercard elsewhere), **All plans include** (a grid of what every plan has), **Compare all plans** (free trial, 3, 6 and 12 months side by side: price, billing and every feature, with a button per plan; it scrolls sideways on phones with the feature column fixed), how billing works and a pricing FAQ. |
 | `/qr-code-types` | Every QR code type, grouped (Links and pages, Social and chat, Business, Media), each with what it does, dynamic or static, *New*, a **Create** button and a link to its own page when there is one; then the coming-soon types, dynamic vs static and an FAQ. Built from `lib/qr/qrTypes.js`, so a released type appears here by itself. The header's **QR types** link opens it. |
 | `/website-qr-code`, `/multiple-links-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
 | `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: a medium-height banner (`PageBanner`: title, tagline and a one-line summary beside a picture of the code as it looks in the dashboard, with its scans and a note; a compact version on phones and tablets; sized so nothing is cut off), the breadcrumb, an overview with the buttons, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. Inner pages use this calmer banner on purpose; only the home page has the large hero. |
+| `/blog` | The blog, written in WordPress (see [Blog](#blog-wordpress)): the banner (`PageBanner`), **Latest articles** with the count, topic buttons (a category's articles only, kept in the address as `?category=<slug>`; shown when there are two topics or more), then every article as a card, newest first: 4 across from 1280 px, 3 on laptops, 2 on tablets, 1 on phones, 12 at a time with **Show more articles**. Without articles: "Our first articles are on the way". |
+| `/blog/<slug>` | One article, laid out in the site container like the other inner pages: a light banner with the topics, title, the written excerpt as an introduction, author, date and reading time; the breadcrumb row (Home › Blog › topic › title, the title cut short on phones); then the featured image and the text on the left, with the sidebar on the right beside both (**On this page**, the article's h2 and h3 headings with the current one marked, and a sign-up card; it stays in view while scrolling). On phones and tablets **On this page** is a folding box under the picture. After the text: tags, **Written by** with share buttons (X, LinkedIn, Facebook, WhatsApp, copy link; plain links, nothing loads from those sites), and **Keep reading** (4 articles, same topic first). A thin gradient line at the top of the screen fills as the article is read. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 7-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/auth/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
 | `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the released types in groups: Links and pages, Social and chat, Business, Media; new ones are marked *New* and the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static, hosted pages always dynamic — and, for websites, an optional password; for a hosted page such as **List of links** the preview is the real page as it's typed) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or another released type) opens straight at step 2 with that type chosen; the landing page links there. `?edit=<id>` edits an existing hosted page: only the content step, saved with **Save changes** (`PUT api/qrs/[id]` with `content`); the printed code doesn't change. |
@@ -32,7 +34,7 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 | `/admin` | Totals and latest codes, for users with the admin role only. |
 | `/robots.txt`, `/sitemap.xml` | For search engines, generated by `pages/robots.txt.js` and `pages/sitemap.xml.js` (see "Search engines" under Coding conventions). |
 
-Public pages end with `components/layout/SiteFooter.js`: the brand, a card with the support email, QR codes / Use cases / Product / Account / Support links, the Razorpay note and a **Back to top** button (the landing, pricing, QR type and industry pages add the closing sign-up panel above it).
+Public pages end with `components/layout/SiteFooter.js`: the brand, a card with the support email, QR codes / Use cases / Product (with the Blog) / Account / Support links, the Razorpay note and a **Back to top** button (the landing, pricing, QR type, industry and blog pages add the closing sign-up panel above it).
 
 All dashboard pages share `components/layout/DashboardLayout.js`: the sidebar has a **Create QR code** button, then *Workspace* (My QR codes, Analytics) and *Account* (My account, Billing, Help & support), each with an icon; the plan card and the signed-in user sit at the bottom. On phones the same links, with the same icons, are in the header's menu.
 
@@ -51,6 +53,7 @@ All dashboard pages share `components/layout/DashboardLayout.js`: the sidebar ha
 | Bot protection | Cloudflare Turnstile |
 | QR rendering | `qr-code-styling` (designed codes in the browser), `qrcode` (server PNGs) |
 | Charts | `recharts` |
+| Blog | Articles written in WordPress, read over GraphQL (the WPGraphQL plugin) and cleaned with `sanitize-html` |
 | Location | `geoip-lite` (bundled IP database) |
 | Runtime | Node 24 LTS in production, Node 22 or newer locally |
 
@@ -65,9 +68,11 @@ pages/                 routes (see "What the app does"); pages/api/ is the JSON 
 components/
   layout/              SiteHeader, SiteFooter, PublicLayout, DashboardLayout, LegalPage, SeoMeta
   landing/             marketing pages: LandingUi (shared sections, buttons, FAQ accordion), PageBanner (inner page
-                       banner + breadcrumb), LandingPage + landingPages
+                       banner, and BreadcrumbBar, the breadcrumb row under it), LandingPage + landingPages
                        (the QR type and industry pages and their content), TypeScreen (phone previews), PricingCards
                        (plan cards, PricingFootnote, PaymentMethods, AllPlansInclude)
+  blog/                BlogUi (article cards, byline, topic chips, the banner picture) and
+                       ArticleParts (reading progress, On this page, share buttons, the sign-up card)
   auth/                AuthShell (sign-in page shell and form fields), CodeInput, Turnstile
   qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal, qrTypeVisuals (icon and colours per type)
   qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields)
@@ -79,6 +84,7 @@ components/
   dashboard/           FolderHeader
 lib/                   shared helpers at the top level; one folder per domain below
   billing/             plans, prices, plan rules, Razorpay, plan emails
+  blog/                the blog's WordPress articles: reading them, cleaning their HTML, addresses and dates
   invoices/            GST invoices: numbering, tax, PDF, email
   qr/                  QR types, content rules, page themes, form definitions, design config, downloads, passwords,
                        image limits, redirect checks
@@ -105,7 +111,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `scanUtils.js`, `geoIp.js` | Scan details: hashed IP, device, OS, browser, country and city. |
 | `resetToken.js` | Password-reset tokens and their hashes. |
 | `useCurrentUser.js` | Browser hook that loads the signed-in user (if any) for public pages and their header. |
-| `seo.js` | Structured data for search engines (JSON-LD): the organisation, breadcrumbs, FAQ, and the product with its prices (`softwareApplicationSchema`); `pricesForSearch` gives search result text the lowest monthly price in both currencies ("$19.99/month (₹2,000 in India)") whoever is looking. |
+| `seo.js` | Structured data for search engines (JSON-LD): the organisation, breadcrumbs, FAQ, the blog (`blogSchema`) and its articles (`blogPostingSchema`), and the product with its prices (`softwareApplicationSchema`); `pricesForSearch` gives search result text the lowest monthly price in both currencies ("$19.99/month (₹2,000 in India)") whoever is looking. |
 | `site.js` | `SUPPORT_EMAIL`, `SITE_URL`, contact topics, `TRIAL_PLAN_FEATURES` and `PAID_PLAN_FEATURES` (billing page, plan email), `LEGAL_LAST_UPDATED` (update when the legal pages change). |
 | `billing/subscription.js` | Plan rules: `getUserSubscriptionStatus`, `canCreateQR`, `checkQRCodeLimit`, `getQrPauseReason`, `TRIAL_DAYS`, `TRIAL_QR_LIMIT`. No server dependencies, so pages can import it. |
 | `billing/subscriptionSync.js` | Applies plan changes: pauses codes when a plan ends. |
@@ -115,6 +121,9 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `billing/razorpayClient.js`, `razorpayVerify.js`, `razorpayError.js` | Razorpay SDK, signature checks, readable error messages. |
 | `billing/subscriptionEmails.js` | `sendPlanEmails`: the customer and admin emails for a new subscription or a renewal, each sent once. |
 | `billing/cancelSubscription.js` | `cancelSubscriptionForUser`: cancels the subscription in Razorpay (at the end of the billing cycle; straight away with a full refund during the free days), records it and sends the cancellation emails; `recordRazorpayCancellation` for the `subscription.cancelled` webhook. |
+| `blog/wordpress.js` | Server only. Reads the blog from WordPress over GraphQL: `getBlogPosts` (every published post as a card, newest first), `getBlogPost(slug)` (one post with its cleaned HTML, headings, tags and search text, or `null`), `getRelatedPosts`, `getBlogSitemapEntries`; `BLOG_REVALIDATE_SECONDS` (how often pages refresh) and `isBuildPhase`. |
+| `blog/postHtml.js` | Server only. `cleanPostHtml` (see [Blog](#blog-wordpress)), plus text helpers: `decodeEntities`, `plainText`, `excerptText`, `readingMinutes`, `shortDescription`. |
+| `blog/format.js` | `BLOG_PATH`, `postPath(slug)`, `categoryPath(slug)` and `formatPostDate` ("30 October 2026", or "30 Oct 2026"). Safe for pages and components. |
 | `invoices/invoices.js` | `issueInvoiceForPayment`: creates the GST invoice for a payment (once, numbered) and emails it with the PDF; `sellerDetails` reads the `INVOICE_*` settings. |
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
@@ -201,6 +210,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `INVOICE_SELLER_NAME`, `INVOICE_SELLER_ADDRESS`, `INVOICE_SELLER_GSTIN` | The business printed on GST invoices (address lines separated by `\|`). All three, with a valid GSTIN, are needed before any invoice is issued. |
 | `INVOICE_SAC` | Optional. SAC code shown on invoices. |
 | `INVOICE_LUT_ARN` | Optional. With a Letter of Undertaking, dollar payments are invoiced as exports without GST; without it they include IGST. |
+| `WORDPRESS_GRAPHQL_URL` | Optional. The blog's WordPress GraphQL address; the default is in `lib/blog/wordpress.js`. |
 
 ## Data model
 
@@ -378,6 +388,36 @@ Invoices are numbered `QG/<financial year>/<sequence>` (e.g. `QG/2026-27/0001`),
 
 Without SMTP settings all of them are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
 
+## Blog (WordPress)
+
+Articles are written in a separate WordPress site and shown at `/blog` on qr-genie.co. The WordPress site needs the **WPGraphQL** plugin. With the **WPGraphQL Yoast SEO Addon** plugin as well, each post's Yoast title, description and social image are used. The WordPress site's own pages must stay hidden from search engines (Settings → Reading → *Discourage search engines*), so search engines index each article once, at qr-genie.co. That setting makes Yoast call every post "noindex", so the blog ignores Yoast's noindex: every published post is shown and listed in the sitemap.
+
+**Writing a post in WordPress:**
+- **Title** and **content**: the content's headings become the **On this page** list. Use Heading 2 for sections and Heading 3 inside them; a Heading 1 is shown as a Heading 2, because the page title is the only h1.
+- **Featured image**: the card picture and the large picture at the top of the article. Wide images (16:9 or 16:10) look best. Without one, a soft placeholder is shown.
+- **Excerpt**: the card text, and the introduction under the article's title. Without one, WordPress uses the article's opening words; they're then not repeated as an introduction.
+- **Categories**: the topics. *Uncategorized* is never shown.
+- **Tags** are shown at the end of the article.
+- **Author**: the user's public display name (Users → Profile → *Display name publicly as*), or their first and last name while the display name is still the login. The team account ("QR Genie Team", or no name at all) shows as *QR-Genie Team* with the QR-Genie mark; anyone else shows with their initials.
+- **Yoast** (with the add-on): SEO title (its ending "- <site name>" is replaced with "| QR-Genie"), meta description (the excerpt otherwise) and social image (the featured image otherwise).
+- Drafts, scheduled and private posts don't appear; publishing is what puts a post on the site. To take a post off the blog, switch it back to draft or private.
+
+**How it's built.** Both pages use `getStaticProps` with `revalidate` (incremental static regeneration). `/blog` is built during the deploy; each article is built the first time someone opens it. Pages are then served from that stored copy and refreshed from WordPress in the background at most every 5 minutes (`BLOG_REVALIDATE_SECONDS`): a new, edited or deleted post shows within about 5 minutes of the next visit. If WordPress can't be reached:
+- During a refresh, the last good copy stays up.
+- During a deploy's build, the build still succeeds: `/blog` starts empty and tries again a minute later.
+- For an article never opened before, there's no copy yet, so it shows an error until WordPress answers.
+
+`/sitemap.xml` reads the article list from WordPress on each request and leaves the articles out if it can't.
+
+**What's kept from a post's HTML** (`cleanPostHtml` in `lib/blog/postHtml.js`):
+- Text, headings, lists, quotes, tables, images, figures and code.
+- The WordPress block classes the blog styles (`.blog-content` in `styles/globals.css`): images and galleries, alignment, pullquotes, buttons, columns, embeds, separators.
+- Video embeds from YouTube (moved to `youtube-nocookie.com`) and Vimeo only, the two players the Content Security Policy allows.
+
+Scripts, inline styles, forms, other iframes and links that aren't web, email or phone links are removed. Links between posts on the WordPress site point to `/blog/<slug>` instead (a category link to `/blog?category=<slug>`). Links to qr-genie.co become paths (`/pricing`), so they also work locally; links to other websites open in a new tab. Headings get ids for **On this page**. Wide tables scroll sideways on phones. Images load lazily from WordPress, at the size WordPress made for the screen.
+
+To show something new from WordPress (a block type, an embed provider), allow it in `cleanPostHtml`, style it in `.blog-content`, and for an embed add its domain to `frame-src` in `next.config.js`.
+
 ## Coding conventions
 
 - **API responses:** JSON. On failure `{ error: "message for the user" }` with a matching status code (400, 401, 403, 404, 405, 429, 500). Never send internal error details (`error.message`, stack traces) to the browser; log them with `console.error`.
@@ -389,7 +429,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - **Database lookups by id:** pass ids as plain strings (`String(id)` or a `typeof` check). An object from a JSON body would be read by Prisma as a filter.
 - **Saved designs** go through `sanitizeDesign` (`lib/qr/qrConfig.js`): colour fields must be colours, text is capped, only flat values are kept. When building HTML or CSS by hand (print windows, SVG export), escape text with `escapeHtml` and pass colours through `safeColor`.
 - **Logs:** never log passwords, tokens, codes or full email bodies. In production, `lib/email.js` logs only the recipient and subject if SMTP isn't set up.
-- **Server-only modules** (`lib/prisma`, `lib/auth`, `lib/email`, `lib/scanUtils`, …) may be used in pages only inside `getServerSideProps`. Don't leave unused imports of them in a page: Next.js can then ship the module to the browser.
+- **Server-only modules** (`lib/prisma`, `lib/auth`, `lib/email`, `lib/scanUtils`, `lib/blog/wordpress`, …) may be used in pages only inside `getServerSideProps` or `getStaticProps`. Don't leave unused imports of them in a page: Next.js can then ship the module to the browser.
 - **Content Security Policy** (`next.config.js`, production only): scripts may come only from the site, Razorpay, Cloudflare Turnstile and Google Tag Manager; inline `<script>` and `eval` are blocked. When adding a third-party script, iframe, font or API, add its domain to the policy and test with `npm run build && npm start`: the dev server doesn't apply the policy.
 - **Google Tag Manager and Search Console:**
   - `pages/_document.js` holds the Search Console verification tag and loads Tag Manager (container `GTM-M2HW6QST`), plus the `noscript` fallback.
@@ -408,7 +448,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - **Search engines:**
   - Every public page sets its title and description with `components/layout/SeoMeta.js`. It also adds:
     - the canonical address on `SITE_URL`, so www and other variants count as the same page;
-    - Open Graph and Twitter tags, with the 1200×630 share image `public/og-image.png`;
+    - Open Graph and Twitter tags, with the 1200×630 share image `public/og-image.png` (blog articles share their own picture: `image`, with `type="article"` and the article dates as children);
     - structured data, from the `jsonLd` prop (nodes from `lib/seo.js`), written as one JSON-LD block. JSON-LD is a data block, not a script, so the CSP allows it; `SeoMeta` escapes `<` in it.
   - Pages that shouldn't show up in search, such as password reset, email codes and logout, pass `noindex`.
   - Keep titles under about 60 characters and descriptions under about 160.
@@ -416,10 +456,11 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
     - Home: Organization, WebSite, SoftwareApplication (with both currencies' prices) and FAQPage.
     - Pricing: the same plus breadcrumbs.
     - QR type and industry pages: Organization, breadcrumbs and FAQPage.
+    - Blog: Organization, breadcrumbs and Blog (with the newest 20 articles); an article: Organization, breadcrumbs and BlogPosting.
   - FAQ structured data must match questions that are visible on the page. `FaqList` (`components/landing/LandingUi.js`) and `faqPageSchema` take the same list, so keep answers as plain text. `FaqList` is an accordion: one answer open at a time, sliding open (the answer's grid row grows from 0 to its height). It's the only FAQ design: the dashboard billing page uses it too (its answers may contain links, since it has no structured data; `className` sets the list's width). Closed answers stay in the HTML, collapsed rather than removed, so search engines still read them; keep it that way if you change it.
   - Search result text and structured data show the same prices to everyone, both currencies (`pricesForSearch`), because search engines crawl from abroad. The visible page still shows only the visitor's own price.
   - Don't add review or rating structured data for the sample testimonials: search engines only allow it for real, verifiable reviews.
-  - Add new public pages to `PAGES` in `pages/sitemap.xml.js`. Add private or one-time URLs to `DISALLOW` in `pages/robots.txt.js`; `/r/` is there because a crawler visit would count as a scan.
+  - Add new public pages to `PAGES` in `pages/sitemap.xml.js` (blog articles are added from WordPress by themselves, with the date they last changed). Add private or one-time URLs to `DISALLOW` in `pages/robots.txt.js`; `/r/` is there because a crawler visit would count as a scan.
   - Headings (`h1`–`h4`) are for real section titles. Use `p` with `font-display` for names and labels that only look like headings. Each page has one `h1`: `HeroTitle` puts the search phrase first and the promise after it.
   - **A new QR type or industry page:**
     1. Add its content to `LANDING_PAGES` in `components/landing/landingPages.js`, following the comment at the top.
@@ -489,6 +530,8 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 | Browser console shows "Content Security Policy" errors | A new third-party resource isn't in the policy in `next.config.js`. |
 | A visitor can't open a protected QR code | They may have hit the guessing limit ("Too many attempts"): it clears after 15 minutes. The owner can set a new password on the code's details page. |
 | Something changed in `schema.prisma` but the app doesn't see it | Run `npx prisma generate` and restart the app. |
+| A new or edited blog post isn't showing | Pages refresh at most every 5 minutes, on the next visit after that: open the page, wait a moment, reload. Check the post is published (not a draft or scheduled). The log shows "Blog: WordPress could not be read" when the GraphQL address doesn't answer. |
+| Blog posts show the post title in search results instead of the Yoast title | The WPGraphQL Yoast SEO Addon plugin isn't active in WordPress; without it the blog uses the title and excerpt. |
 
 **After a deploy**, a quick check on the live site: log in, create a code, scan it with a phone and see the scan counted, open Analytics. For changes to payments or email, also start a checkout and request a password reset.
 
@@ -498,4 +541,5 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
 - **Credit notes** for refunds (free-days refunds flag the invoice in the admin email; issue the credit note by hand for now), and a list of past invoices to download on the billing page (invoices are only emailed for now).
 - **Changing plan length** in place (upgrade or downgrade): customers cancel and subscribe again when the plan ends.
 - **Translations:** only English is available, although a language can be chosen in the account settings.
-- **Other QR types** (links, menus, video, …) are defined but not released. **PDF and vCard** codes were removed and will be rebuilt from scratch.
+- **Blog extras:** search, author pages, a page per topic (topics are a filter on `/blog`), comments, previews of drafts, and an instant refresh when a post is published (WordPress could call a revalidate endpoint; for now pages refresh within about 5 minutes).
+- **QR types with uploaded files** (Images, MP3, and PDF or video files) wait for file storage; Images and MP3 are defined in `lib/qr/qrTypes.js` but not released.

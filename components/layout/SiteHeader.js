@@ -11,8 +11,12 @@ const SECTION_LINKS = [
   { href: "/#how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
   { href: "/#testimonials", label: "Testimonials" },
+  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ];
+
+// A page link is current on its own page and the pages under it (/blog on every article)
+const isOnPage = (href, pathname) => !href.includes("#") && (pathname === href || pathname.startsWith(`${href}/`));
 
 // Header account icons share one filled style, signed in or not; log out turns red on hover
 const iconBase =
@@ -115,7 +119,7 @@ export default function SiteHeader({
 
   const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
   const hiddenFrom = menuBreakpoint === "md" ? "md:hidden" : "lg:hidden";
-  const links = drawerLinks || SECTION_LINKS.map((link) => ({ ...link, active: link.href === router.pathname }));
+  const links = drawerLinks || SECTION_LINKS.map((link) => ({ ...link, active: isOnPage(link.href, router.pathname) }));
 
   let actions;
   if (loading) {
@@ -200,16 +204,17 @@ export default function SiteHeader({
             <div className="flex min-w-0 items-center">
               <Logo />
             </div>
-            <nav className="hidden lg:flex lg:items-center lg:gap-1 xl:gap-6" aria-label="Site sections">
+            {/* Tighter below xl so the seven links fit between the logo and the account icons at 1024px */}
+            <nav className="hidden lg:flex lg:items-center xl:gap-6" aria-label="Site sections">
               {SECTION_LINKS.map((link) => {
-                const onPage = link.href === router.pathname;
+                const onPage = isOnPage(link.href, router.pathname);
                 const current = onPage || (activeSection !== null && link.href === `/#${activeSection}`);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     aria-current={onPage ? "page" : current ? "true" : undefined}
-                    className={`relative whitespace-nowrap px-3 py-2 text-[15px] font-semibold transition-colors duration-200 hover:!text-indigo-700 focus:outline-none focus-visible:!text-indigo-700 after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-gradient-to-r after:from-indigo-600 after:to-purple-600 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100 motion-reduce:after:transition-none ${
+                    className={`relative whitespace-nowrap px-2 py-2 text-[14px] font-semibold transition-colors duration-200 hover:!text-indigo-700 focus:outline-none focus-visible:!text-indigo-700 after:absolute after:inset-x-2 after:bottom-0.5 xl:px-3 xl:text-[15px] xl:after:inset-x-3 after:h-0.5 after:origin-left after:rounded-full after:bg-gradient-to-r after:from-indigo-600 after:to-purple-600 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100 motion-reduce:after:transition-none ${
                       current ? "!text-indigo-700 after:scale-x-100" : "!text-gray-700 after:scale-x-0"
                     }`}
                   >

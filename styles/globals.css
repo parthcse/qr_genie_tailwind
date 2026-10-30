@@ -110,3 +110,177 @@ body {
     animation: none;
   }
 }
+
+/* Blog articles (pages/blog/[slug].js): the HTML written in WordPress, cleaned by lib/blog/postHtml.js, which keeps
+   only the tags and WordPress block classes styled here. A comfortable reading size and line length, headings in the
+   display font, brand-coloured links and list markers. */
+@layer components {
+  .blog-content {
+    @apply text-base leading-[1.8] text-slate-700;
+    overflow-wrap: break-word;
+  }
+  .blog-content > :first-child {
+    margin-top: 0;
+  }
+  .blog-content > :last-child {
+    margin-bottom: 0;
+  }
+  .blog-content p {
+    margin: 1.3em 0;
+  }
+  .blog-content h2 {
+    @apply mb-4 mt-14 scroll-mt-28 text-[1.6rem] font-bold leading-tight tracking-[-0.02em] text-slate-900 sm:text-[1.9rem];
+  }
+  .blog-content h3 {
+    @apply mb-3 mt-10 scroll-mt-28 text-xl font-semibold leading-snug tracking-[-0.01em] text-slate-900 sm:text-[1.375rem];
+  }
+  .blog-content :is(h4, h5, h6) {
+    @apply mb-2 mt-8 scroll-mt-28 text-lg font-semibold leading-snug text-slate-900;
+  }
+  .blog-content :is(h2, h3, h4, h5, h6) + * {
+    margin-top: 0;
+  }
+  .blog-content a {
+    @apply font-medium text-indigo-700 underline decoration-indigo-300 decoration-[1.5px] underline-offset-[3px] transition-colors duration-200 hover:text-purple-700 hover:decoration-purple-500;
+  }
+  .blog-content :is(strong, b) {
+    @apply font-semibold text-slate-900;
+  }
+  .blog-content :is(ul, ol) {
+    margin: 1.3em 0;
+    padding-left: 1.5em;
+  }
+  .blog-content ul {
+    list-style: disc;
+  }
+  .blog-content ol {
+    list-style: decimal;
+  }
+  .blog-content li {
+    margin: 0.5em 0;
+    padding-left: 0.35em;
+  }
+  .blog-content li::marker {
+    @apply font-semibold text-indigo-500;
+  }
+  .blog-content li > :is(ul, ol) {
+    margin: 0.5em 0;
+  }
+  .blog-content blockquote {
+    @apply my-10 rounded-r-2xl border-l-[3px] border-indigo-500 bg-gradient-to-r from-indigo-50/90 to-transparent py-5 pl-6 pr-4 font-display text-[1.2rem] font-medium leading-relaxed text-slate-800 sm:pl-8 sm:text-[1.3rem];
+  }
+  .blog-content blockquote p {
+    margin: 0.6em 0;
+  }
+  .blog-content blockquote > :first-child {
+    margin-top: 0;
+  }
+  .blog-content blockquote > :last-child {
+    margin-bottom: 0;
+  }
+  .blog-content blockquote cite {
+    @apply mt-3 block font-sans text-sm font-semibold not-italic text-slate-500;
+  }
+  .blog-content .wp-block-pullquote {
+    @apply my-12 border-y border-slate-200 py-8 text-center;
+  }
+  .blog-content .wp-block-pullquote blockquote {
+    @apply m-0 border-0 bg-none p-0 text-2xl sm:text-[1.6rem];
+  }
+  .blog-content img {
+    @apply h-auto max-w-full rounded-2xl;
+  }
+  .blog-content figure {
+    @apply my-10;
+  }
+  .blog-content figure img {
+    @apply mx-auto;
+  }
+  .blog-content figcaption {
+    @apply mt-3 text-center text-sm leading-relaxed text-slate-500;
+  }
+  .blog-content hr {
+    @apply mx-auto my-14 h-px w-24 border-0 bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300;
+  }
+  .blog-content code {
+    @apply rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-indigo-700;
+  }
+  .blog-content pre {
+    @apply my-8 overflow-x-auto rounded-2xl bg-slate-900 p-5 text-sm leading-relaxed text-slate-100;
+  }
+  .blog-content pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .blog-content mark {
+    @apply rounded bg-amber-100 px-1 text-slate-900;
+  }
+  .blog-content .blog-table {
+    @apply my-10 overflow-x-auto rounded-2xl ring-1 ring-slate-200;
+  }
+  .blog-content .wp-block-table .blog-table {
+    @apply my-0;
+  }
+  .blog-content table {
+    @apply w-full border-collapse text-left text-[15px] leading-relaxed;
+  }
+  .blog-content th {
+    @apply bg-slate-50 px-4 py-3 font-semibold text-slate-900;
+  }
+  .blog-content td {
+    @apply border-t border-slate-200 px-4 py-3 align-top;
+  }
+  .blog-content iframe {
+    @apply aspect-video h-auto w-full rounded-2xl bg-slate-100;
+  }
+  .blog-content .wp-block-embed {
+    @apply my-10;
+  }
+  .blog-content :is(.aligncenter, .has-text-align-center) {
+    @apply mx-auto text-center;
+  }
+  .blog-content .has-text-align-right {
+    @apply text-right;
+  }
+  .blog-content :is(.alignleft, .alignright) {
+    @apply my-6;
+  }
+  .blog-content .wp-block-buttons {
+    @apply my-8 flex flex-wrap gap-3;
+  }
+  .blog-content .wp-block-buttons.is-content-justification-center {
+    @apply justify-center;
+  }
+  .blog-content a.wp-block-button__link {
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-base font-semibold text-white no-underline shadow-lg shadow-indigo-600/25 transition duration-200 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-purple-700 hover:text-white motion-reduce:transform-none;
+  }
+  .blog-content .wp-block-gallery {
+    @apply my-10 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4;
+  }
+  .blog-content .wp-block-gallery figure {
+    @apply m-0;
+  }
+  .blog-content .wp-block-gallery img {
+    @apply aspect-square w-full object-cover;
+  }
+  .blog-content .wp-block-columns {
+    @apply my-8 grid gap-6 sm:auto-cols-fr sm:grid-flow-col;
+  }
+  .blog-content details {
+    @apply my-6 rounded-2xl bg-white px-5 py-4 ring-1 ring-slate-200;
+  }
+  .blog-content summary {
+    @apply cursor-pointer font-semibold text-slate-900;
+  }
+  .blog-content .has-drop-cap::first-letter {
+    @apply float-left mr-3 mt-1 font-display text-[3.6rem] font-bold leading-[0.8] text-indigo-600;
+  }
+
+  @media (min-width: 640px) {
+    .blog-content .alignleft {
+      @apply float-left mb-4 mr-6 mt-1 max-w-[50%];
+    }
+    .blog-content .alignright {
+      @apply float-right mb-4 ml-6 mt-1 max-w-[50%];
+    }
+  }
+}
