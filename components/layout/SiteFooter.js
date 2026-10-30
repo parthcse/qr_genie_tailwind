@@ -157,6 +157,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                   <li><Link href="/wifi-qr-code" className={footerLink}>Wi-Fi</Link></li>
                   <li><Link href="/whatsapp-qr-code" className={footerLink}>WhatsApp</Link></li>
                   <li><Link href="/instagram-qr-code" className={footerLink}>Instagram</Link></li>
+                  <li><Link href="/qr-code-types" className={footerLink}>All QR code types</Link></li>
                 </ul>
               </nav>
               <nav aria-labelledby="footer-use-cases">

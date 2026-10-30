@@ -10,6 +10,7 @@ import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload
 import { sanitizeDesign } from "@/lib/qr/qrConfig";
 import { qrTypeById } from "@/lib/qr/qrTypes";
 import { normalizeContent } from "@/lib/qr/qrContent";
+import { socialProfileLink } from "@/lib/qr/socialPlatforms";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "@/lib/billing/subscription";
 const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
@@ -80,6 +81,7 @@ export default async function handler(req, res) {
     folder, // Folder ID
     wifi,
     instagram, // Instagram form data
+    facebook, // Facebook form data
     whatsapp, // WhatsApp form data
     qrColor,
     bgColor,
@@ -205,6 +207,17 @@ export default async function handler(req, res) {
     metaObj = {
       username: username,
     };
+  } else if (type === "facebook") {
+    // A page name becomes facebook.com/<name>; a pasted link must be a Facebook address
+    const link = socialProfileLink("facebook", typeof facebook?.page === "string" ? facebook.page : "");
+    if (!link.url) {
+      return res.status(400).json({ error: link.error || "Add your Facebook page name or link." });
+    }
+    if (!/^(?:[a-z0-9-]+\.)*(facebook\.com|fb\.com|fb\.me|fb\.watch)$/i.test(new URL(link.url).hostname)) {
+      return res.status(400).json({ error: "Please enter a Facebook page name or a facebook.com link." });
+    }
+    targetUrl = link.url;
+    metaObj = { page: link.handle || link.url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "") };
   } else if (type === "whatsapp") {
     const whatsappData = whatsapp || {};
     const countryCode = /^\+\d{1,4}$/.test(whatsappData.countryCode) ? whatsappData.countryCode : "+91";

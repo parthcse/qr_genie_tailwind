@@ -99,6 +99,8 @@ function destinationOf(code) {
   switch (code.type) {
     case "wifi":
       return { label: meta.ssid ? `Network: ${meta.ssid}` : "Wi-Fi network", href: null };
+    case "facebook":
+      return { label: meta.page && !meta.page.includes("/") ? `facebook.com/${meta.page}` : withoutProtocol(code.targetUrl || ""), href };
     case "instagram":
       return { label: meta.username ? `@${meta.username}` : withoutProtocol(code.targetUrl || ""), href };
     case "whatsapp":

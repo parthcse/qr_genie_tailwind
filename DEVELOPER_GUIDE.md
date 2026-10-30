@@ -14,8 +14,9 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 
 | Page | What's there |
 |---|---|
-| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for the released types, each with a phone preview of what a scan does, a button to create one and a link to its page; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **Pricing** and **Contact** open their own pages (underlined there). |
+| `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for four popular types — Website, List of links, WhatsApp, Instagram — each with a phone preview of what a scan does, a button to create one and a link to its page, then an **All QR code types** box linking to `/qr-code-types`; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **Pricing** and **Contact** open their own pages (underlined there). |
 | `/pricing` | The plan cards (3 \| 12 \| 6 months, the 12-month plan featured as *Best value*; same as the landing page, in the visitor's currency), **Payment methods** (logos of the ways to pay a subscription in that currency: Visa, Mastercard, RuPay, UPI AutoPay and net banking in India; Visa and Mastercard elsewhere), **All plans include** (a grid of what every plan has), **Compare all plans** (free trial, 3, 6 and 12 months side by side: price, billing and every feature, with a button per plan; it scrolls sideways on phones with the feature column fixed), how billing works and a pricing FAQ. |
+| `/qr-code-types` | Every QR code type, grouped (Links and pages, Social and chat, Business, Media), each with what it does, dynamic or static, *New*, a **Create** button and a link to its own page when there is one; then the coming-soon types, dynamic vs static and an FAQ. Built from `lib/qr/qrTypes.js`, so a released type appears here by itself. The header's **QR types** link opens it. |
 | `/website-qr-code`, `/multiple-links-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
 | `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: a medium-height banner (`PageBanner`: title, tagline and a one-line summary beside a picture of the code as it looks in the dashboard, with its scans and a note; a compact version on phones and tablets; sized so nothing is cut off), the breadcrumb, an overview with the buttons, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. Inner pages use this calmer banner on purpose; only the home page has the large hero. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 7-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/auth/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
@@ -70,7 +71,8 @@ components/
   auth/                AuthShell (sign-in page shell and form fields), CodeInput, Turnstile
   qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal, qrTypeVisuals (icon and colours per type)
   qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields)
-  qr/landing/          the pages QR-Genie hosts for "page" types (LandingShell, LinksLanding, QrLanding),
+  qr/landing/          the pages QR-Genie hosts for "page" types (LandingShell with the shared header and button,
+                       LinksLanding, SocialLanding, QrLanding) and brandIcons (social platform icons and colours),
                        shown at /r/<slug> and as the create page's live preview
   billing/             PaymentResultModal, CancelSubscriptionModal
   dashboard/           FolderHeader
@@ -116,6 +118,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
 | `qr/qrTypes.js` | The list of QR types: label, sentence name, group, `kind` (`redirect`, `page` or `static`) and whether it's `released`. Everything that lists or checks types reads it, including the API. `releasedTypeNames()` gives copy such as "website, list of links, Wi-Fi, WhatsApp and Instagram". |
+| `qr/socialPlatforms.js` | The social platforms for Social media pages and Facebook codes: `socialProfileLink(platform, typed)` turns a username ("@cafe"), a WhatsApp number or a pasted link into the profile link, or returns the message for a bad value. |
 | `qr/qrContent.js` | Content rules for hosted pages: `emptyContent`, `normalizeContent` (cleans and checks; returns `{ content }` or `{ error }` with the message to show) and `contentSummary` ("4 links"). Shared by the create page and the server, which always re-checks. |
 | `qr/landingThemes.js` | The colour themes of hosted pages (plain colours, applied as inline styles). |
 | `qr/qrSchemas.js` | Form definitions for each QR type. |
@@ -253,12 +256,16 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, List of links, WiFi, WhatsApp, Instagram (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (social media, Facebook, business, coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (business, coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
-- **redirect** (Website, WhatsApp, Instagram): the short link forwards to an address made from the content, saved in `targetUrl`.
-- **page** (List of links): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **redirect** (Website, WhatsApp, Instagram, Facebook): the short link forwards to an address made from the content, saved in `targetUrl`.
+- **page** (List of links, Social media): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
 - **static** (WiFi): the content is printed into the code.
+
+**Social media:** a name (required, 80), photo, description (300), up to 20 profiles and a colour theme. Each profile is a platform from `lib/qr/socialPlatforms.js` plus a username, a WhatsApp number or a link; it's saved as `{ platform, handle, url }` and shown with the platform's icon. `contentToForm` turns saved profiles back into what the edit form shows.
+
+**Facebook:** a page name (`cafearoma`, becomes `https://www.facebook.com/cafearoma`) or a link, which must be on facebook.com, fb.com, fb.me or fb.watch.
 
 **List of links:** a title (required, 80 characters), an optional photo or logo (shrunk in the browser to 150 KB), a description (300), up to 20 buttons (title of 60 characters + an http(s) address; blank rows are left out) and one of eight colour themes. Links open in the same tab with `rel="noopener noreferrer nofollow"`.
 
@@ -284,7 +291,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 3. A hosted page: add its rules to `RULES` in `lib/qr/qrContent.js` and its page to `components/qr/landing/` (registered in `QrLanding.js`); the API, scan page, preview and editing then work without further changes. A redirect type: add its validation to `api/create-dynamic.js` and its preview to `MobilePreview` in `pages/dashboard/create-qr.js`.
 4. If the type uploads files (PDFs, videos, audio), store them outside the database (e.g. object storage) first; the forms only keep images, and those are capped at 150 KB.
 5. If it needs its own landing page or file, make sure it escapes everything it shows (React does this for text; anything built by hand, such as a downloadable file, must strip line breaks and markup), and that a password-protected code can't be opened there directly, bypassing `/r/<slug>`.
-6. Add the type to `qrTypeShowcase` in `pages/index.js` (the "QR code types" tabs only list released types) with a phone screen in `components/landing/TypeScreen.js`, and give it its own page (see "A new QR type or industry page" under Coding conventions). Copy that lists the types (pricing, home, dashboard) uses `releasedTypeNames()` and updates itself.
+6. It appears on `/qr-code-types` by itself; add a one-line description and "Great for" to `BLURBS` in `pages/qr-code-types.js`. Give it its own page when it's worth one (see "A new QR type or industry page" under Coding conventions). The home page tabs stay at four popular types (`qrTypeShowcase` in `pages/index.js`, phone screens in `components/landing/TypeScreen.js`). Copy that lists the types (pricing, dashboard) uses `releasedTypeNames()` and updates itself.
 
 **Downloads** are made in the browser (`lib/qr/qrDownload.js`, and the create page's own export) using the address of the page you're on, so download codes from the live site, not from localhost. On the create page, downloading is only offered after the code is created, so the file always holds the real short link (for dynamic codes) or the final content (for static ones).
 
@@ -298,7 +305,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
-| Hosted page (List of links) | The page, from its saved content | Yes |
+| Hosted page (List of links, Social media) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.

@@ -1,5 +1,55 @@
+import { FaArrowRight } from "react-icons/fa";
 import { landingTheme } from "@/lib/qr/landingThemes";
 import { SITE_URL } from "@/lib/site";
+
+/**
+ * A full-width button in the theme's colours: an optional icon, a title and an optional second line. In the preview
+ * (or without an address) it's drawn but not clickable. Links open in the same tab, without passing on where they came from.
+ */
+export function LandingButton({ href, preview = false, themeId, icon = null, title, subtitle }) {
+  const theme = landingTheme(themeId);
+  const body = (
+    <>
+      {icon}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{title}</span>
+        {subtitle && (
+          <span className="block truncate text-xs font-medium opacity-60">{subtitle}</span>
+        )}
+      </span>
+      <FaArrowRight className="h-3 w-3 flex-none opacity-40 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true" />
+    </>
+  );
+  const className = `group flex w-full items-center gap-3 rounded-2xl ${icon ? "px-3.5 py-3" : "px-5 py-4"} text-left text-[15px] font-semibold shadow-sm transition duration-300`;
+  const style = { background: theme.button, color: theme.buttonText, border: `1px solid ${theme.buttonBorder}` };
+  return preview || !href ? (
+    <span className={className} style={style}>
+      {body}
+    </span>
+  ) : (
+    <a href={href} rel="noopener noreferrer nofollow" className={`${className} hover:-translate-y-0.5 hover:shadow-lg`} style={style}>
+      {body}
+    </a>
+  );
+}
+
+/** Photo, title and description at the top of a hosted page; in the preview an empty title shows a placeholder */
+export function LandingHeader({ image, title, description, themeId, preview = false, placeholder = "Your page title" }) {
+  const theme = landingTheme(themeId);
+  return (
+    <div className="text-center">
+      <LandingAvatar image={image} title={title} themeId={themeId} />
+      <h1 className={`mt-5 break-words font-display text-2xl font-bold tracking-tight ${title ? "" : "opacity-60"}`}>
+        {title || (preview ? placeholder : "")}
+      </h1>
+      {description && (
+        <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /**
  * The frame of every page QR-Genie hosts: the theme's background and colours, a centred phone-width column and a small

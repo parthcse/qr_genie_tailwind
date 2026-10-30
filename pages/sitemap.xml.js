@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/site";
 const PAGES = [
   "/",
   "/pricing",
+  "/qr-code-types",
   "/website-qr-code",
   "/multiple-links-qr-code",
   "/wifi-qr-code",

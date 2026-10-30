@@ -2,6 +2,8 @@ import { useId, useState } from "react";
 import { FaArrowDown, FaArrowUp, FaCamera, FaCheck, FaPlus, FaTrash } from "react-icons/fa";
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { LANDING_THEMES, DEFAULT_LANDING_THEME } from "@/lib/qr/landingThemes";
+import { SOCIAL_PLATFORMS, socialPlatform } from "@/lib/qr/socialPlatforms";
+import { BrandTile } from "@/components/qr/landing/brandIcons";
 
 /**
  * Form fields for the hosted page types (list of links, ...), used by DynamicForm:
@@ -141,6 +143,96 @@ export function LinkListField({ field, value, onChange }) {
         </button>
       ) : (
         <p className="mt-3 text-xs text-slate-500">That's the maximum of {max} links.</p>
+      )}
+    </div>
+  );
+}
+
+/** "profileList": social profiles, each a platform plus a username, number or link (lib/qr/socialPlatforms.js) */
+export function ProfileListField({ field, value, onChange }) {
+  const rows = Array.isArray(value) && value.length > 0 ? value : [{ platform: "instagram", value: "" }];
+  const max = field.max || 20;
+  // Suggest a platform that isn't on the list yet for a new row
+  const nextPlatform = SOCIAL_PLATFORMS.find((p) => !rows.some((row) => row.platform === p.id))?.id || "website";
+
+  const update = (index, patch) => onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  const remove = (index) => onChange(rows.length === 1 ? [{ platform: "instagram", value: "" }] : rows.filter((_, i) => i !== index));
+  const move = (index, step) => {
+    const next = [...rows];
+    const target = index + step;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <span className={labelClass}>
+        {field.label}
+        {field.required && <span className="ml-1 text-red-500">*</span>}
+      </span>
+      <ol className="space-y-3">
+        {rows.map((row, index) => {
+          const platform = socialPlatform(row.platform) || SOCIAL_PLATFORMS[0];
+          return (
+            <li key={index} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <BrandTile platform={platform.id} className="h-6 w-6" />
+                  Profile {index + 1}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label={`Move profile ${index + 1} up`} className="rounded-md p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:opacity-30">
+                    <FaArrowUp className="h-3 w-3" />
+                  </button>
+                  <button type="button" onClick={() => move(index, 1)} disabled={index === rows.length - 1} aria-label={`Move profile ${index + 1} down`} className="rounded-md p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:opacity-30">
+                    <FaArrowDown className="h-3 w-3" />
+                  </button>
+                  <button type="button" onClick={() => remove(index)} aria-label={`Remove profile ${index + 1}`} className="rounded-md p-1.5 text-slate-400 transition hover:bg-white hover:text-red-600">
+                    <FaTrash className="h-3 w-3" />
+                  </button>
+                </span>
+              </div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+                <select
+                  value={platform.id}
+                  onChange={(e) => update(index, { platform: e.target.value })}
+                  aria-label={`Profile ${index + 1} platform`}
+                  className={`${inputClass} bg-white`}
+                >
+                  {SOCIAL_PLATFORMS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={row.value || ""}
+                  onChange={(e) => update(index, { value: e.target.value })}
+                  placeholder={platform.placeholder}
+                  aria-label={`Profile ${index + 1} username or link`}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className={`${inputClass} bg-white`}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {rows.length < max ? (
+        <button
+          type="button"
+          onClick={() => onChange([...rows, { platform: nextPlatform, value: "" }])}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dashed border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50"
+        >
+          <FaPlus className="h-3 w-3" />
+          Add profile
+        </button>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">That's the maximum of {max} profiles.</p>
       )}
     </div>
   );

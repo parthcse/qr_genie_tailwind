@@ -11,9 +11,10 @@ import { createQRConfig } from "@/lib/qr/qrConfig";
 import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { QR_TYPES, QR_TYPE_CATEGORIES, qrTypeById, isPageType } from "@/lib/qr/qrTypes";
-import { emptyContent, normalizeContent } from "@/lib/qr/qrContent";
+import { emptyContent, normalizeContent, contentToForm } from "@/lib/qr/qrContent";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 import QrLanding from "@/components/qr/landing/QrLanding";
+import { socialProfileLink } from "@/lib/qr/socialPlatforms";
 import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
 import { jsPDF } from "jspdf";
 
@@ -166,7 +167,7 @@ const generatePreviewUrl = (qrType, formData) => {
       }
       return `https://wa.me/${fullPhone}${message ? `?text=${message}` : ""}`;
     case "facebook":
-      return formData.social?.facebook || "https://facebook.com/example";
+      return socialProfileLink("facebook", formData.facebook?.page).url || "https://www.facebook.com/";
     case "instagram":
       const instagramUsername = formData.instagram?.username || "";
       // Remove @ if user included it
@@ -942,6 +943,39 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
           </div>
         );
+      case "facebook": {
+        const typed = (formData.facebook?.page || "").trim();
+        const link = socialProfileLink("facebook", typed);
+        const pageName = link.handle || typed.replace(/^(https?:\/\/)?(www\.)?(facebook|fb)\.com\//i, "").replace(/[/?#].*$/, "") || "Your page";
+        return (
+          <div className="flex h-full flex-col bg-[#f0f2f5]">
+            <div className="h-36 flex-none bg-gradient-to-br from-[#1877f2] via-[#3b82f6] to-[#93c5fd]" />
+            <div className="bg-white px-4 pb-4">
+              <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-blue-50 text-[#1877f2] shadow">
+                <FaFacebook className="h-9 w-9" />
+              </div>
+              <p className="mt-2 break-words text-lg font-bold text-gray-900">{pageName}</p>
+              <p className="truncate text-xs text-gray-500">facebook.com/{link.handle || pageName}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <span className="rounded-md bg-[#1877f2] py-1.5 text-center text-xs font-semibold text-white">Follow</span>
+                <span className="rounded-md bg-gray-200 py-1.5 text-center text-xs font-semibold text-gray-800">Message</span>
+              </div>
+            </div>
+            <div className="mt-2 flex-1 space-y-3 bg-white p-4">
+              {[0, 1].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-8 w-8 rounded-full bg-blue-50" />
+                    <span className="h-2 w-24 rounded-full bg-gray-200" />
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-gray-100" />
+                  <div className="h-20 rounded-lg bg-gray-100" />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
       default:
         // Hosted page types (list of links, ...): the real page, drawn from the form as it's filled in
         if (isPageType(qrType)) {
@@ -1144,6 +1178,9 @@ const INITIAL_FORM_DATA = {
   folder: "",
   // Hosted pages start from their blank content (lib/qr/qrContent.js)
   links: emptyContent("links"),
+  social: emptyContent("social"),
+  // Facebook
+  facebook: { page: "" },
   // WhatsApp
   whatsapp: {
 
@@ -1296,7 +1333,7 @@ export default function CreateQrPage() {
           return;
         }
         setSelectedType(qr.type);
-        setFormData((prev) => ({ ...prev, [qr.type]: { ...emptyContent(qr.type), ...qr.content } }));
+        setFormData((prev) => ({ ...prev, [qr.type]: { ...emptyContent(qr.type), ...contentToForm(qr.type, qr.content) } }));
         setEditing({ id: qr.id, name: qr.name || `QR code ${qr.slug}`, slug: qr.slug });
         setPreviewMode("destination");
         setStep(2);
@@ -1400,6 +1437,8 @@ export default function CreateQrPage() {
         return !!(formData.whatsapp?.countryCode && formData.whatsapp?.phone?.trim());
       case "instagram":
         return !!formData.instagram?.username?.trim();
+      case "facebook":
+        return !!socialProfileLink("facebook", formData.facebook?.page).url;
       default:
         return false;
     }
@@ -1426,6 +1465,8 @@ export default function CreateQrPage() {
           : "Add the network name and password to continue.";
       case "instagram":
         return "Add the Instagram username to continue.";
+      case "facebook":
+        return socialProfileLink("facebook", formData.facebook?.page).error || "Add your Facebook page name or link to continue.";
       default:
         return "Fill in the required fields to continue.";
     }

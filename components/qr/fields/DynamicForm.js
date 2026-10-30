@@ -48,7 +48,7 @@ import {
   IconSelectorField,
   FolderField,
 } from "./FieldComponents";
-import { ImageField, LinkListField, ThemeField } from "./PageFields";
+import { ImageField, LinkListField, ProfileListField, ThemeField } from "./PageFields";
 
 // Icon mapping
 const iconMap = {
@@ -272,6 +272,9 @@ const CollapsibleSection = ({
 
       case "linkList":
         return <LinkListField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "profileList":
+        return <ProfileListField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
 
       case "theme":
         return <ThemeField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;

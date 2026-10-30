@@ -15,6 +15,7 @@ import {
   FaRocket,
   FaStar,
   FaArrowRight,
+  FaThLarge,
   FaCog,
   FaLink,
   FaQuoteLeft,
@@ -48,7 +49,9 @@ import {
 } from "@/components/landing/LandingUi";
 import { formatMonthly, cheapestPlan } from "@/lib/billing/price";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
-import { releasedTypeNames } from "@/lib/qr/qrTypes";
+import { QR_TYPES } from "@/lib/qr/qrTypes";
+
+const RELEASED_TYPE_COUNT = QR_TYPES.filter((type) => type.released).length;
 import { SITE_URL } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
 
@@ -123,7 +126,7 @@ const howItWorks = [
   },
   {
     title: 'Create QR Codes',
-    description: `Make QR codes for your ${releasedTypeNames("or")} in a few clicks.`,
+    description: "Make QR codes for websites, link pages, Wi-Fi, WhatsApp, social media and more in a few clicks.",
     icon: <FaQrcode className="h-6 w-6" />
   },
   {
@@ -332,36 +335,6 @@ const qrTypeShowcase = [
     page: "/multiple-links-qr-code",
   },
   {
-    id: "wifi",
-    label: "Wi-Fi",
-    tagline: "Join a network in one scan",
-    icon: FaWifi,
-    accent: "bg-cyan-50 text-cyan-700 ring-cyan-100",
-    qrColor: "#0e7490",
-    tab: {
-      hover: "hover:ring-cyan-300 hover:shadow-cyan-500/15",
-      selected: "ring-2 ring-cyan-500 shadow-cyan-500/20",
-      tint: "from-cyan-50",
-      chipHover: "group-hover:from-cyan-500 group-hover:to-sky-600 group-hover:shadow-cyan-500/30",
-      chipSelected: "from-cyan-500 to-sky-600 shadow-cyan-500/30",
-      label: "text-cyan-700",
-      labelHover: "group-hover:text-cyan-700",
-      bar: "from-cyan-500 to-sky-500",
-    },
-    kind: "Static",
-    title: "Wi-Fi QR code",
-    description:
-      "Guests point their camera at the code and join your network straight away, with no long password to read out or type. Made for cafés, hotels, offices and events.",
-    points: [
-      "Works with the iPhone and Android camera",
-      "WPA, WEP and open networks",
-      "Hidden networks supported",
-      "The details live in the code, nothing to load",
-    ],
-    cta: "Create a Wi-Fi QR code",
-    page: "/wifi-qr-code",
-  },
-  {
     id: "whatsapp",
     label: "WhatsApp",
     tagline: "Start a chat with you",
@@ -565,7 +538,9 @@ function QrTypesShowcase({ isAuthenticated }) {
 
   return (
     <>
-      <div role="tablist" aria-label="QR code types" className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:mt-14 lg:grid-cols-5">
+      <div className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:mt-14 lg:grid-cols-5">
+        {/* The tabs sit in the grid next to the "All QR code types" link, which is a link, not a tab */}
+        <div role="tablist" aria-label="QR code types" className="contents">
         {qrTypeShowcase.map((type, index) => {
           const selected = type.id === active;
           const Icon = type.icon;
@@ -626,6 +601,21 @@ function QrTypesShowcase({ isAuthenticated }) {
             </button>
           );
         })}
+        </div>
+
+        <Link
+          href="/qr-code-types"
+          className="group relative col-span-2 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-3 py-3 text-left ring-1 ring-indigo-200 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/15 hover:ring-indigo-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:col-span-1 sm:flex-col sm:gap-0 sm:py-5 sm:text-center"
+        >
+          <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30 transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transform-none sm:h-12 sm:w-12">
+            <FaThLarge className="h-5 w-5" />
+          </span>
+          <span className="relative min-w-0 flex-1 sm:mt-3 sm:flex-none">
+            <span className="block font-display text-[15px] font-semibold text-indigo-700">All QR code types</span>
+            <span className="mt-0.5 block text-xs text-slate-500">See all {RELEASED_TYPE_COUNT} types</span>
+          </span>
+          <FaArrowRight className="relative h-3.5 w-3.5 flex-none text-indigo-500 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none sm:mt-2.5" aria-hidden="true" />
+        </Link>
       </div>
 
       <div className="relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10">
@@ -897,8 +887,8 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
           <div className={container}>
             <SectionHeading
               eyebrow="QR code types"
-              title={`Create ${releasedTypeNames()} QR codes`}
-              description="Choose what happens when someone scans: open your website, show a page with all your links, join your Wi-Fi, start a WhatsApp chat or visit your Instagram. Every type is styled with your own colours and logo."
+              title="Create website, list of links, WhatsApp and Instagram QR codes"
+              description={`Choose what happens when someone scans: open your website, show a page with all your links, start a WhatsApp chat or visit your Instagram. Wi-Fi, social media and the other types are one click away. Every type is styled with your own colours and logo.`}
             />
             <QrTypesShowcase isAuthenticated={isAuthenticated} />
           </div>

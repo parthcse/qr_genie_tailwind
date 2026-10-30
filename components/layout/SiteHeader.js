@@ -6,7 +6,7 @@ import { FaQrcode, FaThLarge, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaT
 // Main menu. "/#..." glides to the section on the landing page and navigates there from anywhere else;
 // the others are pages of their own
 const SECTION_LINKS = [
-  { href: "/#qr-types", label: "QR types" },
+  { href: "/qr-code-types", label: "QR types" },
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },

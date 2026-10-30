@@ -1,8 +1,10 @@
 import LinksLanding from "./LinksLanding";
+import SocialLanding from "./SocialLanding";
 
 // The hosted page for each "page" type (lib/qr/qrTypes.js)
 const PAGES = {
   links: LinksLanding,
+  social: SocialLanding,
 };
 
 export const hasLandingPage = (type) => !!PAGES[type];
