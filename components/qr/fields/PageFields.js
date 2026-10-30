@@ -3,6 +3,7 @@ import { FaArrowDown, FaArrowUp, FaCamera, FaCheck, FaPlus, FaTrash } from "reac
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { LANDING_THEMES, DEFAULT_LANDING_THEME } from "@/lib/qr/landingThemes";
 import { SOCIAL_PLATFORMS, socialPlatform } from "@/lib/qr/socialPlatforms";
+import { WEEK_DAYS } from "@/lib/qr/qrContent";
 import { BrandTile } from "@/components/qr/landing/brandIcons";
 
 /**
@@ -235,6 +236,39 @@ export function ProfileListField({ field, value, onChange }) {
         <p className="mt-3 text-xs text-slate-500">That's the maximum of {max} profiles.</p>
       )}
     </div>
+  );
+}
+
+/** "hours": opening hours as free text for each day of the week ("9:00 – 18:00", "Closed"); empty days are left out */
+export function HoursField({ field, value, onChange }) {
+  const hours = value && typeof value === "object" ? value : {};
+  const weekdays = WEEK_DAYS.slice(0, 5);
+  const copyMonday = () => onChange({ ...hours, ...Object.fromEntries(weekdays.slice(1).map((day) => [day.id, hours.mon || ""])) });
+  return (
+    <fieldset>
+      <legend className={labelClass}>{field.label}</legend>
+      <div className="space-y-2">
+        {WEEK_DAYS.map((day) => (
+          <label key={day.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-3">
+            <span className="text-sm text-slate-600">{day.label}</span>
+            <input
+              type="text"
+              value={hours[day.id] || ""}
+              onChange={(e) => onChange({ ...hours, [day.id]: e.target.value })}
+              maxLength={40}
+              placeholder={day.id === "sun" ? "e.g. Closed" : "e.g. 9:00 – 18:00"}
+              className={inputClass}
+            />
+          </label>
+        ))}
+      </div>
+      {hours.mon && (
+        <button type="button" onClick={copyMonday} className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+          Copy Monday to Tuesday–Friday
+        </button>
+      )}
+      <p className="mt-1.5 text-xs text-slate-500">Leave a day empty to hide it.</p>
+    </fieldset>
   );
 }
 

@@ -18,7 +18,7 @@ import { pauseActiveQrCodes } from "@/lib/billing/subscriptionSync";
 import { getClientIp } from "@/lib/clientIp";
 import { parseWifiString } from "@/lib/qr/qrPassword";
 import { isPageType } from "@/lib/qr/qrTypes";
-import { normalizeContent } from "@/lib/qr/qrContent";
+import { normalizeContent, contentTitle } from "@/lib/qr/qrContent";
 import QrLanding, { hasLandingPage } from "@/components/qr/landing/QrLanding";
 
 export async function getServerSideProps({ params, req }) {
@@ -94,7 +94,7 @@ export async function getServerSideProps({ params, req }) {
       console.error(`QR code ${qr.slug}: page content can't be shown (${error || "no page for this type"})`);
       return { props: { view: "not_found" } };
     }
-    return { props: { view: "page", pageType: qr.type, content } };
+    return { props: { view: "page", pageType: qr.type, content, slug } };
   }
 
   // WiFi (codes made before WiFi became static-only): show the network so people can join by hand
@@ -334,10 +334,10 @@ export default function RedirectPage({ view, pausedMessage, reason, slug, wifi, 
     return (
       <>
         <Head>
-          <title>{content?.title || "QR-Genie"}</title>
+          <title>{contentTitle(pageType, content) || "QR-Genie"}</title>
           <meta name="robots" content="noindex" />
         </Head>
-        <QrLanding type={pageType} content={content} />
+        <QrLanding type={pageType} content={content} slug={slug} />
       </>
     );
   }

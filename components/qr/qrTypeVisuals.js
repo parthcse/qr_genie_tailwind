@@ -14,6 +14,7 @@ import {
   FaImages,
   FaMusic,
   FaQrcode,
+  FaAddressCard,
 } from "react-icons/fa";
 
 /**
@@ -29,6 +30,7 @@ export const QR_TYPE_VISUALS = {
   social: { icon: FaShareAlt, accent: "bg-indigo-50 text-indigo-600", chip: "bg-indigo-50 text-indigo-700 ring-indigo-600/20" },
   facebook: { icon: FaFacebook, accent: "bg-blue-50 text-blue-600", chip: "bg-blue-50 text-blue-700 ring-blue-600/20" },
   business: { icon: FaBuilding, accent: "bg-slate-100 text-slate-700", chip: "bg-slate-100 text-slate-700 ring-slate-600/20" },
+  vcard: { icon: FaAddressCard, accent: "bg-fuchsia-50 text-fuchsia-600", chip: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-600/20" },
   coupon: { icon: FaTicketAlt, accent: "bg-amber-50 text-amber-600", chip: "bg-amber-50 text-amber-700 ring-amber-600/20" },
   menu: { icon: FaUtensils, accent: "bg-orange-50 text-orange-600", chip: "bg-orange-50 text-orange-700 ring-orange-600/20" },
   apps: { icon: FaMobileAlt, accent: "bg-teal-50 text-teal-600", chip: "bg-teal-50 text-teal-700 ring-teal-600/20" },

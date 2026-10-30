@@ -34,6 +34,8 @@ import {
   FaPinterest,
   FaSnapchat,
   FaUserCircle,
+  FaAddressCard,
+  FaClock,
 } from "react-icons/fa";
 import {
   InputField,
@@ -48,7 +50,7 @@ import {
   IconSelectorField,
   FolderField,
 } from "./FieldComponents";
-import { ImageField, LinkListField, ProfileListField, ThemeField } from "./PageFields";
+import { HoursField, ImageField, LinkListField, ProfileListField, ThemeField } from "./PageFields";
 
 // Icon mapping
 const iconMap = {
@@ -82,6 +84,8 @@ const iconMap = {
   FaPinterest,
   FaSnapchat,
   FaUserCircle,
+  FaAddressCard,
+  FaClock,
 };
 
 // Collapsible Section Component
@@ -276,6 +280,9 @@ const CollapsibleSection = ({
       case "profileList":
         return <ProfileListField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
 
+      case "hours":
+        return <HoursField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
       case "theme":
         return <ThemeField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
 
@@ -437,61 +444,35 @@ export default function DynamicForm({ schema, formData, updateFormData, type, fo
     }));
   };
 
-  const handleUpdateFormData = (path, value) => {
-
-    if (!path || typeof path !== "string") {
-      console.warn("handleUpdateFormData: path must be a string", path);
-      return;
-    }
-    const keys = path.split(".").filter(k => k); // Filter out empty strings
-    if (keys.length === 0) {
-      console.warn("handleUpdateFormData: path is empty", path);
-      return;
-    }
-    
-    const newData = { ...formData };
-    let current = newData;
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      if (!current[key] || typeof current[key] !== "object") {
-        current[key] = {};
-      } else {
-        current[key] = { ...current[key] };
-      }
-      current = current[key];
-    }
-
-    current[keys[keys.length - 1]] = value;
-    updateFormData(newData);
-  };
-
-
-  // Helper function to update multiple fields atomically
-  const handleBatchUpdateFormData = (updates) => {
-    // updates is an array of { path, value } objects
-    const newData = { ...formData };
-    
+  // Sets several { path, value } pairs on a copy of the form data. Changes go to updateFormData as a function of the
+  // latest data, so fields filled in quick succession (browser autofill) don't overwrite each other.
+  const applyUpdates = (updates) => (data) => {
+    const newData = { ...data };
     updates.forEach(({ path, value }) => {
       if (!path || typeof path !== "string") return;
-      const keys = path.split(".").filter(k => k);
+      const keys = path.split(".").filter((k) => k);
       if (keys.length === 0) return;
-      
       let current = newData;
       for (let i = 0; i < keys.length - 1; i++) {
         const key = keys[i];
-        if (!current[key] || typeof current[key] !== "object") {
-          current[key] = {};
-        } else {
-          current[key] = { ...current[key] };
-        }
+        current[key] = current[key] && typeof current[key] === "object" ? { ...current[key] } : {};
         current = current[key];
       }
       current[keys[keys.length - 1]] = value;
     });
-    
-    updateFormData(newData);
+    return newData;
   };
+
+  const handleUpdateFormData = (path, value) => {
+    if (!path || typeof path !== "string") {
+      console.warn("handleUpdateFormData: path must be a string", path);
+      return;
+    }
+    updateFormData(applyUpdates([{ path, value }]));
+  };
+
+  // Helper function to update multiple fields atomically; updates is an array of { path, value }
+  const handleBatchUpdateFormData = (updates) => updateFormData(applyUpdates(updates));
 
   if (!schema || !schema.sections) {
     return (

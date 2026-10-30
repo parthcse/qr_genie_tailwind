@@ -33,8 +33,11 @@ export function LandingButton({ href, preview = false, themeId, icon = null, tit
   );
 }
 
-/** Photo, title and description at the top of a hosted page; in the preview an empty title shows a placeholder */
-export function LandingHeader({ image, title, description, themeId, preview = false, placeholder = "Your page title" }) {
+/**
+ * Photo, title, an optional subtitle (e.g. job title) and description at the top of a hosted page; in the preview an
+ * empty title shows a placeholder
+ */
+export function LandingHeader({ image, title, subtitle, description, themeId, preview = false, placeholder = "Your page title" }) {
   const theme = landingTheme(themeId);
   return (
     <div className="text-center">
@@ -42,6 +45,11 @@ export function LandingHeader({ image, title, description, themeId, preview = fa
       <h1 className={`mt-5 break-words font-display text-2xl font-bold tracking-tight ${title ? "" : "opacity-60"}`}>
         {title || (preview ? placeholder : "")}
       </h1>
+      {subtitle && (
+        <p className="mt-1 break-words text-sm font-semibold" style={{ color: theme.muted }}>
+          {subtitle}
+        </p>
+      )}
       {description && (
         <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
           {description}

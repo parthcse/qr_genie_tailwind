@@ -1179,6 +1179,8 @@ const INITIAL_FORM_DATA = {
   // Hosted pages start from their blank content (lib/qr/qrContent.js)
   links: emptyContent("links"),
   social: emptyContent("social"),
+  business: emptyContent("business"),
+  vcard: emptyContent("vcard"),
   // Facebook
   facebook: { page: "" },
   // WhatsApp
@@ -1671,9 +1673,14 @@ export default function CreateQrPage() {
     const passwordOn = selectedType === "website" && !!formData.passwordEnabled;
     const linkType = isWifi ? "STATIC" : formData.linkType || "DYNAMIC";
 
-    const updateFormData = (newData) => {
-      // A password only works on a dynamic code
-      setFormData(newData.passwordEnabled && newData.linkType === "STATIC" ? { ...newData, linkType: "DYNAMIC" } : newData);
+    // Takes the new form data, or a function of the latest data (DynamicForm sends functions so quick successive
+    // changes, such as browser autofill, all land)
+    const updateFormData = (update) => {
+      setFormData((prev) => {
+        const next = typeof update === "function" ? update(prev) : update;
+        // A password only works on a dynamic code
+        return next.passwordEnabled && next.linkType === "STATIC" ? { ...next, linkType: "DYNAMIC" } : next;
+      });
       setPreviewKey((prev) => prev + 1);
     };
 

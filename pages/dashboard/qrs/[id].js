@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, FaEye, FaEyeSlash } from "react-icons/fa";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { isPageType, qrTypeLabel } from "@/lib/qr/qrTypes";
-import { contentSummary } from "@/lib/qr/qrContent";
+import { contentSummary, contentTitle } from "@/lib/qr/qrContent";
 
 export async function getServerSideProps(context) {
   const { getUserFromRequest, accountRedirect } = await import("@/lib/auth");
@@ -396,7 +396,7 @@ export default function QrDetailPage({ qrId }) {
             </div>
             {qr.content && (
               <p className="mt-4 text-sm text-gray-700">
-                <span className="font-medium text-gray-900">{qr.content.title}</span>
+                <span className="font-medium text-gray-900">{contentTitle(qr.type, qr.content)}</span>
                 {contentSummary(qr.type, qr.content) ? <span className="text-gray-500"> · {contentSummary(qr.type, qr.content)}</span> : null}
               </p>
             )}

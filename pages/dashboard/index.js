@@ -8,7 +8,7 @@ import QrDownloadModal from "@/components/qr/QrDownloadModal";
 import DesignedQRCode from "@/components/qr/DesignedQRCode";
 import FolderHeader from "@/components/dashboard/FolderHeader";
 import { TRIAL_QR_LIMIT } from "@/lib/billing/subscription";
-import { qrTypeById, isPageType, qrTypeLabel, releasedTypeNames } from "@/lib/qr/qrTypes";
+import { qrTypeById, isPageType, qrTypeLabel, releasedTypeCount } from "@/lib/qr/qrTypes";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 import {
   FaQrcode,
@@ -1029,7 +1029,7 @@ export default function Dashboard() {
           </div>
           <h3 className="mt-5 text-lg font-semibold text-gray-900">Create your first QR code</h3>
           <p className="mx-auto mt-1 max-w-sm text-sm text-gray-600">
-            Choose from {releasedTypeNames()} codes. Dynamic codes can be changed any time after printing.
+            Choose from {releasedTypeCount()} types, from a website or a page of links to Wi-Fi and contact cards. Dynamic codes can be changed any time after printing.
           </p>
           <Link
             href="/dashboard/create-qr"

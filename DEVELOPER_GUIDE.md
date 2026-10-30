@@ -72,7 +72,8 @@ components/
   qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal, qrTypeVisuals (icon and colours per type)
   qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields)
   qr/landing/          the pages QR-Genie hosts for "page" types (LandingShell with the shared header and button,
-                       LinksLanding, SocialLanding, QrLanding) and brandIcons (social platform icons and colours),
+                       LinksLanding, SocialLanding, ContactLanding, BusinessLanding, QrLanding), ContactBlocks
+                       (call / email / website / directions, details card, Save contact) and brandIcons (social platform icons and colours),
                        shown at /r/<slug> and as the create page's live preview
   billing/             PaymentResultModal, CancelSubscriptionModal
   dashboard/           FolderHeader
@@ -118,6 +119,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
 | `qr/qrTypes.js` | The list of QR types: label, sentence name, group, `kind` (`redirect`, `page` or `static`) and whether it's `released`. Everything that lists or checks types reads it, including the API. `releasedTypeNames()` gives copy such as "website, list of links, Wi-Fi, WhatsApp and Instagram". |
+| `qr/vcard.js` | `buildVCard`: a vCard 3.0 file for "Save contact" (values escaped, lines folded at 75, photo embedded when it's PNG or JPEG) and `vcardFileName`. |
 | `qr/socialPlatforms.js` | The social platforms for Social media pages and Facebook codes: `socialProfileLink(platform, typed)` turns a username ("@cafe"), a WhatsApp number or a pasted link into the profile link, or returns the message for a bad value. |
 | `qr/qrContent.js` | Content rules for hosted pages: `emptyContent`, `normalizeContent` (cleans and checks; returns `{ content }` or `{ error }` with the message to show) and `contentSummary` ("4 links"). Shared by the create page and the server, which always re-checks. |
 | `qr/landingThemes.js` | The colour themes of hosted pages (plain colours, applied as inline styles). |
@@ -138,7 +140,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | Folders | `folders` (list, create), `folders/[id]` (rename, delete) |
 | Analytics | `analytics/overview` |
 | Billing | `billing/plans`, `billing/cancel`, `checkout/razorpay/create-subscription`, `checkout/razorpay/verify`, `webhooks/razorpay` |
-| Public | `r/[slug]/unlock` (password check for protected codes), `contact` |
+| Public | `r/[slug]/unlock` (password check for protected codes), `r/[slug]/vcard` (the "Save contact" file of a Contact card or Business page; only while the code is active and its owner's plan runs; not counted as a scan), `contact` |
 | Admin | `admin/summary` |
 
 ## Local development
@@ -256,12 +258,18 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (business, coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard) (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
 - **redirect** (Website, WhatsApp, Instagram, Facebook): the short link forwards to an address made from the content, saved in `targetUrl`.
-- **page** (List of links, Social media): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **page** (List of links, Social media, Business, Contact card): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
 - **static** (WiFi): the content is printed into the code.
+
+**Contact card (`vcard`):** first and/or last name (one is required), photo, job title, company, a short note, a mobile and a work phone, email, website, address (at least a phone, email or website), up to 10 social profiles and a theme. The page has one-tap Call, Email, Website and Directions (Google Maps search) buttons, **Save contact** (`api/r/[slug]/vcard`), the details and the profiles.
+
+**Business:** business name (`businessName`; required), logo, about (500), phone, email, website, address (at least one of them), opening hours (free text per day; empty days are hidden), up to 10 social profiles and a theme. Same actions as a contact card, plus opening hours; **Save contact** saves the business as an organisation.
+
+Field ids `name` and `folder` are reserved in the form: DynamicForm always stores them at the top level (the code's private name and folder), so a page's own name field needs another id (`businessName`, `title`).
 
 **Social media:** a name (required, 80), photo, description (300), up to 20 profiles and a colour theme. Each profile is a platform from `lib/qr/socialPlatforms.js` plus a username, a WhatsApp number or a link; it's saved as `{ platform, handle, url }` and shown with the platform's icon. `contentToForm` turns saved profiles back into what the edit form shows.
 
@@ -283,7 +291,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 **Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colors must be hex, Instagram usernames and WhatsApp numbers must be valid, hosted pages go through `normalizeContent`, names have length limits, a logo and a page photo may each be at most 150 KB and the whole request 600 KB), then saves the code with a random 6-character slug. The create page sends only the chosen type's page content.
 
-**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle) and, for hosted pages, `components/qr/fields/PageFields.js` (image, linkList, theme). Every type except Website keeps its fields under its own name in the form data (`formData.links.title`).
+**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle) and, for hosted pages, `components/qr/fields/PageFields.js` (image, linkList, profileList, hours, theme). DynamicForm passes each change to the create page as a function of the latest form data, so fields filled at once (browser autofill) don't overwrite each other. Every type except Website keeps its fields under its own name in the form data (`formData.links.title`).
 
 **Releasing another type:**
 1. Set `released: true` (and `isNew: true` for the *New* badge) in `lib/qr/qrTypes.js`; its icon and colours are in `components/qr/qrTypeVisuals.js`.
@@ -305,7 +313,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
-| Hosted page (List of links, Social media) | The page, from its saved content | Yes |
+| Hosted page (List of links, Social media, Business, Contact card) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.

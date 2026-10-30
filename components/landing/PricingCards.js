@@ -20,7 +20,7 @@ import { SiVisa } from "react-icons/si";
 import { formatPrice, monthlyAmount, savingsFor } from "@/lib/billing/price";
 import { PLAN_TERMS, BEST_VALUE_TERM } from "@/lib/billing/terms";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
-import { releasedTypeNames } from "@/lib/qr/qrTypes";
+import { releasedTypeCount } from "@/lib/qr/qrTypes";
 
 // Desktop shows 3 | 12 | 6 months with the best value in the middle; phones list the best value first
 const ORDER = { "12m": "md:order-2", "6m": "md:order-3", "3m": "md:order-1" };
@@ -255,7 +255,7 @@ export function PaymentMethods({ currency = "INR", className = "mt-12" }) {
 const PLAN_INCLUDES = [
   { icon: FaQrcode, title: "Unlimited dynamic QR codes", text: "Create as many codes as you need and change where they point any time." },
   { icon: FaInfinity, title: "Unlimited scans", text: "Every code can be scanned as often as people like." },
-  { icon: FaShapes, title: "All QR code types", text: `${releasedTypeNames()[0].toUpperCase()}${releasedTypeNames().slice(1)} codes.` },
+  { icon: FaShapes, title: "All QR code types", text: `${releasedTypeCount()} types, from websites and link pages to Wi-Fi, social media and contact cards.` },
   { icon: FaChartLine, title: "Complete scan analytics", text: "Scans by day, hour, country, city, device and browser, with CSV export." },
   { icon: FaPalette, title: "Your own design", text: "Colours, gradients, corner styles, a frame with your text and your logo." },
   { icon: FaDownload, title: "Print-ready downloads", text: "PNG, SVG, JPEG and PDF, or print straight from your browser." },
