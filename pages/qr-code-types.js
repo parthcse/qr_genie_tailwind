@@ -136,7 +136,9 @@ export default function QrCodeTypesPage() {
   const { loading, user } = useCurrentUser();
   const createHref = (id) => (user ? `/dashboard/create-qr?type=${id}` : "/auth/register");
 
-  const description = `Compare every QR code type: websites, link pages, Wi-Fi, WhatsApp, social media and more. Edit dynamic codes after printing. Free for ${TRIAL_DAYS} days.`;
+  // Search result text from the SEO team; the number follows the released types
+  const title = `QR Code Types – Explore ${released.length} Types of QR Codes | QR-Genie`;
+  const description = `Explore ${released.length} QR code types, including Website, WiFi, WhatsApp, Instagram, Email, Menu and more. Create custom QR codes with your logo and colours using QR-Genie.`;
   const structuredData = [
     organizationSchema,
     breadcrumbSchema([
@@ -151,7 +153,7 @@ export default function QrCodeTypesPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <SeoMeta title="All QR Code Types: Links, Wi-Fi, Social and More | QR-Genie" description={description} path={PATH} jsonLd={structuredData} />
+      <SeoMeta title={title} description={description} path={PATH} jsonLd={structuredData} />
       <SiteHeader isAuthenticated={!!user} loading={loading} />
 
       <main>
