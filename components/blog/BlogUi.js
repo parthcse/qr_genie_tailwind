@@ -102,28 +102,29 @@ const stretchedLink =
 
 /**
  * Article card for the grids (4 across on wide screens): picture with its topic, date and reading time, title, a few
- * lines of the excerpt. The whole card opens the article; the topic opens the list filtered to it.
+ * lines of the excerpt. The whole card opens the article; the topic opens that topic's list. The picture box has the
+ * shape of a share image (1200×630), the size featured images are made at, so they show uncut.
  */
 export function PostCard({ post, headingLevel: Heading = "h3" }) {
   const category = post.categories[0];
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-900/[0.07] hover:ring-indigo-200 motion-reduce:transform-none">
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-900/[0.07] hover:ring-indigo-200 motion-reduce:transform-none">
+      <div className="relative aspect-[1200/630] overflow-hidden border-b border-slate-100 bg-slate-100">
         <PostImage
           image={post.image}
           sizes="(min-width: 1280px) 310px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05] motion-reduce:transform-none"
+          className="h-full w-full object-cover"
         />
         {category && (
-          <span className="absolute left-3.5 top-3.5">
+          <span className="absolute left-3 top-3">
             <CategoryChip category={category} onImage />
           </span>
         )}
       </div>
       <div className="flex flex-1 flex-col p-5">
         <PostMeta post={post} />
-        <Heading className="mt-2.5 text-balance font-display text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-slate-900 transition-colors duration-300 group-hover:text-indigo-700">
-          <Link href={postPath(post.slug)} className={`${stretchedLink} after:rounded-3xl`}>
+        <Heading className="mt-2.5 font-display text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-slate-900 transition-colors duration-300 group-hover:text-indigo-700">
+          <Link href={postPath(post.slug)} className={`${stretchedLink} after:rounded-2xl`}>
             {post.title}
           </Link>
         </Heading>

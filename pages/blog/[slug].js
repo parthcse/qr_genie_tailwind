@@ -107,7 +107,7 @@ export default function BlogPostPage({ post, related }) {
                     sizes="(min-width: 1280px) 880px, (min-width: 1024px) 66vw, 100vw"
                     loading="eager"
                     fetchPriority="high"
-                    className="aspect-[16/9] w-full rounded-[1.5rem] object-cover shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 sm:rounded-[2rem]"
+                    className="h-auto w-full rounded-2xl shadow-xl shadow-indigo-900/10 ring-1 ring-slate-900/5 sm:rounded-3xl"
                   />
                 )}
                 {showContents && <MobileTableOfContents headings={post.headings} className={`lg:hidden ${post.image ? "mt-8" : ""}`} />}
