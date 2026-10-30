@@ -258,11 +258,11 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard), Coupon, App download (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (menu, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard), Coupon, App download, Menu, Video (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (images, MP3) are shown as coming soon; they need file storage outside the database first (see "Releasing another type"). PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
 - **redirect** (Website, WhatsApp, Instagram, Facebook): the short link forwards to an address made from the content, saved in `targetUrl`.
-- **page** (List of links, Social media, Business, Contact card, Coupon, App download): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **page** (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
 - **static** (WiFi): the content is printed into the code.
 
 **Contact card (`vcard`):** first and/or last name (one is required), photo, job title, company, a short note, a mobile and a work phone, email, website, address (at least a phone, email or website), up to 10 social profiles and a theme. The page has one-tap Call, Email, Website and Directions (Google Maps search) buttons, **Save contact** (`api/r/[slug]/vcard`), the details and the profiles.
@@ -272,6 +272,10 @@ All are listed with comments in `.env.example`. Values never go into git.
 **Coupon:** the offer (required, 80), details (300), a code (40) with a **Copy** button, an optional last day (`validUntil`, YYYY-MM-DD), optional logo and business name, an optional button (link and text, "Use the offer" by default) and terms (500, folded away under *Terms and conditions*). After the last day (`offerEnded`: once that day is over everywhere, i.e. its end in UTC plus 14 hours) the page says *This offer ended on …* and hides the button; the code still opens. Dates are shown in English with a fixed time zone so the server and the phone render the same text.
 
 **App download (`apps`):** app name (required), icon, description, an App Store link (apps.apple.com or itunes.apple.com) and/or a Google Play link (play.google.com) and an optional website. On a scan, iPhones and iPads go straight to the App Store and Android phones to Google Play (`redirect` in its rules, applied by the scan page through `contentRedirect`); other devices, or a phone whose store isn't set, see the page with both store buttons. Every visit is counted, redirected or not.
+
+**Menu:** a name (`venueName`; required), logo, description (300), up to 20 sections of dishes (200 dishes in all; each a name (80), a price as text (20) and a description (200); blank rows and empty sections are left out) and notes (300, e.g. allergens). The page has shortcuts to the named sections and shows the dishes on white cards so they read well in every theme. The restaurant landing page offers it (and a Website code for a menu that's already online).
+
+**Video:** a YouTube or Vimeo link (`parseVideoUrl` accepts watch, youtu.be, shorts, embed and live links, and Vimeo links with a private hash; it's saved as `{ provider, videoId, hash, url }`), a title, a description and an optional button. Until the visitor taps play the page shows only a play card, so nothing is requested from YouTube or Vimeo; the tap loads the player from `www.youtube-nocookie.com` or `player.vimeo.com` (`videoEmbedUrl`, both in the CSP's frame-src) with autoplay. The privacy policy says so.
 
 Field ids `name` and `folder` are reserved in the form: DynamicForm always stores them at the top level (the code's private name and folder), so a page's own name field needs another id (`businessName`, `title`).
 
@@ -295,7 +299,7 @@ Field ids `name` and `folder` are reserved in the form: DynamicForm always store
 
 **Creating** (`api/create-dynamic.js`): checks the plan and trial limit, then validates the input for the type (URLs must be http(s), colors must be hex, Instagram usernames and WhatsApp numbers must be valid, hosted pages go through `normalizeContent`, names have length limits, a logo and a page photo may each be at most 150 KB and the whole request 600 KB), then saves the code with a random 6-character slug. The create page sends only the chosen type's page content.
 
-**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle) and, for hosted pages, `components/qr/fields/PageFields.js` (image, linkList, profileList, hours, theme). DynamicForm passes each change to the create page as a function of the latest form data, so fields filled at once (browser autofill) don't overwrite each other. Every type except Website keeps its fields under its own name in the form data (`formData.links.title`).
+**The form system:** each type's fields are defined in `lib/qr/qrSchemas.js` and drawn by `components/qr/fields/DynamicForm.js` with the field components in `components/qr/fields/FieldComponents.js` (text, url, email, tel, password, textarea, select, folder, toggle (shown as a switch), color, file, repeater, icon selector; fields can depend on a toggle) and, for hosted pages, `components/qr/fields/PageFields.js` (image, linkList, profileList, hours, menuSections, theme; text fields also accept `type: "date"`). DynamicForm passes each change to the create page as a function of the latest form data, so fields filled at once (browser autofill) don't overwrite each other. Every type except Website keeps its fields under its own name in the form data (`formData.links.title`).
 
 **Releasing another type:**
 1. Set `released: true` (and `isNew: true` for the *New* badge) in `lib/qr/qrTypes.js`; its icon and colours are in `components/qr/qrTypeVisuals.js`.
@@ -318,7 +322,7 @@ Field ids `name` and `folder` are reserved in the form: DynamicForm always store
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
 | App download, from an iPhone or Android phone | Redirect to that phone's store | Yes |
-| Hosted page (List of links, Social media, Business, Contact card, Coupon, App download) | The page, from its saved content | Yes |
+| Hosted page (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.
@@ -387,6 +391,7 @@ Without SMTP settings all of them are printed to the log. The SMTP connection is
   - `pages/_document.js` holds the Search Console verification tag and loads Tag Manager (container `GTM-M2HW6QST`), plus the `noscript` fallback.
   - Google's snippet is in `public/gtm-init.js`, a file rather than inline code, so the CSP allows it.
   - It runs only on qr-genie.co, and never on QR scan pages (`/r/…`, our customers' visitors) or on the password reset and email confirmation pages (their addresses carry one-time codes).
+  - The CSP also allows the YouTube (`www.youtube-nocookie.com`) and Vimeo (`player.vimeo.com`) players in frames, for Video QR code pages.
   - The CSP allows Google's domains for Tag Manager, its Preview mode, Google Analytics and the Google tag's advertising measurement (Google Ads conversions send to `www.google.com` and `*.doubleclick.net`, allowed in `connect-src` only). Tags that load anything else (other ads pixels, chat widgets, custom HTML) are blocked until their domains are added.
   - The privacy policy's Cookies, How we use your information and Service providers sections describe Google Analytics and Google Ads measurement: update them if the tags change.
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.

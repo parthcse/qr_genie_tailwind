@@ -88,6 +88,10 @@ const sections = [
           None of this runs on QR code scan pages, so scans of your codes are never sent to Google. You can block analytics
           and advertising cookies in your browser settings without affecting how QR-Genie works.
         </p>
+        <p>
+          A video QR code shows a video from YouTube or Vimeo. The video is only loaded when the person who scanned the code
+          taps play; from then on YouTube or Vimeo may set their own cookies, as described in their privacy policies.
+        </p>
       </>
     ),
   },
@@ -121,6 +125,7 @@ const sections = [
           <li><strong>Amazon Web Services</strong>, which hosts our servers and database and sends our emails;</li>
           <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots;</li>
           <li><strong>Google</strong> (Tag Manager, Analytics and Ads), to measure visits to our website and how well our ads work.</li>
+          <li><strong>YouTube and Vimeo</strong>, to play videos on video QR codes, only after the viewer taps play.</li>
         </ul>
         <p>We may also disclose information if the law requires it.</p>
       </>

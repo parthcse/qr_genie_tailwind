@@ -26,9 +26,9 @@ const BLURBS = {
   business: { text: "Your business on one page: call, email, website, directions, opening hours and a Save contact button.", best: "Shops, salons, clinics, offices" },
   vcard: { text: "A digital business card: your photo, job and contact details, saved to the phone in one tap.", best: "Business cards, name badges, email signatures" },
   coupon: { text: "A discount with a code to copy in one tap, an end date, your terms and a button to use it.", best: "Shop windows, receipts, flyers" },
-  menu: { text: "Your menu as a fast mobile page, with sections, dishes and prices." },
+  menu: { text: "Your menu as a fast mobile page, with sections, dishes, prices and notes. Change it any time.", best: "Restaurants, cafés, bars, food trucks" },
   apps: { text: "Sends iPhone users to the App Store and Android users to Google Play, from one code.", best: "Packaging, posters, in-store displays" },
-  video: { text: "Plays your YouTube or Vimeo video on a clean mobile page." },
+  video: { text: "Plays your YouTube or Vimeo video on a clean mobile page, with a button to learn more.", best: "Product demos, tours, events" },
   images: { text: "A photo gallery people can swipe through." },
   mp3: { text: "An audio player for a song, podcast or message." },
 };

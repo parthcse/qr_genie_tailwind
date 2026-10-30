@@ -1183,6 +1183,8 @@ const INITIAL_FORM_DATA = {
   vcard: emptyContent("vcard"),
   coupon: emptyContent("coupon"),
   apps: emptyContent("apps"),
+  video: emptyContent("video"),
+  menu: emptyContent("menu"),
   // Facebook
   facebook: { page: "" },
   // WhatsApp

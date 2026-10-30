@@ -24,6 +24,7 @@ import {
   FaUtensils,
   FaWifi,
   FaList,
+  FaInfoCircle,
   FaFacebook,
   FaInstagram,
   FaTwitter,
@@ -52,7 +53,7 @@ import {
   IconSelectorField,
   FolderField,
 } from "./FieldComponents";
-import { HoursField, ImageField, LinkListField, ProfileListField, ThemeField } from "./PageFields";
+import { HoursField, ImageField, LinkListField, MenuField, ProfileListField, ThemeField } from "./PageFields";
 
 // Icon mapping
 const iconMap = {
@@ -76,6 +77,7 @@ const iconMap = {
   FaUtensils,
   FaWifi,
   FaList,
+  FaInfoCircle,
   FaFacebook,
   FaInstagram,
   FaTwitter,
@@ -287,6 +289,9 @@ const CollapsibleSection = ({
 
       case "hours":
         return <HoursField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "menuSections":
+        return <MenuField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
 
       case "theme":
         return <ThemeField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;

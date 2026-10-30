@@ -4,6 +4,8 @@ import ContactLanding from "./ContactLanding";
 import BusinessLanding from "./BusinessLanding";
 import CouponLanding from "./CouponLanding";
 import AppLanding from "./AppLanding";
+import VideoLanding from "./VideoLanding";
+import MenuLanding from "./MenuLanding";
 
 // The hosted page for each "page" type (lib/qr/qrTypes.js)
 const PAGES = {
@@ -13,6 +15,8 @@ const PAGES = {
   business: BusinessLanding,
   coupon: CouponLanding,
   apps: AppLanding,
+  video: VideoLanding,
+  menu: MenuLanding,
 };
 
 export const hasLandingPage = (type) => !!PAGES[type];

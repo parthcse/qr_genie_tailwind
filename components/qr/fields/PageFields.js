@@ -272,6 +272,145 @@ export function HoursField({ field, value, onChange }) {
   );
 }
 
+const emptyDish = () => ({ name: "", description: "", price: "" });
+
+/** "menuSections": the menu as sections of dishes, each with a name, a price and a short description */
+export function MenuField({ field, value, onChange }) {
+  const sections = Array.isArray(value) && value.length > 0 ? value : [{ title: "", items: [emptyDish()] }];
+  const dishCount = sections.reduce((sum, section) => sum + (section.items?.length || 0), 0);
+  const maxSections = field.maxSections || 20;
+  const maxDishes = field.maxItems || 200;
+
+  const setSection = (index, patch) => onChange(sections.map((section, i) => (i === index ? { ...section, ...patch } : section)));
+  const moveIn = (list, index, step) => {
+    const next = [...list];
+    const target = index + step;
+    if (target < 0 || target >= next.length) return list;
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  };
+  const iconButton = "rounded-md p-1.5 text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:opacity-30";
+
+  return (
+    <div>
+      <span className={labelClass}>
+        {field.label}
+        {field.required && <span className="ml-1 text-red-500">*</span>}
+      </span>
+      <div className="space-y-4">
+        {sections.map((section, s) => {
+          const items = section.items?.length ? section.items : [emptyDish()];
+          const setItem = (i, patch) => setSection(s, { items: items.map((item, n) => (n === i ? { ...item, ...patch } : item)) });
+          return (
+            <div key={s} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={section.title || ""}
+                  onChange={(e) => setSection(s, { title: e.target.value })}
+                  maxLength={60}
+                  placeholder={s === 0 ? "Section, e.g. Coffee" : "Section, e.g. Cakes"}
+                  aria-label={`Section ${s + 1} name`}
+                  className={`${inputClass} bg-white font-semibold`}
+                />
+                <span className="flex flex-none items-center gap-0.5">
+                  <button type="button" onClick={() => onChange(moveIn(sections, s, -1))} disabled={s === 0} aria-label={`Move section ${s + 1} up`} className={iconButton}>
+                    <FaArrowUp className="h-3 w-3" />
+                  </button>
+                  <button type="button" onClick={() => onChange(moveIn(sections, s, 1))} disabled={s === sections.length - 1} aria-label={`Move section ${s + 1} down`} className={iconButton}>
+                    <FaArrowDown className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange(sections.length === 1 ? [{ title: "", items: [emptyDish()] }] : sections.filter((_, i) => i !== s))}
+                    aria-label={`Remove section ${s + 1}`}
+                    className="rounded-md p-1.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+                  >
+                    <FaTrash className="h-3 w-3" />
+                  </button>
+                </span>
+              </div>
+              <ol className="mt-3 space-y-2">
+                {items.map((item, i) => (
+                  <li key={i} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                    <div className="grid grid-cols-[minmax(0,1fr)_6.5rem_auto] items-center gap-2">
+                      <input
+                        type="text"
+                        value={item.name || ""}
+                        onChange={(e) => setItem(i, { name: e.target.value })}
+                        maxLength={80}
+                        placeholder="Dish, e.g. Cappuccino"
+                        aria-label={`Section ${s + 1}, dish ${i + 1} name`}
+                        className={inputClass}
+                      />
+                      <input
+                        type="text"
+                        value={item.price || ""}
+                        onChange={(e) => setItem(i, { price: e.target.value })}
+                        maxLength={20}
+                        placeholder="Price"
+                        aria-label={`Section ${s + 1}, dish ${i + 1} price`}
+                        className={inputClass}
+                      />
+                      <span className="flex items-center">
+                        <button type="button" onClick={() => setSection(s, { items: moveIn(items, i, -1) })} disabled={i === 0} aria-label={`Move dish ${i + 1} up`} className={iconButton}>
+                          <FaArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSection(s, { items: items.length === 1 ? [emptyDish()] : items.filter((_, n) => n !== i) })}
+                          aria-label={`Remove dish ${i + 1}`}
+                          className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-red-600"
+                        >
+                          <FaTrash className="h-3 w-3" />
+                        </button>
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={item.description || ""}
+                      onChange={(e) => setItem(i, { description: e.target.value })}
+                      maxLength={200}
+                      placeholder="Short description (optional)"
+                      aria-label={`Section ${s + 1}, dish ${i + 1} description`}
+                      className={`${inputClass} mt-2 py-2 text-xs`}
+                    />
+                  </li>
+                ))}
+              </ol>
+              {dishCount < maxDishes && (
+                <button
+                  type="button"
+                  onClick={() => setSection(s, { items: [...items, emptyDish()] })}
+                  className="mt-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50"
+                >
+                  <FaPlus className="h-3 w-3" />
+                  Add dish
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {sections.length < maxSections ? (
+        <button
+          type="button"
+          onClick={() => onChange([...sections, { title: "", items: [emptyDish()] }])}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dashed border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50"
+        >
+          <FaPlus className="h-3 w-3" />
+          Add section
+        </button>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">That's the maximum of {maxSections} sections.</p>
+      )}
+      <p className="mt-1.5 text-xs text-slate-500">
+        {dishCount} of {maxDishes} dishes. Empty rows are left out.
+      </p>
+    </div>
+  );
+}
+
 export function ThemeField({ field, value, onChange }) {
   const selected = value || DEFAULT_LANDING_THEME;
   return (

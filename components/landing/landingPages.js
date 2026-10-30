@@ -32,8 +32,8 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
  * Content of the QR type and industry pages (rendered by LandingPage.js). Each page targets one search phrase from
  * the SEO plan: the title, h1 and first paragraph use it. Only promise what the product does today (see
  * DEVELOPER_GUIDE "QR codes"): Wi-Fi codes are static (no tracking, can't be edited), passwords only on website codes,
- * and the only pages QR-Genie hosts are the released "page" types (list of links); menus, forms and files still
- * live on pages people already have.
+ * and the pages QR-Genie hosts are the released "page" types in lib/qr/qrTypes.js (list of links, menu, ...); forms
+ * and uploaded files (PDFs, images) still live on pages people already have.
  *
  * Fields: path, crumb (breadcrumb name), seoTitle (≤ 60 characters), description (≤ 160), eyebrow { icon, label },
  * title + highlight (in the gradient) + subtitle (the h1), summary (one sentence under the h1 in the banner), intro (the overview below the banner), createType (preselected type on the create page, or null), cta, preview (the banner picture: qrColor, card (name, what it opens,
@@ -44,6 +44,7 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
 // Short labels and pages of the QR types, for the badges on ideas and the related links
 export const TYPE_PAGES = {
   website: { label: "Website QR code", path: "/website-qr-code" },
+  menu: { label: "Menu QR code", path: "/restaurant-menu-qr-code" },
   links: { label: "List of links QR code", path: "/multiple-links-qr-code" },
   wifi: { label: "Wi-Fi QR code", path: "/wifi-qr-code" },
   whatsapp: { label: "WhatsApp QR code", path: "/whatsapp-qr-code" },
@@ -61,6 +62,7 @@ export const LANDING_LINKS = {
   "/qr-codes-for-events": { label: "Events", long: "QR codes for events" },
   "/qr-codes-for-real-estate": { label: "Real estate", long: "QR codes for real estate" },
   "/qr-codes-for-hotels": { label: "Hotels", long: "QR codes for hotels" },
+  "/qr-code-types": { label: "QR code types", long: "All QR code types" },
   "/pricing": { label: "Pricing", long: "Plans and pricing" },
 };
 
@@ -488,15 +490,15 @@ export const LANDING_PAGES = {
     crumb: "Restaurant menus",
     seoTitle: "QR Code for Restaurant Menus, Editable Anytime | QR-Genie",
     description:
-      `Create a QR code for your restaurant menu. Change the menu link anytime without reprinting, share your Wi-Fi and track scans. Free for ${TRIAL_DAYS} days.`,
+      `Create a QR code for your restaurant menu: type your menu or link to the one you have. Change it anytime without reprinting and track scans. Free for ${TRIAL_DAYS} days.`,
     eyebrow: { icon: FaUtensils, label: "For restaurants" },
     title: "QR Codes for",
     highlight: "Restaurant Menus",
     subtitle: "Update your menu without reprinting",
-    summary: "Link every table to your online menu, and change it whenever dishes or prices change.",
+    summary: "Put your menu on every table, and change it whenever dishes or prices change.",
     intro:
-      "Link your tables, windows and takeaway bags to your online menu. When dishes or prices change, update the link in QR-Genie and every printed code shows the new menu. Add a Wi-Fi code for guests and a WhatsApp code for orders.",
-    createType: "website",
+      "Type your menu into QR-Genie and we host it as a fast mobile page, or link to the menu you already have online. When dishes or prices change, update it in your dashboard and every printed code shows the new menu. Add a Wi-Fi code for guests and a WhatsApp code for orders.",
+    createType: "menu",
     cta: "Create a menu QR code",
     preview: {
       qrColor: "#c2410c",
@@ -508,7 +510,7 @@ export const LANDING_PAGES = {
       description: "A digital menu that's always current, and fewer questions for your staff.",
       items: [
         { icon: <FaUtensils className="h-5 w-5" />, title: "Contactless digital menu", description: "Guests scan at the table and browse the menu on their own phone." },
-        { icon: <FaSyncAlt className="h-5 w-5" />, title: "Update without reprinting", description: "Seasonal dishes or new prices: change the link and every printed code shows the new menu." },
+        { icon: <FaSyncAlt className="h-5 w-5" />, title: "Update without reprinting", description: "Seasonal dishes or new prices: edit the menu (or its link) and every printed code shows the new one." },
         { icon: <FaChartLine className="h-5 w-5" />, title: "See when guests scan", description: "Scans by day, hour and device, and a weekday-by-hour view of your busiest times." },
         { icon: <FaWifi className="h-5 w-5" />, title: "Wi-Fi without asking", description: "Add a Wi-Fi QR code to table cards so guests connect without asking staff." },
         { icon: <FaWhatsapp className="h-5 w-5" />, title: "Orders and bookings by chat", description: "A WhatsApp code on takeaway bags and flyers brings in reorders and table bookings." },
@@ -518,16 +520,16 @@ export const LANDING_PAGES = {
     steps: {
       title: "How to make a QR code for your restaurant menu",
       items: [
-        { icon: <FaGlobe className="h-6 w-6" />, title: "Put your menu online", description: "Use a page on your website, your ordering platform's menu, or a PDF in online storage." },
-        { icon: <FaQrcode className="h-6 w-6" />, title: "Create a website QR code", description: "Paste the menu link, name the code and pick your colours, logo and frame." },
+        { icon: <FaUtensils className="h-6 w-6" />, title: "Add your menu", description: "Choose Menu and type your sections, dishes and prices, or choose Website and paste the link to a menu you already have online." },
+        { icon: <FaQrcode className="h-6 w-6" />, title: "Design the code", description: "Name the code and pick your colours, logo and a frame such as Scan for the menu." },
         { icon: <FaPrint className="h-6 w-6" />, title: "Print it for your tables", description: "Download print-ready files for table tents, stickers, windows and takeaway bags." },
-        { icon: <FaSyncAlt className="h-6 w-6" />, title: "Update anytime", description: "When the menu changes, change the link in your dashboard. Nothing to reprint." },
+        { icon: <FaSyncAlt className="h-6 w-6" />, title: "Update anytime", description: "When the menu changes, edit it in your dashboard. Nothing to reprint." },
       ],
     },
     ideas: {
       title: "QR codes around your restaurant",
       items: [
-        { title: "Table tents and stickers", description: "The menu on every table, readable on any phone.", type: "website" },
+        { title: "Table tents and stickers", description: "The menu on every table, readable on any phone.", type: "menu" },
         { title: "Takeaway bags and boxes", description: "Reorders and feedback on WhatsApp.", type: "whatsapp" },
         { title: "Guest Wi-Fi", description: "A Wi-Fi code on table cards or at the counter.", type: "wifi" },
         { title: "Instagram", description: "Turn diners into followers with a code by the till or in the bill folder.", type: "instagram" },
@@ -539,17 +541,17 @@ export const LANDING_PAGES = {
       {
         question: "How do I create a QR code for my restaurant menu?",
         answer:
-          `Put your menu online, create a website QR code in QR-Genie with the menu's link, design it and print it. The free trial lets you try it with up to 2 codes for ${TRIAL_DAYS} days.`,
+          `Choose Menu, type your sections, dishes and prices, design the code and print it. If your menu is already online, choose Website and paste its link instead. The free trial lets you try it with up to 2 codes for ${TRIAL_DAYS} days.`,
       },
       {
         question: "Can I update the menu without reprinting the QR code?",
         answer:
-          "Yes. The printed code holds a short QR-Genie link. Change where it points in your dashboard and the next scan opens the new menu.",
+          "Yes. The printed code holds a short QR-Genie link. Edit the menu (or change the link it opens) in your dashboard and the next scan shows the new one.",
       },
       {
         question: "Do I need a website for my menu?",
         answer:
-          "Your menu needs to be online somewhere: a page on your website, your ordering platform's menu page, or a PDF in online storage such as Google Drive. The QR code points to it, and you can switch to a different link any time.",
+          "No. With a Menu QR code you type your menu into QR-Genie and we host it as a mobile page, with sections, prices and notes such as allergens. If your menu is already online, on your website, an ordering platform or a PDF, a Website QR code can open it instead.",
       },
       {
         question: "Can I use one QR code for every table?",
@@ -561,7 +563,7 @@ export const LANDING_PAGES = {
         answer: "No. Recent iPhones and Android phones scan QR codes with the built-in camera, and the menu opens in their browser.",
       },
     ],
-    related: ["/website-qr-code", "/wifi-qr-code", "/whatsapp-qr-code", "/qr-codes-for-hotels", "/pricing"],
+    related: ["/qr-code-types", "/website-qr-code", "/wifi-qr-code", "/whatsapp-qr-code", "/pricing"],
   },
 
   events: {
