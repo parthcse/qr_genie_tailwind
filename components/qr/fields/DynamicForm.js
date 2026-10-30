@@ -36,6 +36,8 @@ import {
   FaUserCircle,
   FaAddressCard,
   FaClock,
+  FaTicketAlt,
+  FaMobileAlt,
 } from "react-icons/fa";
 import {
   InputField,
@@ -86,6 +88,8 @@ const iconMap = {
   FaUserCircle,
   FaAddressCard,
   FaClock,
+  FaTicketAlt,
+  FaMobileAlt,
 };
 
 // Collapsible Section Component
@@ -141,6 +145,7 @@ const CollapsibleSection = ({
       case "url":
       case "email":
       case "tel":
+      case "date":
       case "password":
         return (
           <InputField

@@ -18,7 +18,7 @@ import { pauseActiveQrCodes } from "@/lib/billing/subscriptionSync";
 import { getClientIp } from "@/lib/clientIp";
 import { parseWifiString } from "@/lib/qr/qrPassword";
 import { isPageType } from "@/lib/qr/qrTypes";
-import { normalizeContent, contentTitle } from "@/lib/qr/qrContent";
+import { normalizeContent, contentTitle, contentRedirect } from "@/lib/qr/qrContent";
 import QrLanding, { hasLandingPage } from "@/components/qr/landing/QrLanding";
 
 export async function getServerSideProps({ params, req }) {
@@ -93,6 +93,12 @@ export async function getServerSideProps({ params, req }) {
     if (error || !hasLandingPage(qr.type)) {
       console.error(`QR code ${qr.slug}: page content can't be shown (${error || "no page for this type"})`);
       return { props: { view: "not_found" } };
+    }
+    // Some pages send certain phones straight on (App download: iPhone to the App Store, Android to Google Play)
+    const straightTo = contentRedirect(qr.type, content, ua);
+    if (straightTo) {
+      const checked = validateRedirectUrl(straightTo);
+      if (checked.valid) return { redirect: { destination: checked.url, permanent: false } };
     }
     return { props: { view: "page", pageType: qr.type, content, slug } };
   }

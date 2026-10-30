@@ -1181,6 +1181,8 @@ const INITIAL_FORM_DATA = {
   social: emptyContent("social"),
   business: emptyContent("business"),
   vcard: emptyContent("vcard"),
+  coupon: emptyContent("coupon"),
+  apps: emptyContent("apps"),
   // Facebook
   facebook: { page: "" },
   // WhatsApp

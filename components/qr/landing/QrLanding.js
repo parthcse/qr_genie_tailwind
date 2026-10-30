@@ -2,6 +2,8 @@ import LinksLanding from "./LinksLanding";
 import SocialLanding from "./SocialLanding";
 import ContactLanding from "./ContactLanding";
 import BusinessLanding from "./BusinessLanding";
+import CouponLanding from "./CouponLanding";
+import AppLanding from "./AppLanding";
 
 // The hosted page for each "page" type (lib/qr/qrTypes.js)
 const PAGES = {
@@ -9,6 +11,8 @@ const PAGES = {
   social: SocialLanding,
   vcard: ContactLanding,
   business: BusinessLanding,
+  coupon: CouponLanding,
+  apps: AppLanding,
 };
 
 export const hasLandingPage = (type) => !!PAGES[type];

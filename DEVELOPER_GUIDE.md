@@ -258,16 +258,20 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard) (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (coupon, menu, app download, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard), Coupon, App download (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (menu, video, images, MP3) are shown as coming soon. PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
 - **redirect** (Website, WhatsApp, Instagram, Facebook): the short link forwards to an address made from the content, saved in `targetUrl`.
-- **page** (List of links, Social media, Business, Contact card): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **page** (List of links, Social media, Business, Contact card, Coupon, App download): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
 - **static** (WiFi): the content is printed into the code.
 
 **Contact card (`vcard`):** first and/or last name (one is required), photo, job title, company, a short note, a mobile and a work phone, email, website, address (at least a phone, email or website), up to 10 social profiles and a theme. The page has one-tap Call, Email, Website and Directions (Google Maps search) buttons, **Save contact** (`api/r/[slug]/vcard`), the details and the profiles.
 
 **Business:** business name (`businessName`; required), logo, about (500), phone, email, website, address (at least one of them), opening hours (free text per day; empty days are hidden), up to 10 social profiles and a theme. Same actions as a contact card, plus opening hours; **Save contact** saves the business as an organisation.
+
+**Coupon:** the offer (required, 80), details (300), a code (40) with a **Copy** button, an optional last day (`validUntil`, YYYY-MM-DD), optional logo and business name, an optional button (link and text, "Use the offer" by default) and terms (500, folded away under *Terms and conditions*). After the last day (`offerEnded`: once that day is over everywhere, i.e. its end in UTC plus 14 hours) the page says *This offer ended on …* and hides the button; the code still opens. Dates are shown in English with a fixed time zone so the server and the phone render the same text.
+
+**App download (`apps`):** app name (required), icon, description, an App Store link (apps.apple.com or itunes.apple.com) and/or a Google Play link (play.google.com) and an optional website. On a scan, iPhones and iPads go straight to the App Store and Android phones to Google Play (`redirect` in its rules, applied by the scan page through `contentRedirect`); other devices, or a phone whose store isn't set, see the page with both store buttons. Every visit is counted, redirected or not.
 
 Field ids `name` and `folder` are reserved in the form: DynamicForm always stores them at the top level (the code's private name and folder), so a page's own name field needs another id (`businessName`, `title`).
 
@@ -313,7 +317,8 @@ Field ids `name` and `folder` are reserved in the form: DynamicForm always store
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
-| Hosted page (List of links, Social media, Business, Contact card) | The page, from its saved content | Yes |
+| App download, from an iPhone or Android phone | Redirect to that phone's store | Yes |
+| Hosted page (List of links, Social media, Business, Contact card, Coupon, App download) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.
