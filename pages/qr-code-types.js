@@ -23,6 +23,10 @@ const BLURBS = {
   instagram: { text: "Opens your Instagram profile, in the app when it's installed.", best: "Shops, restaurants, creators" },
   social: { text: "One page with all your social profiles, each with its own branded button.", best: "Brands, venues, influencers" },
   facebook: { text: "Opens your Facebook page, in the Facebook app when it's installed.", best: "Local businesses, events" },
+  email: { text: "Opens a new email to you, with the subject and message already filled in.", best: "Bookings, enquiries, feedback" },
+  sms: { text: "Opens a new text message to you, with your message ready to send.", best: "Offers, sign-ups, support" },
+  phone: { text: "Offers to call your number straight from the camera.", best: "Shop windows, vans, flyers" },
+  location: { text: "Opens your address or place in Google Maps, ready for directions.", best: "Events, shops, rentals" },
   business: { text: "Your business on one page: call, email, website, directions, opening hours and a Save contact button.", best: "Shops, salons, clinics, offices" },
   vcard: { text: "A digital business card: your photo, job and contact details, saved to the phone in one tap.", best: "Business cards, name badges, email signatures" },
   coupon: { text: "A discount with a code to copy in one tap, an end date, your terms and a button to use it.", best: "Shop windows, receipts, flyers" },
@@ -47,7 +51,7 @@ const faqs = [
   {
     question: "Which QR code types can I change after printing?",
     answer:
-      "Every dynamic type: change where it points or edit its page from your dashboard, and every scan is counted. Wi-Fi codes are static: the network details are printed into the code, so a new password needs a new code.",
+      "Every dynamic type: change where it points or edit its page from your dashboard, and every scan is counted. Wi-Fi, Email, SMS and Phone call codes are static: their details are printed into the code, so a change needs a new code.",
   },
   {
     question: "Are all QR code types included in every plan?",
@@ -232,7 +236,7 @@ export default function QrCodeTypesPage() {
                 <h3 className="mt-4 font-display text-lg font-semibold text-slate-900">Static</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
                   The content is printed into the code itself, so it works with no internet page in between. It can't be changed or tracked
-                  later. Wi-Fi codes are always static.
+                  later. Wi-Fi, Email, SMS and Phone call codes are always static.
                 </p>
               </div>
             </div>

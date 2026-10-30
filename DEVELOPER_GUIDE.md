@@ -119,6 +119,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `invoices/gst.js` | GST maths and rules with no dependencies: the tax inside a GST-inclusive price, CGST + SGST / IGST / export, state codes, GSTIN check, financial year and invoice number, amount in words. |
 | `invoices/invoicePdf.js`, `invoiceFormat.js` | Draws the invoice PDF (`renderInvoicePdf`); the display text shared by the PDF and the invoice email (`describeInvoice`). |
 | `qr/qrTypes.js` | The list of QR types: label, sentence name, group, `kind` (`redirect`, `page` or `static`) and whether it's `released`. Everything that lists or checks types reads it, including the API. `releasedTypeNames()` gives copy such as "website, list of links, Wi-Fi, WhatsApp and Instagram". |
+| `qr/qrActions.js` | `actionPayload` for Email, SMS and Phone call (the `mailto:`, `SMSTO:` or `tel:` text printed into a static code) and Location (a Google Maps link): `{ payload, meta }` or `{ error }`, shared by the create page and the API. |
 | `qr/vcard.js` | `buildVCard`: a vCard 3.0 file for "Save contact" (values escaped, lines folded at 75, photo embedded when it's PNG or JPEG) and `vcardFileName`. |
 | `qr/socialPlatforms.js` | The social platforms for Social media pages and Facebook codes: `socialProfileLink(platform, typed)` turns a username ("@cafe"), a WhatsApp number or a pasted link into the profile link, or returns the message for a bad value. |
 | `qr/qrContent.js` | Content rules for hosted pages: `emptyContent`, `normalizeContent` (cleans and checks; returns `{ content }` or `{ error }` with the message to show) and `contentSummary` ("4 links"). Shared by the create page and the server, which always re-checks. |
@@ -258,12 +259,12 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types:** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Business, Contact card (vCard), Coupon, App download, Menu, Video (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (images, MP3) are shown as coming soon; they need file storage outside the database first (see "Releasing another type"). PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types (17):** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Email, SMS, Phone call, Location, Business, Contact card (vCard), Coupon, App download, Menu, Video, in five groups on the create page (Links and pages, Social and chat, Calls messages and places, Business, Media) (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (images, MP3) are shown as coming soon; they need file storage outside the database first (see "Releasing another type"). PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
-- **redirect** (Website, WhatsApp, Instagram, Facebook): the short link forwards to an address made from the content, saved in `targetUrl`.
+- **redirect** (Website, WhatsApp, Instagram, Facebook, Location): the short link forwards to an address made from the content, saved in `targetUrl`.
 - **page** (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
-- **static** (WiFi): the content is printed into the code.
+- **static** (WiFi, Email, SMS, Phone call): the content is printed into the code, so the camera acts on it straight away, even offline. Not tracked, can't be edited; the create page explains this instead of offering Dynamic/Static. The short link of a static Email, SMS or Phone code shows "not found" (it has no page).
 
 **Contact card (`vcard`):** first and/or last name (one is required), photo, job title, company, a short note, a mobile and a work phone, email, website, address (at least a phone, email or website), up to 10 social profiles and a theme. The page has one-tap Call, Email, Website and Directions (Google Maps search) buttons, **Save contact** (`api/r/[slug]/vcard`), the details and the profiles.
 
@@ -276,6 +277,8 @@ All are listed with comments in `.env.example`. Values never go into git.
 **Menu:** a name (`venueName`; required), logo, description (300), up to 20 sections of dishes (200 dishes in all; each a name (80), a price as text (20) and a description (200); blank rows and empty sections are left out) and notes (300, e.g. allergens). The page has shortcuts to the named sections and shows the dishes on white cards so they read well in every theme. The restaurant landing page offers it (and a Website code for a menu that's already online).
 
 **Video:** a YouTube or Vimeo link (`parseVideoUrl` accepts watch, youtu.be, shorts, embed and live links, and Vimeo links with a private hash; it's saved as `{ provider, videoId, hash, url }`), a title, a description and an optional button. Until the visitor taps play the page shows only a play card, so nothing is requested from YouTube or Vimeo; the tap loads the player from `www.youtube-nocookie.com` or `player.vimeo.com` (`videoEmbedUrl`, both in the CSP's frame-src) with autoplay. The privacy policy says so.
+
+**Email, SMS, Phone call, Location** (`lib/qr/qrActions.js`): Email holds `mailto:address?subject=…&body=…` (encoded); SMS holds `SMSTO:+number:message`; Phone holds `tel:+number` (digits and a leading + only). Location forwards to `https://www.google.com/maps/search/?api=1&query=<address>` and, like Website, can be made static instead. Their `meta` (address, number) is what the dashboard list shows.
 
 Field ids `name` and `folder` are reserved in the form: DynamicForm always stores them at the top level (the code's private name and folder), so a page's own name field needs another id (`businessName`, `title`).
 
@@ -321,6 +324,7 @@ Field ids `name` and `folder` are reserved in the form: DynamicForm always store
 | Paused, or the owner's plan has ended | "QR code paused" (or the owner's custom message) | No |
 | Password protected | Password page; the right password sends the visitor on | Yes (once, on the password page) |
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
+| Static Email, SMS or Phone call (short link opened by hand) | "QR not found or removed" | Yes |
 | App download, from an iPhone or Android phone | Redirect to that phone's store | Yes |
 | Hosted page (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |

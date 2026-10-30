@@ -17,7 +17,7 @@ import { getQrPauseReason, PLAN_STATUS_FIELDS } from "@/lib/billing/subscription
 import { pauseActiveQrCodes } from "@/lib/billing/subscriptionSync";
 import { getClientIp } from "@/lib/clientIp";
 import { parseWifiString } from "@/lib/qr/qrPassword";
-import { isPageType } from "@/lib/qr/qrTypes";
+import { isPageType, qrTypeById } from "@/lib/qr/qrTypes";
 import { normalizeContent, contentTitle, contentRedirect } from "@/lib/qr/qrContent";
 import QrLanding, { hasLandingPage } from "@/components/qr/landing/QrLanding";
 
@@ -124,6 +124,11 @@ export async function getServerSideProps({ params, req }) {
         },
       },
     };
+  }
+
+  // Static Email, SMS and Phone codes hold mailto: / SMSTO: / tel: text, not a web address: there's no page to show
+  if (qrTypeById(qr.type)?.kind === "static") {
+    return { props: { view: "not_found" } };
   }
 
   // Password protected: the destination is only sent after the right password (see /api/r/[slug]/unlock)

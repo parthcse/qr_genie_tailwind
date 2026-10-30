@@ -99,6 +99,14 @@ function destinationOf(code) {
   switch (code.type) {
     case "wifi":
       return { label: meta.ssid ? `Network: ${meta.ssid}` : "Wi-Fi network", href: null };
+    case "email":
+      return { label: meta.to ? `Email to ${meta.to}` : "Email", href: null };
+    case "sms":
+      return { label: meta.phone ? `Text ${meta.phone}` : "Text message", href: null };
+    case "phone":
+      return { label: meta.phone ? `Call ${meta.phone}` : "Phone call", href: null };
+    case "location":
+      return { label: meta.address || "Location", href };
     case "facebook":
       return { label: meta.page && !meta.page.includes("/") ? `facebook.com/${meta.page}` : withoutProtocol(code.targetUrl || ""), href };
     case "instagram":

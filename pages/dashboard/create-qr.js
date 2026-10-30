@@ -15,6 +15,7 @@ import { emptyContent, normalizeContent, contentToForm } from "@/lib/qr/qrConten
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 import QrLanding from "@/components/qr/landing/QrLanding";
 import { socialProfileLink } from "@/lib/qr/socialPlatforms";
+import { actionPayload, isActionType } from "@/lib/qr/qrActions";
 import { toPng, toJpeg, toSvg, toBlob } from "html-to-image";
 import { jsPDF } from "jspdf";
 
@@ -151,6 +152,11 @@ const generatePreviewUrl = (qrType, formData) => {
 
   // Hosted pages live at the code's own short link, made when the code is created
   if (isPageType(qrType)) return `${baseUrl}/r/preview`;
+  // Email, SMS, Phone call and Location: what the code will hold, or an example until the form is filled in
+  if (isActionType(qrType)) {
+    const examples = { email: "mailto:hello@example.com", sms: "SMSTO:+919876543210:", phone: "tel:+919876543210", location: "https://www.google.com/maps" };
+    return actionPayload(qrType, formData[qrType]).payload || examples[qrType];
+  }
 
   switch (qrType) {
     case "website":
@@ -943,6 +949,89 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
           </div>
         );
+      case "email": {
+        const mail = formData.email || {};
+        return (
+          <div className="flex h-full flex-col bg-white pt-12">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 pb-3 text-sm">
+              <span className="text-blue-500">Cancel</span>
+              <span className="font-semibold text-gray-900">New Message</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 text-white">
+                <FaArrowRight className="h-3 w-3 -rotate-90" />
+              </span>
+            </div>
+            <div className="space-y-0 px-4 text-sm">
+              <p className="truncate border-b border-gray-100 py-2.5 text-gray-900">
+                <span className="text-gray-400">To: </span>
+                {mail.to || "you@example.com"}
+              </p>
+              <p className="truncate border-b border-gray-100 py-2.5 font-medium text-gray-900">
+                <span className="font-normal text-gray-400">Subject: </span>
+                {mail.subject}
+              </p>
+              <p className="whitespace-pre-line break-words py-3 text-gray-700">{mail.body || <span className="text-gray-300">Your message</span>}</p>
+            </div>
+          </div>
+        );
+      }
+      case "sms": {
+        const sms = formData.sms || {};
+        return (
+          <div className="flex h-full flex-col bg-white pt-11">
+            <div className="flex flex-col items-center border-b border-gray-100 pb-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-b from-gray-300 to-gray-400 text-white">
+                <FaPhone className="h-4 w-4" />
+              </span>
+              <span className="mt-1 text-xs font-medium text-gray-900">{sms.phone || "+91 98765 43210"}</span>
+            </div>
+            <div className="flex-1" />
+            <div className="flex items-end gap-2 border-t border-gray-100 p-3">
+              <div className="min-h-[2.25rem] flex-1 whitespace-pre-line break-words rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-900">
+                {sms.message || <span className="text-gray-300">Text Message</span>}
+              </div>
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-500 text-white">
+                <FaArrowRight className="h-3 w-3 -rotate-90" />
+              </span>
+            </div>
+          </div>
+        );
+      }
+      case "phone": {
+        const number = formData.phone?.phone || "+91 98765 43210";
+        return (
+          <div className="flex h-full flex-col items-center bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 px-6 pb-10 pt-20 text-white">
+            <p className="text-2xl font-light tracking-wide">{number}</p>
+            <p className="mt-1 text-sm text-white/60">Tap to call</p>
+            <div className="mt-auto flex flex-col items-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30">
+                <FaPhone className="h-6 w-6" />
+              </span>
+              <span className="mt-2 text-xs text-white/70">Call</span>
+            </div>
+          </div>
+        );
+      }
+      case "location": {
+        const address = (formData.location?.address || "").trim();
+        return (
+          <div className="relative flex h-full flex-col bg-[#e8eef3]">
+            {/* A simple drawn map: streets, a park and the pin */}
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect x="170" y="80" width="110" height="140" rx="10" fill="#cfe8d3" />
+              <path d="M0 260 L300 200 M120 0 L160 600 M0 420 L300 470 M240 0 L210 600" stroke="#ffffff" strokeWidth="14" fill="none" />
+              <path d="M0 330 L300 330" stroke="#fde68a" strokeWidth="10" fill="none" />
+            </svg>
+            <div className="relative flex flex-1 items-center justify-center">
+              <FaMapMarkerAlt className="h-12 w-12 -translate-y-6 text-red-500 drop-shadow-lg" />
+            </div>
+            <div className="relative m-3 rounded-2xl bg-white p-4 shadow-lg">
+              <p className="break-words text-sm font-semibold text-gray-900">{address || "Your address or place"}</p>
+              <p className="mt-0.5 text-xs text-gray-500">Google Maps</p>
+              <span className="mt-3 block rounded-full bg-blue-600 py-2 text-center text-xs font-semibold text-white">Directions</span>
+            </div>
+          </div>
+        );
+      }
       case "facebook": {
         const typed = (formData.facebook?.page || "").trim();
         const link = socialProfileLink("facebook", typed);
@@ -1187,6 +1276,11 @@ const INITIAL_FORM_DATA = {
   menu: emptyContent("menu"),
   // Facebook
   facebook: { page: "" },
+  // Email, SMS, Phone call and Location (lib/qr/qrActions.js)
+  email: { to: "", subject: "", body: "" },
+  sms: { phone: "", message: "" },
+  phone: { phone: "" },
+  location: { address: "" },
   // WhatsApp
   whatsapp: {
 
@@ -1428,6 +1522,7 @@ export default function CreateQrPage() {
   const canContinueFromStep2 = () => {
     if (!selectedType) return false;
     if (pageCheck) return !pageCheck.error;
+    if (isActionType(selectedType)) return !actionPayload(selectedType, formData[selectedType]).error;
 
     switch (selectedType) {
       case "website":
@@ -1456,6 +1551,7 @@ export default function CreateQrPage() {
     if (isPageType(qrType)) {
       return (qrType === selectedType ? pageCheck?.error : normalizeContent(qrType, formData[qrType]).error) || "";
     }
+    if (isActionType(qrType)) return actionPayload(qrType, formData[qrType]).error || "";
 
     switch (qrType) {
       case "website":
@@ -1521,7 +1617,7 @@ export default function CreateQrPage() {
           // The form data, without other page types' content (a photo typed in for another type isn't sent)
           ...Object.fromEntries(Object.entries(formData).filter(([key]) => !isPageType(key) || key === selectedType)),
           // WiFi codes are always static; a password only applies to website codes
-          linkType: selectedType === "wifi" ? "STATIC" : isPageType(selectedType) ? "DYNAMIC" : formData.linkType || "DYNAMIC",
+          linkType: qrTypeById(selectedType)?.kind === "static" ? "STATIC" : isPageType(selectedType) ? "DYNAMIC" : formData.linkType || "DYNAMIC",
           passwordEnabled: selectedType === "website" && !!formData.passwordEnabled,
           // Use pattern colors for QR, fallback to legacy qrColor
           qrColor: designData.patternColor || designData.qrColor || "#000000",
@@ -1674,8 +1770,11 @@ export default function CreateQrPage() {
     const typeInfo = qrTypes.find((type) => type.id === selectedType);
     const TypeIcon = typeInfo?.icon || FaQrcode;
     const isWifi = selectedType === "wifi";
+    const isStatic = typeInfo?.kind === "static";
     const passwordOn = selectedType === "website" && !!formData.passwordEnabled;
-    const linkType = isWifi ? "STATIC" : formData.linkType || "DYNAMIC";
+    const linkType = isStatic ? "STATIC" : formData.linkType || "DYNAMIC";
+    // What a static code does straight from the camera (WiFi has its own note)
+    const staticAction = { email: "opens a new email to you", sms: "opens a new text message to you", phone: "starts a call to you" }[selectedType];
 
     // Takes the new form data, or a function of the latest data (DynamicForm sends functions so quick successive
     // changes, such as browser autofill, all land)
@@ -1735,6 +1834,14 @@ export default function CreateQrPage() {
             <p className="text-sm leading-relaxed text-cyan-900">
               <span className="font-semibold">Wi-Fi codes are static.</span> Phones join the network straight from the camera, with no app or
               web page in between. Scans aren't counted, and if the network name or password changes you'll need a new code.
+            </p>
+          </div>
+        ) : isStatic ? (
+          <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <FaInfoCircle className="mt-0.5 h-4 w-4 flex-none text-slate-500" />
+            <p className="text-sm leading-relaxed text-slate-700">
+              <span className="font-semibold">{typeInfo.label} codes are static.</span> Scanning one {staticAction} straight from the camera,
+              with no web page in between, even offline. Scans aren&apos;t counted, and to change the details you&apos;ll need a new code.
             </p>
           </div>
         ) : isPageType(selectedType) ? (
@@ -2450,7 +2557,7 @@ export default function CreateQrPage() {
   const nextDisabled = (step === 1 && !canContinueFromStep1) || (step === 2 && !canContinueFromStep2());
   const qrPreviewAvailable = !!success || canGenerateQR;
   const isWifi = selectedType === "wifi";
-  const willBeDynamic = !isWifi && (isPageType(selectedType) || (formData.linkType || "DYNAMIC") === "DYNAMIC");
+  const willBeDynamic = qrTypeById(selectedType)?.kind !== "static" && (isPageType(selectedType) || (formData.linkType || "DYNAMIC") === "DYNAMIC");
 
   return (
     <DashboardLayout

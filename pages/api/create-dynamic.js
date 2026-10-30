@@ -11,6 +11,7 @@ import { sanitizeDesign } from "@/lib/qr/qrConfig";
 import { qrTypeById } from "@/lib/qr/qrTypes";
 import { normalizeContent } from "@/lib/qr/qrContent";
 import { socialProfileLink } from "@/lib/qr/socialPlatforms";
+import { actionPayload, isActionType } from "@/lib/qr/qrActions";
 
 import { canCreateQR, checkQRCodeLimit, getUserSubscriptionStatus } from "@/lib/billing/subscription";
 const WIFI_SECURITY = new Set(["WPA", "WEP", "WPA-EAP", "nopass"]);
@@ -207,6 +208,14 @@ export default async function handler(req, res) {
     metaObj = {
       username: username,
     };
+  } else if (isActionType(type)) {
+    // Email, SMS, Phone call (static: mailto: / SMSTO: / tel: printed into the code) and Location (a Google Maps link)
+    const { payload, meta, error } = actionPayload(type, req.body?.[type]);
+    if (error) {
+      return res.status(400).json({ error });
+    }
+    targetUrl = payload;
+    metaObj = meta;
   } else if (type === "facebook") {
     // A page name becomes facebook.com/<name>; a pasted link must be a Facebook address
     const link = socialProfileLink("facebook", typeof facebook?.page === "string" ? facebook.page : "");
