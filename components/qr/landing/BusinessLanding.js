@@ -1,9 +1,11 @@
 import { FaClock } from "react-icons/fa6";
 import { WEEK_DAYS } from "@/lib/qr/qrContent";
 import { landingTheme } from "@/lib/qr/landingThemes";
-import LandingShell, { LandingHeader } from "./LandingShell";
+import LandingShell, { LandingHeader, Part } from "./LandingShell";
 import { ActionRow, DetailsCard, SaveContactButton, contactActions } from "./ContactBlocks";
 import { ProfileButtons } from "./SocialLanding";
+
+const CONTACT_FIELDS = ["phone", "email", "website", "address"];
 
 function OpeningHours({ hours = {}, themeId }) {
   const theme = landingTheme(themeId);
@@ -35,12 +37,22 @@ export default function BusinessLanding({ content = {}, preview = false, slug = 
   const actions = contactActions(content);
   return (
     <LandingShell themeId={content.theme} preview={preview}>
-      <LandingHeader image={content.avatar} title={content.businessName} description={content.description} themeId={content.theme} preview={preview} placeholder="Your business name" />
-      <ActionRow actions={actions} preview={preview} themeId={content.theme} />
-      <OpeningHours hours={content.hours} themeId={content.theme} />
-      <DetailsCard actions={actions} preview={preview} themeId={content.theme} />
-      <ProfileButtons profiles={content.profiles || []} preview={preview} themeId={content.theme} className="mt-6" />
-      <SaveContactButton slug={slug} preview={preview} themeId={content.theme} />
+      <LandingHeader image={content.avatar} title={content.businessName} description={content.description} themeId={content.theme} content={content} fields={{ title: "businessName" }} />
+      <Part content={content} fields={CONTACT_FIELDS}>
+        <ActionRow actions={actions} preview={preview} themeId={content.theme} />
+      </Part>
+      <Part content={content} fields="hours">
+        <OpeningHours hours={content.hours} themeId={content.theme} />
+      </Part>
+      <Part content={content} fields={CONTACT_FIELDS}>
+        <DetailsCard actions={actions} preview={preview} themeId={content.theme} />
+      </Part>
+      <Part content={content} fields="profiles">
+        <ProfileButtons profiles={content.profiles || []} preview={preview} themeId={content.theme} className="mt-6" />
+      </Part>
+      <Part content={content} fields={CONTACT_FIELDS}>
+        <SaveContactButton slug={slug} preview={preview} themeId={content.theme} />
+      </Part>
     </LandingShell>
   );
 }

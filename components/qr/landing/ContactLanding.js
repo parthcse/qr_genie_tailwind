@@ -1,6 +1,8 @@
-import LandingShell, { LandingHeader } from "./LandingShell";
+import LandingShell, { LandingHeader, Part } from "./LandingShell";
 import { ActionRow, DetailsCard, SaveContactButton, contactActions } from "./ContactBlocks";
 import { ProfileButtons } from "./SocialLanding";
+
+const CONTACT_FIELDS = ["phone", "phone2", "email", "website", "address"];
 
 /**
  * "Contact card" (vCard) page: photo, name, job title and company, a short note, one-tap actions, "Save contact",
@@ -22,13 +24,17 @@ export default function ContactLanding({ content = {}, preview = false, slug = n
         subtitle={[content.jobTitle, content.company].filter(Boolean).join(" · ")}
         description={content.note}
         themeId={content.theme}
-        preview={preview}
-        placeholder="Your name"
+        content={content}
+        fields={{ title: ["firstName", "lastName"], subtitle: ["jobTitle", "company"], description: "note" }}
       />
-      <ActionRow actions={actions} preview={preview} themeId={content.theme} />
-      <SaveContactButton slug={slug} preview={preview} themeId={content.theme} />
-      <DetailsCard actions={details} preview={preview} themeId={content.theme} />
-      <ProfileButtons profiles={content.profiles || []} preview={preview} themeId={content.theme} className="mt-6" />
+      <Part content={content} fields={CONTACT_FIELDS}>
+        <ActionRow actions={actions} preview={preview} themeId={content.theme} />
+        <SaveContactButton slug={slug} preview={preview} themeId={content.theme} />
+        <DetailsCard actions={details} preview={preview} themeId={content.theme} />
+      </Part>
+      <Part content={content} fields="profiles">
+        <ProfileButtons profiles={content.profiles || []} preview={preview} themeId={content.theme} className="mt-6" />
+      </Part>
     </LandingShell>
   );
 }

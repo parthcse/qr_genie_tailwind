@@ -1,6 +1,7 @@
 // components/qr/QrOverviewModal.js
 import { useEffect, useRef, useState } from "react";
-import { FaTimes, FaDownload, FaInfoCircle, FaExternalLinkAlt, FaGlobe, FaWifi, FaMusic, FaLink, FaBuilding, FaVideo, FaImages, FaFacebook, FaInstagram, FaShareAlt, FaWhatsapp, FaUtensils, FaMobileAlt, FaTicketAlt, FaQrcode } from "react-icons/fa";
+import { FaTimes, FaDownload, FaInfoCircle, FaExternalLinkAlt, FaGlobe, FaWifi, FaMusic,
+  FaFilePdf, FaLink, FaBuilding, FaVideo, FaImages, FaFacebook, FaInstagram, FaShareAlt, FaWhatsapp, FaUtensils, FaMobileAlt, FaTicketAlt, FaQrcode } from "react-icons/fa";
 import Link from "next/link";
 import DesignedQRCode from "./DesignedQRCode";
 import { createQRConfig } from "@/lib/qr/qrConfig";
@@ -21,6 +22,7 @@ const getTypeIcon = (type) => {
     facebook: FaFacebook,
     social: FaShareAlt,
     mp3: FaMusic,
+    pdf: FaFilePdf,
     menu: FaUtensils,
     apps: FaMobileAlt,
     coupon: FaTicketAlt,

@@ -21,7 +21,7 @@ const sections = [
       <ul>
         <li><strong>Account details:</strong> your name, email address and password. Passwords are stored only as a secure hash, never in readable form.</li>
         <li><strong>Profile and billing details you choose to add:</strong> phone number, company, address and tax ID.</li>
-        <li><strong>The content of your QR codes:</strong> destination links and anything else you enter, such as Wi-Fi network details, a WhatsApp number and message, an Instagram username or a logo image.</li>
+        <li><strong>The content of your QR codes:</strong> destination links and anything else you enter, such as Wi-Fi network details, a WhatsApp number and message, an Instagram username, a logo image, or photos, audio and PDF files you upload.</li>
         <li><strong>Messages you send us</strong> through the contact form or by email.</li>
       </ul>
     ),
@@ -89,6 +89,10 @@ const sections = [
           and advertising cookies in your browser settings without affecting how QR-Genie works.
         </p>
         <p>
+          Photos, audio and PDF files you upload are stored on our server and can be seen by anyone who scans your code or
+          has the file&apos;s address. We delete them when you remove them from your QR codes or delete those codes.
+        </p>
+        <p>
           A video QR code shows a video from YouTube or Vimeo. The video is only loaded when the person who scanned the code
           taps play; from then on YouTube or Vimeo may set their own cookies, as described in their privacy policies.
         </p>
@@ -138,12 +142,16 @@ const sections = [
       <>
         <p>
           We keep your account details, QR codes and scan history while your account is open. When you delete a QR code, it
-          stops working and disappears from your dashboard; its scan history stays with your account so your analytics
-          remain accurate.
+          stops working and disappears from your dashboard, and any photos, audio or PDF files it used are deleted from our
+          server; its scan history stays with your account so your analytics remain accurate.
         </p>
         <p>
-          If you ask us to close your account, we delete your personal information, except records we must keep by law, such
-          as payment and invoice records.
+          You can delete your account at any time from My Account. That permanently deletes your account details, QR codes,
+          scan history, uploaded files and the messages you sent us, straight away; copies in our backups are overwritten
+          within about three months. We keep only what we need to: GST invoices and payment records, which the law requires
+          us to keep and which are no longer linked to an account, and a one-way fingerprint of your email address that can&apos;t
+          be turned back into it, so a new account with the same address doesn&apos;t get another free trial. Razorpay keeps its own
+          records of your payments.
         </p>
       </>
     ),
@@ -153,8 +161,8 @@ const sections = [
     heading: "Your choices and rights",
     body: (
       <p>
-        You can update most of your details yourself under My Account. To get a copy of your information, correct something
-        you can&apos;t change yourself, or delete your account, <Link href="/contact?topic=privacy">contact us</Link>. We&apos;ll
+        You can update most of your details yourself under My Account. You can also delete your account there. To get a copy of
+        your information or correct something you can&apos;t change yourself, <Link href="/contact?topic=privacy">contact us</Link>. We&apos;ll
         respond within 30 days.
       </p>
     ),

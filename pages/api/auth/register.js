@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { hadDeletedAccount } from "@/lib/accountDeletion";
 import bcrypt from "bcryptjs";
 import { setLoginSession } from "@/lib/auth";
 import { getClientIp } from "@/lib/clientIp";
@@ -59,6 +60,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: "An account with this email already exists. Please log in instead." });
     }
 
+    // Deleting an account and signing up again doesn't give another free trial: the plan page is where they start
+    const trialDays = (await hadDeletedAccount(emailCheck.email)) ? 0 : TRIAL_DAYS;
     const now = new Date();
     const user = await prisma.user.create({
       data: {
@@ -67,7 +70,7 @@ export default async function handler(req, res) {
         name: typeof name === "string" && name.trim() ? name.trim().slice(0, 100) : null,
         subscriptionPlan: "TRIAL",
         trialStartedAt: now,
-        trialEndsAt: new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+        trialEndsAt: new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000),
         termsAcceptedAt: now,
       },
     });

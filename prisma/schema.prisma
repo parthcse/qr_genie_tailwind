@@ -72,6 +72,7 @@ model User {
   qrCodes               QRCode[]
   folders               Folder[]
   invoices              Invoice[]
+  uploadedFiles         UploadedFile[]
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
@@ -98,6 +99,29 @@ model QRCode {
   folder            Folder?   @relation(fields: [folderId], references: [id])
   folderId          String?
   scanEvents        ScanEvent[]
+}
+
+// A one-way fingerprint of the email of each deleted account (lib/accountDeletion.js), and nothing else about them:
+// someone who deletes their account and signs up again doesn't get another free trial.
+model DeletedAccountEmail {
+  emailHash String   @id
+  deletedAt DateTime @default(now())
+}
+
+// A file uploaded for a hosted page (Images, MP3, PDF). The bytes are on disk, named by the id (lib/qr/fileStore.js);
+// pages refer to the id in their content.
+model UploadedFile {
+  id        String   @id // random and unguessable; also the file's address, /api/files/<id>
+  kind      String   // image | audio | pdf
+  mime      String   // read from the file's own bytes, not from what the browser said
+  size      Int      // bytes
+  name      String   // the original file name, for display and downloads
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@index([userId])
 }
 
 model ScanEvent {

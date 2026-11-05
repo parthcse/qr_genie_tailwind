@@ -45,3 +45,6 @@ Thumbs.db
 # Written by `next dev` when an AI coding assistant starts it; not used by this project
 /AGENTS.md
 /CLAUDE.md
+
+# Files uploaded for hosted pages (locally; the server keeps its own in UPLOADS_DIR)
+/uploads/

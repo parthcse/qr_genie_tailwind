@@ -4,7 +4,10 @@ import { sendPlanEmails } from "@/lib/billing/subscriptionEmails";
 import { issueInvoiceForPayment } from "@/lib/invoices/invoices";
 import { recordRazorpayCancellation } from "@/lib/billing/cancelSubscription";
 import { verifyWebhookSignature } from "@/lib/billing/razorpayVerify";
-import { trimEnv } from "@/lib/billing/razorpayClient";
+import { getRazorpayClient, trimEnv } from "@/lib/billing/razorpayClient";
+import { adminRecipients } from "@/lib/billing/subscriptionEmails";
+import { formatPrice } from "@/lib/billing/price";
+import { sendPaymentForDeletedAccountEmail } from "@/lib/email";
 
 export const config = {
   api: {
@@ -89,6 +92,19 @@ export default async function handler(req, res) {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!user) {
+      // The account was deleted. Its subscription was cancelled then, but a charge already on its way can still arrive.
+      const charge = event.payload?.payment?.entity;
+      if (eventName === "subscription.charged" && charge?.id) {
+        console.error(`Razorpay charged a deleted account: payment ${charge.id}, subscription ${subscription.id}`);
+        const stopped = await getRazorpayClient().subscriptions.cancel(subscription.id, false).then(() => true, () => false);
+        sendPaymentForDeletedAccountEmail({
+          to: adminRecipients(),
+          paymentId: charge.id,
+          subscriptionId: subscription.id,
+          amount: charge.amount != null && charge.currency ? formatPrice(charge.amount, charge.currency) : null,
+          stopped,
+        }).catch((err) => console.error("Deleted account payment email:", err.message));
+      }
       return res.status(200).json({ ok: true, ignored: true });
     }
 

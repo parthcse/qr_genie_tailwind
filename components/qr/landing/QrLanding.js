@@ -6,6 +6,9 @@ import CouponLanding from "./CouponLanding";
 import AppLanding from "./AppLanding";
 import VideoLanding from "./VideoLanding";
 import MenuLanding from "./MenuLanding";
+import ImagesLanding from "./ImagesLanding";
+import AudioLanding from "./AudioLanding";
+import PdfLanding from "./PdfLanding";
 
 // The hosted page for each "page" type (lib/qr/qrTypes.js)
 const PAGES = {
@@ -17,6 +20,9 @@ const PAGES = {
   apps: AppLanding,
   video: VideoLanding,
   menu: MenuLanding,
+  images: ImagesLanding,
+  mp3: AudioLanding,
+  pdf: PdfLanding,
 };
 
 export const hasLandingPage = (type) => !!PAGES[type];

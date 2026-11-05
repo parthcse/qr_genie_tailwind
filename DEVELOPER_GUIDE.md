@@ -16,7 +16,7 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 |---|---|
 | `/` | Landing page: hero with a product preview and stats that count up when scrolled into view, the kinds of business it's made for (restaurants, retail, events, hotels, real estate, marketing; the four with their own page link to it), **QR code types** (tabs for four popular types — Website, List of links, WhatsApp, Instagram — each with a phone preview of what a scan does, a button to create one and a link to its page, then an **All QR code types** box linking to `/qr-code-types`; every panel is in the HTML, only the selected one is shown), features, how it works, pricing (the three plan cards in rupees for visitors in India, US dollars everywhere else, and a **See full pricing** panel linking to `/pricing`), testimonials, **FAQ**, and a closing panel with an illustration (a scannable sign-up QR code for signed-out visitors). The buttons are rendered on the server from the signed-in state, so there's no placeholder flash. The header's section links glide to their section and underline the one being read; **QR types**, **Pricing**, **Blog** and **Contact** open their own pages (underlined there, and **Blog** on every article too). |
 | `/pricing` | The plan cards (3 \| 12 \| 6 months, the 12-month plan featured as *Best value*; same as the landing page, in the visitor's currency), **Payment methods** (logos of the ways to pay a subscription in that currency: Visa, Mastercard, RuPay, UPI AutoPay and net banking in India; Visa and Mastercard elsewhere), **All plans include** (a grid of what every plan has), **Compare all plans** (free trial, 3, 6 and 12 months side by side: price, billing and every feature, with a button per plan; it scrolls sideways on phones with the feature column fixed), how billing works and a pricing FAQ. |
-| `/qr-code-types` | Every QR code type, grouped (Links and pages, Social and chat, Business, Media), each with what it does, dynamic or static, *New*, a **Create** button and a link to its own page when there is one; then the coming-soon types, dynamic vs static and an FAQ. Built from `lib/qr/qrTypes.js`, so a released type appears here by itself. The header's **QR types** link opens it. |
+| `/qr-code-types` | Every QR code type, grouped (Links and pages, Social and chat, Calls, messages and places, Business, Media), each with what it does, dynamic or static, *New*, a **Create** button and a link to its own page when there is one; then any types still to come, dynamic vs static and an FAQ. Built from `lib/qr/qrTypes.js`, so a released type appears here by itself. The header's **QR types** link opens it. |
 | `/website-qr-code`, `/multiple-links-qr-code`, `/wifi-qr-code`, `/whatsapp-qr-code`, `/instagram-qr-code` | One page per QR type, for people searching for that kind of generator. |
 | `/restaurant-menu-qr-code`, `/qr-codes-for-events`, `/qr-codes-for-real-estate`, `/qr-codes-for-hotels` | One page per kind of business. These and the type pages share `components/landing/LandingPage.js`: a medium-height banner (`PageBanner`: title, tagline and a one-line summary beside a picture of the code as it looks in the dashboard, with its scans and a note; a compact version on phones and tablets; sized so nothing is cut off), the breadcrumb, an overview with the buttons, benefits, steps, ideas (linked to the type pages), FAQ and links to the other pages. Their text is in `components/landing/landingPages.js`. Inner pages use this calmer banner on purpose; only the home page has the large hero. |
 | `/blog`, `/blog/page/<n>` | The blog, written in WordPress (see [Blog](#blog-wordpress)): the banner (`PageBanner`), **Latest articles** with the count and "page 2 of 4", topic links (shown when there are two topics or more), then 12 articles as cards, newest first: 4 across from 1280 px, 3 on laptops, 2 on tablets, 1 on phones. The card picture has the share-image shape (1200×630), so featured images made at that size show uncut. Page numbers underneath (Previous, 1 … 5 6 7 … 12, Next) are real links; they and the topic links land on the grid (`#articles`). `/blog/page/1` redirects to `/blog`; a page past the end is "not found". Without articles: "Our first articles are on the way". |
@@ -24,10 +24,10 @@ QR Genie lets businesses create QR codes whose destination can be changed after 
 | `/blog/<slug>` | One article, laid out in the site container like the other inner pages: a light banner with the topics, title, the written excerpt as an introduction, author, date and reading time; the breadcrumb row (Home › Blog › topic › title, the title cut short on phones); then the featured image and the text on the left, with the sidebar on the right beside both (**On this page**, the article's h2 and h3 headings with the current one marked, and a sign-up card; it stays in view while scrolling). On phones and tablets **On this page** is a folding box under the picture. After the text: tags, **Written by** with share buttons (X, LinkedIn, Facebook, WhatsApp, copy link; plain links, nothing loads from those sites), and **Keep reading** (4 articles, same topic first). A thin gradient line at the top of the screen fills as the article is read. |
 | `/auth/register`, `/auth/login`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password` | Sign-up (starts a 7-day free trial; the Terms of Service and Privacy Policy must be accepted), email confirmation with a 6-digit code, login, password reset by email. Login, sign-up and verification share `components/auth/AuthShell.js` (brand panel, animated form, field components). Sign-up, login and forgot-password are protected by a Cloudflare Turnstile check. |
 | `/dashboard` (**My QR codes**) | Stats (codes, active, paused, total scans), folders as chips, search, status tabs (All / Active / Paused), type filter, sorting, pagination. Each code shows its type, dynamic/static, status, a **Protected** badge when it has a password, destination, short link (copy button), folder and scan count, with Download, Details and a menu (preview, copy link, duplicate, move to folder, pause/resume, delete). Select several codes for bulk move, pause, resume or delete. |
-| `/dashboard/create-qr` | Three steps with a live phone preview: **type** (the released types in groups: Links and pages, Social and chat, Business, Media; new ones are marked *New* and the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static, hosted pages always dynamic — and, for websites, an optional password; for a hosted page such as **List of links** the preview is the real page as it's typed) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or another released type) opens straight at step 2 with that type chosen; the landing page links there. `?edit=<id>` edits an existing hosted page: only the content step, saved with **Save changes** (`PUT api/qrs/[id]` with `content`); the printed code doesn't change. |
+| `/dashboard/create-qr` | Three steps with a live phone preview, which from 1024 px wide stays on screen while the form scrolls (the phone is as tall as the window has room for, 640 px at most): **type** (the released types in groups: Links and pages, Social and chat, Business, Media; new ones are marked *New* and the rest are listed as coming soon) → **content** (the form for the type, name, folder, dynamic or static — WiFi is always static, hosted pages always dynamic — and, for websites, an optional password; for a hosted page the preview is the real page, with every option shown as faded example content until it's filled in, see [Live preview](#qr-codes)) → **design** (pattern color or gradient, background color, gradient or transparent, pattern style, corner styles and colors, frame with text, and a logo — big images are shrunk in the browser to 150 KB at most). After **Create QR code** a success screen shows the short link and offers Download (PNG, SVG, PDF, JPEG or print), View details and Create another. `?type=website` (or another released type) opens straight at step 2 with that type chosen; the landing page links there. `?edit=<id>` edits an existing hosted page: only the content step, saved with **Save changes** (`PUT api/qrs/[id]` with `content`); the printed code doesn't change. |
 | `/dashboard/qrs/[id]` | One code: details, change the destination (for a hosted page: **Edit page**, which opens the create page with `?edit=`), add, change or remove its password, set a custom paused message, and its scans over time, by country and by device. |
 | `/dashboard/analytics` | All codes or one code over 7 days, 30 days, 90 days or 12 months: total and unique scans with the change against the previous period, daily average, busiest day, scans over time, devices, operating systems, browsers, top countries and cities, a weekday × hour heatmap (in the viewer's time zone), per-code performance and CSV export. The chosen code is kept in the address (`?qrId=`). |
-| `/dashboard/account` | Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/auth/AuthShell.js`). |
+| `/dashboard/account` | **Delete account** at the end of General information (see [Deleting an account](#deleting-an-account)). Profile, email change (needs the current password, then a 6-digit code sent to the new address), password change with a strength meter (signs out other devices), language, billing details. Fields use the same components as login and sign-up (`components/auth/AuthShell.js`). |
 | `/dashboard/billing` | Current plan (name, price, renewal date, and *Paid months start* for a plan bought during the free days), trial countdown, the three plan cards with Razorpay checkout in the visitor's currency, payment methods, and **Cancel subscription** on the plan card (a confirmation window with an optional reason; the card then shows *Cancelled* and the end date; during the free days it says the payment will be refunded in full). `?plan=3m` / `6m` / `12m` (from **Subscribe** on the public pages) opens that plan's checkout straight away. |
 | `/contact` | Contact form (saved to the database and emailed to support): name, email, the topic as cards (with a tip for billing, cancellation, refund and "something isn't working" messages), message. `?topic=billing` (or another topic value from `lib/site.js`) preselects a topic. Beside it: the support email with a copy button, billing guidance and policy links. |
 | `/privacy`, `/terms`, `/refund-policy` | Legal pages. |
@@ -54,6 +54,7 @@ All dashboard pages share `components/layout/DashboardLayout.js`: the sidebar ha
 | Bot protection | Cloudflare Turnstile |
 | QR rendering | `qr-code-styling` (designed codes in the browser), `qrcode` (server PNGs) |
 | Charts | `recharts` |
+| Uploaded files | On the server's disk, in `UPLOADS_DIR`, behind `lib/qr/fileStore.js` |
 | Blog | Articles written in WordPress, read over GraphQL (the WPGraphQL plugin) and cleaned with `sanitize-html` |
 | Location | `geoip-lite` (bundled IP database) |
 | Runtime | Node 24 LTS in production, Node 22 or newer locally |
@@ -77,9 +78,10 @@ components/
                        ArticleParts (reading progress, On this page, share buttons, the sign-up card)
   auth/                AuthShell (sign-in page shell and form fields), CodeInput, Turnstile
   qr/                  DesignedQRCode, QrDownloadModal, QrOverviewModal, qrTypeVisuals (icon and colours per type)
-  qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields)
+  qr/fields/           the schema-driven form used by create-qr (DynamicForm, FieldComponents, PageFields, UploadFields)
   qr/landing/          the pages QR-Genie hosts for "page" types (LandingShell with the shared header and button,
-                       LinksLanding, SocialLanding, ContactLanding, BusinessLanding, QrLanding), ContactBlocks
+                       LinksLanding, SocialLanding, ContactLanding, BusinessLanding, CouponLanding, AppLanding, MenuLanding,
+                       VideoLanding, ImagesLanding, AudioLanding, PdfLanding, QrLanding), ContactBlocks
                        (call / email / website / directions, details card, Save contact) and brandIcons (social platform icons and colours),
                        shown at /r/<slug> and as the create page's live preview
   billing/             PaymentResultModal, CancelSubscriptionModal
@@ -111,6 +113,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `rateLimit.js` | `isRateLimited(key, windowMs, max)`: true when a request should be refused. |
 | `clientIp.js` | The visitor's IP as passed on by Nginx. |
 | `scanUtils.js`, `geoIp.js` | Scan details: hashed IP, device, OS, browser, country and city. |
+| `accountDeletion.js` | Server only. `deleteAccountData` (everything, in one transaction, then the files), `accountDataSummary` (the counts in the warning), `hadDeletedAccount` (no second free trial). |
 | `resetToken.js` | Password-reset tokens and their hashes. |
 | `useCurrentUser.js` | Browser hook that loads the signed-in user (if any) for public pages and their header. |
 | `seo.js` | Structured data for search engines (JSON-LD): the organisation, breadcrumbs, FAQ, the blog (`blogSchema`) and its articles (`blogPostingSchema`), and the product with its prices (`softwareApplicationSchema`); `pricesForSearch` gives search result text the lowest monthly price in both currencies ("$19.99/month (₹2,000 in India)") whoever is looking. |
@@ -134,6 +137,10 @@ proxy.js               runs before every /api request: blocks cross-site request
 | `qr/vcard.js` | `buildVCard`: a vCard 3.0 file for "Save contact" (values escaped, lines folded at 75, photo embedded when it's PNG or JPEG) and `vcardFileName`. |
 | `qr/socialPlatforms.js` | The social platforms for Social media pages and Facebook codes: `socialProfileLink(platform, typed)` turns a username ("@cafe"), a WhatsApp number or a pasted link into the profile link, or returns the message for a bad value. |
 | `qr/qrContent.js` | Content rules for hosted pages: `emptyContent`, `normalizeContent` (cleans and checks; returns `{ content }` or `{ error }` with the message to show) and `contentSummary` ("4 links"). Shared by the create page and the server, which always re-checks. |
+| `qr/fileRules.js` | What can be uploaded (`FILE_KINDS`, `MAX_UPLOAD_BYTES`, `MAX_GALLERY_IMAGES`, `MAX_GALLERY_BYTES`), file addresses and display helpers. Safe for pages and components. |
+| `qr/fileStore.js` | Server only. Keeps uploads on disk: `sniffFile` (the real type, from the bytes), `saveUpload`, `storageUsed`, `checkContentFiles` (a page's files must be this account's, the right kind and within the gallery's total), `removeUnusedFiles`, `fileIdsOfCode`, `deleteStoredFiles`. Other storage later means changing this file and `pages/api/files/`. |
+| `qr/uploadFile.js` | Browser only: `uploadFile` (with progress), `fileProblem` (a message before uploading), `shrinkPhoto`. |
+| `qr/previewSamples.js` | Example content for the create page's preview: `previewContent(type, form)`. |
 | `qr/landingThemes.js` | The colour themes of hosted pages (plain colours, applied as inline styles). |
 | `qr/qrSchemas.js` | Form definitions for each QR type. |
 | `qr/qrConfig.js` | `createQRConfig`: the qr-code-styling options for a design, shared by the on-screen code and the downloads. |
@@ -147,8 +154,9 @@ proxy.js               runs before every /api request: blocks cross-site request
 | Area | Routes |
 |---|---|
 | Auth | `auth/register`, `auth/login`, `auth/logout`, `auth/me`, `auth/verify-email`, `auth/resend-verification`, `auth/forgot-password`, `auth/reset-password`, `account/email-change` |
-| Account | `account/update`, `account/password`, `account/billing` |
+| Account | `account/update`, `account/password`, `account/billing`, `account/delete` (GET what would go; POST deletes) |
 | QR codes | `create-dynamic`, `my-qr-codes`, `qrs/[id]` (GET, PUT), `qrs/[id]/pause`, `qrs/[id]/resume`, `qrs/[id]/analytics`, `update-qr-name`, `duplicate-qr`, `delete-qr`, `move-to-folder` |
+| Files | `files` (POST, upload one file; the body is the raw file), `files/[id]` (GET, public: the file) |
 | Folders | `folders` (list, create), `folders/[id]` (rename, delete) |
 | Analytics | `analytics/overview` |
 | Billing | `billing/plans`, `billing/cancel`, `checkout/razorpay/create-subscription`, `checkout/razorpay/verify`, `webhooks/razorpay` |
@@ -161,7 +169,7 @@ proxy.js               runs before every /api request: blocks cross-site request
 cp .env.example .env       # fill it in, see below
 npm install                # also runs prisma generate
 npx prisma migrate deploy  # creates the tables
-npm run dev                # http://localhost:3000
+npm run dev                # http://localhost:3002
 ```
 
 Use a local PostgreSQL database, never the production one. Recommended local settings:
@@ -169,7 +177,7 @@ Use a local PostgreSQL database, never the production one. Recommended local set
 | Variable | Local value | Why |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://user:password@localhost:5432/qr_genie_dev` | Your own local database. |
-| `NEXT_PUBLIC_BASE_URL` | `http://localhost:3000` | Codes made locally point at your machine. |
+| `NEXT_PUBLIC_BASE_URL` | `http://localhost:3002` | Codes made locally point at your machine. |
 | `RAZORPAY_*` | Test-mode keys (`rzp_test_...`) and test-mode plan IDs | No real payments. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `1x00000000000000000000AA` | Cloudflare's public test key: always passes, so forms work on localhost. |
 | `TURNSTILE_SECRET_KEY` | `1x0000000000000000000000000000000AA` | Matching test secret. |
@@ -179,8 +187,8 @@ Use a local PostgreSQL database, never the production one. Recommended local set
 
 | Command | Does |
 |---|---|
-| `npm run dev` | Development server with hot reload. |
-| `npm run build` then `npm start` | Production build and server (listens on 127.0.0.1:3000). |
+| `npm run dev` | Development server with hot reload, on port 3002. |
+| `npm run build` then `npm start` | Production build and server (listens on 127.0.0.1:3000, the port Nginx and `scripts/deploy.sh` expect on the server). |
 | `npm run prisma:studio` | Browse and edit the database in the browser. |
 | `npx prisma migrate dev --name what_changed` | Create and apply a migration after editing the schema. |
 | `npm run email:test -- you@example.com` | Send a test email with the current SMTP settings. |
@@ -212,6 +220,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `INVOICE_SELLER_NAME`, `INVOICE_SELLER_ADDRESS`, `INVOICE_SELLER_GSTIN` | The business printed on GST invoices (address lines separated by `\|`). All three, with a valid GSTIN, are needed before any invoice is issued. |
 | `INVOICE_SAC` | Optional. SAC code shown on invoices. |
 | `INVOICE_LUT_ARN` | Optional. With a Letter of Undertaking, dollar payments are invoiced as exports without GST; without it they include IGST. |
+| `UPLOADS_DIR` | Where uploaded files are kept. Default: `uploads/` in the app folder (gitignored). On a server, use a folder outside the app. |
 | `WORDPRESS_GRAPHQL_URL` | Optional. The blog's WordPress GraphQL address; the default is in `lib/blog/wordpress.js`. |
 
 ## Data model
@@ -227,9 +236,11 @@ All are listed with comments in `.env.example`. Values never go into git.
 | `ContactMessage` | Contact-form messages. |
 | `Invoice` | One GST invoice per Razorpay payment (`razorpayPaymentId` is unique): number, financial year and sequence, amounts in paise / cents (`total`, `taxableValue`, `cgst`, `sgst`, `igst`), `supplyType`, place of supply, service period, `seller` and `customer` as printed (JSON), `emailedAt`. Kept when the account is deleted (`userId` becomes empty). |
 | `InvoiceCounter` | The last invoice number used in each financial year. |
+| `DeletedAccountEmail` | A one-way fingerprint (HMAC) of the email of each deleted account, and when; nothing else about them. |
+| `UploadedFile` | One file uploaded for a hosted page: random `id` (also its name on disk and its address), `kind` (`image`, `audio`, `pdf`), `mime` (from the file's own bytes), `size`, the original `name`, the owner. Pages refer to the id in `meta.content`. |
 
 - **`QRCode.meta`** is a JSON string: data for the type (e.g. WiFi network name, Instagram username, WhatsApp number and message; for a hosted page, its cleaned `content`, including its photo as a data URL of at most 150 KB) plus `designConfig` (the design chosen in step 3, including the logo as an image data URL). Logos live in the database, not in files, which is why they're capped at 150 KB.
-- **Deleting a QR code** sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
+- **Deleting a QR code** also removes its uploaded files from the server, and sets `status = DELETED`: the short link shows "not found", the code leaves all lists and the trial count, and its scan history stays.
 - **Deleting a folder** moves its codes to "no folder".
 - **Secrets are left out of every query by default** (`omit` in `lib/prisma.js`): `QRCode.passwordHash`, and `User.password`, `resetToken` and `emailCodeHash`. Login asks for the password hash with `omit: { password: false }`; password and email changes `select` it. For `passwordHash`: code that checks a password asks for it with `omit: { passwordHash: false }`; API responses only ever say `hasPassword: true/false`.
 - `scanCount` is what the dashboard list shows; the analytics pages count `ScanEvent` rows.
@@ -248,6 +259,23 @@ All are listed with comments in `.env.example`. Values never go into git.
 - **Bot checks:** Cloudflare Turnstile (Managed mode) on sign-up, login, forgot-password and contact. `components/auth/Turnstile.js` renders the widget; `lib/turnstile.js` verifies the token.
 - **Rate limits** protect login, sign-up, email confirmation (checking and resending codes), password reset, password/email change, the contact form, scans and password guesses on protected QR codes. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
 - **Admin:** users with `role = "admin"` can open `/admin`. Everyone else gets a "not found" page, so the admin area can't be discovered.
+
+### Deleting an account
+
+**Delete account** on `/dashboard/account` opens `components/dashboard/DeleteAccountModal.js`, in two steps: a warning with the real counts and what happens to the plan, then typing **CONFIRM** with the account's password. `POST api/account/delete` checks the same things on the server (`DELETE_ACCOUNT_WORD` in `lib/site.js`), so a stolen or unattended session can't do it, and five wrong tries lock it for 15 minutes. Afterwards the person sees `/auth/account-deleted`.
+
+What it does, in this order:
+1. **Stops the subscription** (`stopSubscriptionForDeletedAccount` in `lib/billing/cancelSubscription.js`), straight away rather than at the end of the cycle. If Razorpay can't confirm that, **nothing is deleted** and the person is told: an account must never go while it can still be charged. An id Razorpay doesn't know (old, or from test mode) can't charge, so it doesn't hold things up. A plan bought during the free days is refunded in full; otherwise the rest of the period isn't refunded, as in the refund policy, and the warning offers cancelling instead.
+2. **Deletes everything in one transaction** (`deleteAccountData` in `lib/accountDeletion.js`), so it all goes or none of it does: QR codes, including ones deleted earlier, with their scans, folders, the person's contact messages (signed in or from the same address), and the account with its profile, billing details and file records.
+3. **Removes their files from the disk**, used or not, and clears the sign-in cookie. Other sessions stop working because the account is gone. Printed codes then show "QR not found or removed"; static codes (Wi-Fi, Email, SMS, Phone call) hold their details themselves, so they keep working.
+4. **Sends a confirmation** to the person, and a notice to the admin that only says who it was when a subscription was involved, because a payment may need following up.
+
+What stays:
+- **GST invoices**, which tax law requires. `Invoice.user` is `SetNull`, so they're no longer linked to an account, but they hold the customer's details as printed.
+- **A one-way fingerprint of the email address** (`DeletedAccountEmail`), so deleting and signing up again doesn't give another free trial: the same address can register, but its trial has already ended.
+- **Copies in the database backups**, until they're overwritten (about three months at most), and Razorpay's own payment records.
+
+Admin accounts can't be deleted this way, so the owner can't lock themselves out of the admin pages. If a charge reaches Razorpay's webhook for an account that's gone (it was already on its way), the webhook tries to cancel the subscription again and emails the admin *REFUND NEEDED*. Update this list, and the privacy policy's "How long we keep it", when a new table holds personal data: add it to `deleteAccountData`.
 
 ## Plans and the free trial
 
@@ -271,11 +299,11 @@ All are listed with comments in `.env.example`. Values never go into git.
 
 ## QR codes
 
-**Open types (17):** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Email, SMS, Phone call, Location, Business, Contact card (vCard), Coupon, App download, Menu, Video, in five groups on the create page (Links and pages, Social and chat, Calls messages and places, Business, Media) (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (images, MP3) are shown as coming soon; they need file storage outside the database first (see "Releasing another type"). PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
+**Open types (20):** Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Email, SMS, Phone call, Location, Business, Contact card (vCard), Coupon, App download, Menu, Video, Images, MP3, PDF, in five groups on the create page (Links and pages, Social and chat, Calls messages and places, Business, Media) (`released` in `lib/qr/qrTypes.js`; the API refuses the rest). The others in that list (images, MP3) are shown as coming soon; they need file storage outside the database first (see "Releasing another type"). PDF and vCard codes were removed in October 2026 and will be rebuilt from scratch.
 
 **Three kinds of type** (`kind` in `lib/qr/qrTypes.js`):
 - **redirect** (Website, WhatsApp, Instagram, Facebook, Location): the short link forwards to an address made from the content, saved in `targetUrl`.
-- **page** (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
+- **page** (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video, Images, MP3, PDF): QR-Genie hosts a mobile page built from the content. The cleaned content is saved in `meta.content` and `targetUrl` is the code's own short link. Always dynamic, never password protected. The page component (`components/qr/landing/`) is used both at `/r/<slug>` and as the create page's preview, so the preview is exactly what scanners see. The scan page cleans the content again before showing it. Pages can be edited after printing (create page with `?edit=<id>`); the list API sends only the page's title and summary (`meta.page`), not its photo.
 - **static** (WiFi, Email, SMS, Phone call): the content is printed into the code, so the camera acts on it straight away, even offline. Not tracked, can't be edited; the create page explains this instead of offering Dynamic/Static. The short link of a static Email, SMS or Phone code shows "not found" (it has no page).
 
 **Contact card (`vcard`):** first and/or last name (one is required), photo, job title, company, a short note, a mobile and a work phone, email, website, address (at least a phone, email or website), up to 10 social profiles and a theme. The page has one-tap Call, Email, Website and Directions (Google Maps search) buttons, **Save contact** (`api/r/[slug]/vcard`), the details and the profiles.
@@ -289,6 +317,23 @@ All are listed with comments in `.env.example`. Values never go into git.
 **Menu:** a name (`venueName`; required), logo, description (300), up to 20 sections of dishes (200 dishes in all; each a name (80), a price as text (20) and a description (200); blank rows and empty sections are left out) and notes (300, e.g. allergens). The page has shortcuts to the named sections and shows the dishes on white cards so they read well in every theme. The restaurant landing page offers it (and a Website code for a menu that's already online).
 
 **Video:** a YouTube or Vimeo link (`parseVideoUrl` accepts watch, youtu.be, shorts, embed and live links, and Vimeo links with a private hash; it's saved as `{ provider, videoId, hash, url }`), a title, a description and an optional button. Until the visitor taps play the page shows only a play card, so nothing is requested from YouTube or Vimeo; the tap loads the player from `www.youtube-nocookie.com` or `player.vimeo.com` (`videoEmbedUrl`, both in the CSP's frame-src) with autoplay. The privacy policy says so.
+
+**Images:** up to 8 photos (JPG, PNG or WebP; at least one) that add up to 5 MB at most, a title (100), a description (500), an optional button and a colour theme. A photo can be picked at up to 50 MB: anything over 640 KB (its share of the 5 MB) or 1600 px is made smaller in the browser before uploading, in steps until it fits (`shrinkPhoto`), so any 8 photos fit together. That also drops camera details such as GPS position. Browsers that can't write WebP, such as Safari, get a JPEG instead, with see-through parts turned white. The total counts the stored sizes, and the form shows it ("3 of 8 photos · 1.2 MB of 5 MB"). The page shows the first photo large and the rest in two columns; tapping one opens a full-screen viewer to swipe through (arrows and Escape on a computer).
+
+**MP3:** one MP3 of up to 5 MB, a title (100; the file's name when empty), an artist (80), a cover picture (150 KB, kept in the content like other page photos), a description (500), an optional download button (`allowDownload`, off by default), an optional button and a colour theme. The player is our own on top of an `<audio>` element.
+
+**PDF:** one PDF of up to 5 MB, a title (100; the file's name when empty), a cover picture (150 KB), a description (500), an optional button and a colour theme. The page has **Open the PDF** and **Save to my phone** rather than showing it inside the page, because phones open PDFs far better in their own viewer.
+
+**Video files aren't uploaded:** the Video type plays YouTube and Vimeo links.
+
+**Uploaded files** (Images, MP3, PDF):
+- The form uploads each file straight away (`POST api/files?kind=…&name=…`, the raw file as the body, because `proxy.js` refuses form uploads) and keeps `{ id, name, size }` in the content. Creating or saving the code then checks every id belongs to the account and is the right kind (`checkContentFiles`) and takes the name and size from the database.
+- The real type comes from the file's first bytes (`sniffFile`), not its name or what the browser says. SVG isn't accepted because it can carry scripts.
+- `GET api/files/<id>` serves a file to anyone with its address (the id is random, and the page it's on is public): with `nosniff`, the type from `mime`, a policy that allows nothing (except PDFs, whose viewers don't load under one), `noindex`, ranges for audio seeking and `?download=1` to save it. It stops when the owner's plan ends. Requests aren't counted as scans.
+- **Limits:** the server stores files of up to 5 MB (a photo can be picked larger, because it's made smaller first), 8 photos and 5 MB in total on an Images page, and 50 MB of space on the free trial or 500 MB on a paid plan (`storageLimitFor`), so one account can't fill the disk. **Compare all plans** on the pricing page shows these two numbers from the same constants in `fileRules.js`, because the plans promise unlimited codes and customers should know file space is limited. Uploads need a verified email and an active plan.
+- **Removing files:** deleting a code, or taking a file off its page, removes the file from the server straight away (row and bytes, `removeUnusedFiles`), unless a duplicated code still uses it; it goes with the last code using it. Files that were uploaded but never saved on a page, because a form was abandoned, are removed after a day, the next time that account uploads, edits or deletes. Deleting the account removes everything at once.
+
+<a id="live-preview"></a>**Live preview:** hosted pages use the same components in the preview as on the scan page. While a type is being chosen or its form filled in, `previewContent` (`lib/qr/previewSamples.js`) puts example content in every empty field, so people see the whole layout, including optional parts such as a button, and a dummy video until a link is added. It lists those fields in `__sample`; `Part` (`LandingShell.js`) fades a part while all its fields are still examples, and its `data-field` lets the phone scroll to the part being edited. On the design step, after creating and when editing, only real content is shown. Examples never reach the server: it only gets the form. **A new page type** needs an entry in `SAMPLES` and its parts wrapped in `Part`.
 
 **Email, SMS, Phone call, Location** (`lib/qr/qrActions.js`): Email holds `mailto:address?subject=…&body=…` (encoded); SMS holds `SMSTO:+number:message`; Phone holds `tel:+number` (digits and a leading + only). Location forwards to `https://www.google.com/maps/search/?api=1&query=<address>` and, like Website, can be made static instead. Their `meta` (address, number) is what the dashboard list shows.
 
@@ -338,7 +383,7 @@ Field ids `name` and `folder` are reserved in the form: DynamicForm always store
 | Active dynamic WiFi code (made before WiFi became static-only) | Network name and password with a copy button and joining steps | Yes |
 | Static Email, SMS or Phone call (short link opened by hand) | "QR not found or removed" | Yes |
 | App download, from an iPhone or Android phone | Redirect to that phone's store | Yes |
-| Hosted page (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video) | The page, from its saved content | Yes |
+| Hosted page (List of links, Social media, Business, Contact card, Coupon, App download, Menu, Video, Images, MP3, PDF) | The page, from its saved content | Yes |
 | Any other active code | Redirect to the destination | Yes |
 
 - A logged scan adds a `ScanEvent` and increases `scanCount`.
@@ -387,6 +432,8 @@ Invoices are numbered `QG/<financial year>/<sequence>` (e.g. `QG/2026-27/0001`),
   Checkout and the Razorpay webhooks report the same events in any order, so each plan email is sent once: a new subscription is claimed by its subscription ID (whichever call switches the plan on first, which still knows the plan before and the paused codes it restored; if that call has no payment, the payment is looked up from Razorpay), a renewal by its payment ID, in `User.lastPlanEmailKey`. A mail failure is logged and never undoes the plan.
 - **GST invoice** to the customer after every payment (`sendInvoiceEmail` from `lib/invoices/invoices.js`): amount paid, invoice number, service period, payment method, the price breakdown (taxable value, CGST/SGST or IGST, total), a link to the billing page, and the invoice PDF attached (`lib/invoices/invoicePdf.js`, about 30 KB). See [GST invoices](#payments-razorpay). The email is claimed in `Invoice.emailedAt` before sending; if SMTP fails three times (over about two minutes) the claim is released, so the next checkout or webhook call for that payment sends it.
 - **Cancellation** (`lib/billing/cancelSubscription.js`), when a customer cancels on the billing page: to the customer, *Your QR-Genie subscription is cancelled* (the date the plan stays active until, that QR codes pause after it and nothing is deleted, links to billing and the refund policy), or *Your QR-Genie plan is cancelled and refunded* during the free days; to the admin, *Cancelled* with the customer, end date, reason given, any refund (with the GST invoice that needs a credit note) and a link to the subscription in Razorpay (replies go to the customer).
+
+- **Account deleted** (`lib/email.js`): a confirmation to the person; a notice to the admin, naming the customer only when a subscription was involved, with *REFUND NEEDED* in the subject if an automatic refund failed; and *REFUND NEEDED - payment for a deleted account* if a charge arrives after the account has gone.
 
 Without SMTP settings all of them are printed to the log. The SMTP connection is created once, so restart the app after changing SMTP settings. Check delivery with `npm run email:test -- you@example.com`.
 
@@ -488,7 +535,7 @@ To show something new from WordPress (a block type, an embed provider), allow it
   - Logic and constants used by both the browser and the server go in `lib/`, without Node or database imports.
   - A domain with three or more `lib` files gets its own folder (`lib/billing/`, `lib/invoices/`, `lib/qr/`); helpers used across domains stay at the top of `lib/`.
   - Anything with Tailwind classes must live under `pages/` or `components/`: only those folders are scanned for styles (`tailwind.config.js`).
-  - Files the server reads at run time go in `assets/`; files visitors download go in `public/`.
+  - Files the server reads at run time go in `assets/`; files visitors download go in `public/`. Customers' uploads go through `lib/qr/fileStore.js`, never into `public/`.
 - **Naming:** components are PascalCase files with a default export (write `Qr`, not `QR`, in new names); `lib` modules are camelCase files with named exports, functions start with a verb (`getUserFromRequest`, `issueInvoiceForPayment`); constants are `UPPER_SNAKE`; hooks are `useX.js`; folders are lowercase (kebab-case for several words). New API routes are resource-style (`qrs/[id]/…`); existing routes keep their names because the pages call them.
 - **Keep the docs current.** Any change that adds, changes or removes a feature, page, API route, environment variable, database field, dependency or deploy step updates the matching part of this guide (and the README if it's affected) **in the same commit**. Delete the docs for anything you remove. Never put secrets or private server details in either file: the repository is public.
 
@@ -508,16 +555,19 @@ To show something new from WordPress (a block type, an embed provider), allow it
 - **Undo a bad release:** `git revert <commit>` and push.
 - **Migrations run before the new code is live**, and undoing a release doesn't undo the database. Keep migrations backward compatible: adding tables and columns (with defaults) is safe; to rename or remove a column, first deploy code that no longer uses it, then remove it in a later release.
 - **`NEXT_PUBLIC_*` values are baked in at build time.** After changing one on the server, redeploy. Other `.env` changes only need an app restart.
-- Files on the server other than `.env` are reset on every deploy, so change them in git, not on the server.
+- Files on the server other than `.env` are reset on every deploy, so change them in git, not on the server. Uploaded files aren't touched: they're outside the app folder (`UPLOADS_DIR`), and `uploads/` is gitignored.
 
 ## Production
 
 - The app runs with **PM2** (process `qr-genie-next`, started with `npm start`) behind **Nginx**, which handles HTTPS (Let's Encrypt, renewed automatically). PM2 restarts the app on crashes and reboots.
 - The app listens on `127.0.0.1:3000` only; Nginx forwards requests to it and **must pass the visitor's address** (`X-Real-IP` and `X-Forwarded-For`). Scan analytics and rate limits depend on it. If a CDN or proxy is ever added in front of Nginx, configure Nginx's real-IP handling first.
 - Nginx sends `www.qr-genie.co` to `qr-genie.co` with a permanent redirect (path and query kept), so the site has one address. Razorpay webhook paths (`/api/webhooks/`) are passed through on www too, because a redirected POST would be lost.
+- Nginx's `client_max_body_size` must allow at least 6 MB, or uploads over its default of 1 MB fail. The app applies its own smaller limits per route.
+- Uploaded files live in `UPLOADS_DIR`, which the app's user must be able to write to.
 - Production secrets live in the `.env` file in the app folder on the server.
 - The app sends its own security headers in production (see `next.config.js`).
 - Useful commands on the server: `pm2 list`, `pm2 logs qr-genie-next`, `pm2 restart qr-genie-next`, `sudo nginx -t && sudo systemctl reload nginx`.
+- **Uploaded files aren't in the database backups:** back up `UPLOADS_DIR` separately.
 - **Database backups:** `scripts/backup-db.sh` runs every night from cron as the `postgres` system user. It writes a compressed `pg_dump`, checks the file can be read back, keeps every backup for 14 days and Sunday's for 12 weeks, and logs one line per run to `backup.log` in the backup folder. Cron runs an installed copy of the script, so after changing it, install it on the server again. How to restore is in the script's header; to check a backup, restore it into a new, empty database rather than the live one. For copies off the server, keep the hosting provider's automatic snapshots of the whole server turned on (they include the backup folder).
 
 ## Troubleshooting
@@ -535,6 +585,9 @@ To show something new from WordPress (a block type, an embed provider), allow it
 | "Please complete the security check" on every form | The Turnstile site key doesn't allow this hostname. Locally, use the test keys. |
 | Browser console shows "Content Security Policy" errors | A new third-party resource isn't in the policy in `next.config.js`. |
 | A visitor can't open a protected QR code | They may have hit the guessing limit ("Too many attempts"): it clears after 15 minutes. The owner can set a new password on the code's details page. |
+| Uploads over 1 MB fail with "The upload didn't finish" or a 413 | Nginx's `client_max_body_size` is too small (see [Production](#production)). |
+| "The file couldn't be saved" | The app can't write to `UPLOADS_DIR`, or the disk is full. The log has the details. |
+| An uploaded photo, MP3 or PDF shows "not found" | The owner's plan has ended, or the file was removed from its pages. The log says if a stored file is missing from the disk. |
 | Something changed in `schema.prisma` but the app doesn't see it | Run `npx prisma generate` and restart the app. |
 | A new or edited blog post isn't showing | Pages refresh at most every 5 minutes, on the next visit after that: open the page, wait a moment, reload. Check the post is published (not a draft or scheduled). The log shows "Blog: WordPress could not be read" when the GraphQL address doesn't answer. |
 | Blog posts show the post title in search results instead of the Yoast title | The WPGraphQL Yoast SEO Addon plugin isn't active in WordPress; without it the blog uses the title and excerpt. |
@@ -548,4 +601,5 @@ To show something new from WordPress (a block type, an embed provider), allow it
 - **Changing plan length** in place (upgrade or downgrade): customers cancel and subscribe again when the plan ends.
 - **Translations:** only English is available, although a language can be chosen in the account settings.
 - **Blog extras:** search, author pages, a page per topic (topics are a filter on `/blog`), comments, previews of drafts, and an instant refresh when a post is published (WordPress could call a revalidate endpoint; for now pages refresh within about 5 minutes).
-- **QR types with uploaded files** (Images, MP3, and PDF or video files) wait for file storage; Images and MP3 are defined in `lib/qr/qrTypes.js` but not released.
+- **Uploaded video files:** the Video type plays YouTube and Vimeo links only.
+- **File storage away from the server** (S3 or similar), and showing an account how much of its file space is used.

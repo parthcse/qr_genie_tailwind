@@ -37,6 +37,17 @@ const sections = [
     ),
   },
   {
+    id: "deleting-your-account",
+    heading: "Deleting your account",
+    body: (
+      <p>
+        Deleting your account cancels your subscription straight away, so you won&apos;t be charged again. If your paid months
+        haven&apos;t started, your payment is refunded in full. Otherwise we don&apos;t refund the rest of the period, and you lose access
+        to it at once: if you only want to stop paying, cancel your subscription instead and keep your plan until it ends.
+      </p>
+    ),
+  },
+  {
     id: "mistakes",
     heading: "Charged by mistake",
     body: (

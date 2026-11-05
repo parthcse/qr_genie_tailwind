@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldTick } from "@/components/auth/AuthShell";
 import CodeInput, { emptyCode } from "@/components/auth/CodeInput";
+import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import {
   FaUser,
   FaEnvelope,
@@ -24,6 +25,7 @@ import {
   FaLanguage,
   FaRedoAlt,
   FaShieldAlt,
+  FaTrashAlt,
 } from "react-icons/fa";
 
 // Server-side authentication check
@@ -213,6 +215,7 @@ function EmailChangePanel({ pending, currentEmail, onDone, onCancel }) {
 export default function AccountPage({ user: initialUser }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(router.query.tab === "billing" ? "billing" : "general");
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [user, setUser] = useState(initialUser);
 
   useEffect(() => {
@@ -634,6 +637,36 @@ export default function AccountPage({ user: initialUser }) {
               <SaveButton busy={lang.busy}>Save language</SaveButton>
             </form>
           </Section>
+        </div>
+      )}
+
+      {activeTab === "general" && (
+        <div className="mt-8 sm:mt-6">
+          <section aria-labelledby="delete-account-heading" className="rounded-2xl border border-red-100 bg-red-50/40 p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-inset ring-red-100">
+                  <FaTrashAlt className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 id="delete-account-heading" className="text-lg font-semibold text-slate-900">
+                    Delete account
+                  </h2>
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-600">
+                    Permanently delete your account, QR codes, scan history and files. This can&apos;t be undone.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingAccount(true)}
+                className="btn-shine btn-shine-soft inline-flex h-11 flex-none items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+              >
+                Delete my account
+              </button>
+            </div>
+          </section>
+          <DeleteAccountModal open={deletingAccount} onClose={() => setDeletingAccount(false)} />
         </div>
       )}
 

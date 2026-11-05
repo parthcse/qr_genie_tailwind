@@ -200,7 +200,7 @@ export default function QrDetailPage({ qrId }) {
     loadQr().finally(() => setLoading(false));
   }, [qrId]);
 
-  // In browser use current origin so in dev the short link is http://localhost:3000/r/slug
+  // In browser use current origin so in dev the short link is http://localhost:3002/r/slug
   useEffect(() => {
     if (qr?.slug && typeof window !== "undefined") {
       setShortLink(`${window.location.origin}/r/${qr.slug}`);

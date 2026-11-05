@@ -125,8 +125,10 @@ const sections = [
     heading: "Your content",
     body: (
       <p>
-        You own the links and content in your QR codes. You give us permission to store and process that content only as
-        needed to run QR-Genie for you.
+        You own the links, files and other content in your QR codes, and you must have the right to share any photos, audio
+        and PDF files you upload. You give us permission to store and process that content only as needed to run QR-Genie
+        for you. Uploaded files are limited in size and in total space per account, and stop being available when your
+        plan ends.
       </p>
     ),
   },
@@ -156,8 +158,11 @@ const sections = [
     heading: "Ending your account",
     body: (
       <p>
-        You can stop using QR-Genie at any time and ask us to delete your account. We may suspend or close an account that
-        breaks these terms, and will tell you why unless the law prevents us.
+        You can stop using QR-Genie at any time, and delete your account from My Account. Deleting it is permanent: your QR
+        codes stop working, your data is deleted as described in our <Link href="/privacy">privacy policy</Link>, and any
+        subscription is cancelled straight away. See our <Link href="/refund-policy">refund policy</Link> for what that means
+        for your payment. We may suspend or close an account that breaks these terms, and will tell you why unless the law
+        prevents us.
       </p>
     ),
   },

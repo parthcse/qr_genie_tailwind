@@ -13,6 +13,7 @@ import {
   FaVideo,
   FaImages,
   FaMusic,
+  FaFilePdf,
   FaQrcode,
   FaAddressCard,
   FaEnvelope,
@@ -45,6 +46,7 @@ export const QR_TYPE_VISUALS = {
   video: { icon: FaVideo, accent: "bg-rose-50 text-rose-600", chip: "bg-rose-50 text-rose-700 ring-rose-600/20" },
   images: { icon: FaImages, accent: "bg-lime-50 text-lime-700", chip: "bg-lime-50 text-lime-700 ring-lime-600/20" },
   mp3: { icon: FaMusic, accent: "bg-yellow-50 text-yellow-700", chip: "bg-yellow-50 text-yellow-700 ring-yellow-600/20" },
+  pdf: { icon: FaFilePdf, accent: "bg-red-50 text-red-600", chip: "bg-red-50 text-red-700 ring-red-600/20" },
 };
 
 const FALLBACK = { icon: FaQrcode, accent: "bg-indigo-50 text-indigo-600", chip: "bg-gray-50 text-gray-700 ring-gray-500/20" };

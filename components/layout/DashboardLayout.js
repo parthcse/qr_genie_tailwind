@@ -197,7 +197,8 @@ export default function DashboardLayout({ children, title, description, actions 
       <div className="mx-auto flex w-full max-w-site flex-1 overflow-x-clip px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Desktop Sidebar: stays in view below the 80px site header while the page scrolls; plan and account pinned to its bottom */}
         <aside className="hidden md:sticky md:top-[6.5rem] md:flex md:h-[calc(100vh-8rem)] md:w-64 lg:w-72 flex-shrink-0 self-start flex-col rounded-2xl border border-indigo-100 bg-white/80 backdrop-blur-lg px-3 md:px-4 pt-4 pb-4 shadow-lg">
-          <nav className="-mx-1 flex-1 overflow-y-auto px-1" aria-label="Dashboard">
+          {/* It scrolls by itself on short screens; the padding keeps the Create button's ring and shadow inside it */}
+          <nav className="-mx-1 -mt-1 flex-1 overflow-y-auto px-1 pt-1" aria-label="Dashboard">
             {/* Main action */}
             <Link
               href={createItem.href}
@@ -256,7 +257,8 @@ export default function DashboardLayout({ children, title, description, actions 
 
         {/* Main content */}
         <div className="flex min-h-full flex-1 flex-col md:pl-4 lg:pl-6 xl:pl-8 min-w-0">
-          <main className="flex w-full flex-1 flex-col rounded-xl md:rounded-2xl border border-indigo-100 bg-white md:bg-white/80 md:backdrop-blur-lg px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 shadow-xl max-w-full overflow-hidden">
+          {/* overflow-clip (not hidden), so the create page's sticky preview isn't trapped in a scroll container */}
+          <main className="flex w-full flex-1 flex-col rounded-xl md:rounded-2xl border border-indigo-100 bg-white md:bg-white/80 md:backdrop-blur-lg px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 shadow-xl max-w-full overflow-clip">
             {(title || description || actions) && (
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-6">
                 <div className="min-w-0">

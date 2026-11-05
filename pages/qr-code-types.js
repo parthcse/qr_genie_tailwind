@@ -33,8 +33,9 @@ const BLURBS = {
   menu: { text: "Your menu as a fast mobile page, with sections, dishes, prices and notes. Change it any time.", best: "Restaurants, cafés, bars, food trucks" },
   apps: { text: "Sends iPhone users to the App Store and Android users to Google Play, from one code.", best: "Packaging, posters, in-store displays" },
   video: { text: "Plays your YouTube or Vimeo video on a clean mobile page, with a button to learn more.", best: "Product demos, tours, events" },
-  images: { text: "A photo gallery people can swipe through." },
-  mp3: { text: "An audio player for a song, podcast or message." },
+  images: { text: "A photo gallery people can swipe through full screen, with a title and a button.", best: "Shops, portfolios, events, rentals" },
+  mp3: { text: "An audio player for a song, podcast or message, with a cover picture and an optional download.", best: "Musicians, guided tours, welcome messages" },
+  pdf: { text: "Opens or saves your PDF on any phone: brochures, price lists, manuals and more.", best: "Brochures, manuals, price lists" },
 };
 
 const KIND_LABELS = { redirect: "Dynamic", page: "Dynamic · hosted page", static: "Static" };

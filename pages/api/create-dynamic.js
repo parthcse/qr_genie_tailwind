@@ -10,6 +10,7 @@ import { MAX_IMAGE_DATA_URL_LENGTH, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload
 import { sanitizeDesign } from "@/lib/qr/qrConfig";
 import { qrTypeById } from "@/lib/qr/qrTypes";
 import { normalizeContent } from "@/lib/qr/qrContent";
+import { checkContentFiles } from "@/lib/qr/fileStore";
 import { socialProfileLink } from "@/lib/qr/socialPlatforms";
 import { actionPayload, isActionType } from "@/lib/qr/qrActions";
 
@@ -128,6 +129,10 @@ export default async function handler(req, res) {
     const { content, error } = normalizeContent(type, req.body?.[type]);
     if (error) {
       return res.status(400).json({ error });
+    }
+    const files = await checkContentFiles(user.id, type, content);
+    if (files.error) {
+      return res.status(400).json({ error: files.error });
     }
     metaObj = { content };
     targetUrl = `${baseNoSlash}/r/${slug}`;

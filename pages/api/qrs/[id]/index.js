@@ -4,6 +4,7 @@ import { validateRedirectUrl } from "@/lib/qr/redirectValidation";
 import { qrPasswordProblem, hashQrPassword } from "@/lib/qr/qrPassword";
 import { isPageType } from "@/lib/qr/qrTypes";
 import { normalizeContent } from "@/lib/qr/qrContent";
+import { checkContentFiles, fileIdsOfCode, removeUnusedFiles } from "@/lib/qr/fileStore";
 
 function parseMeta(meta) {
   try {
@@ -94,6 +95,10 @@ export default async function handler(req, res) {
       if (normalized.error) {
         return res.status(400).json({ error: normalized.error });
       }
+      const files = await checkContentFiles(user.id, qr.type, normalized.content);
+      if (files.error) {
+        return res.status(400).json({ error: files.error });
+      }
       // Keep the rest of meta (the QR design) as it is
       updates.meta = JSON.stringify({ ...parseMeta(qr.meta), content: normalized.content });
     }
@@ -141,6 +146,7 @@ export default async function handler(req, res) {
         updatedAt: true,
       },
     });
+    if (updates.meta) await removeUnusedFiles(user.id, fileIdsOfCode(qr)); // files taken off the page
     const nowProtected = "passwordHash" in updates ? !!updates.passwordHash : hasPassword;
     return res.status(200).json({
       success: true,

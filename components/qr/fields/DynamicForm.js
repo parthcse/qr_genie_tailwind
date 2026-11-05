@@ -56,6 +56,7 @@ import {
   FolderField,
 } from "./FieldComponents";
 import { HoursField, ImageField, LinkListField, MenuField, ProfileListField, ThemeField } from "./PageFields";
+import { GalleryField, UploadField } from "./UploadFields";
 
 // Icon mapping
 const iconMap = {
@@ -299,6 +300,12 @@ const CollapsibleSection = ({
 
       case "theme":
         return <ThemeField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "upload":
+        return <UploadField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
+
+      case "gallery":
+        return <GalleryField key={field.id} field={field} value={fieldValue} onChange={updateValue} />;
 
       case "section":
         return (

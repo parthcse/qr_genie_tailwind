@@ -3,6 +3,23 @@ import { landingTheme } from "@/lib/qr/landingThemes";
 import { SITE_URL } from "@/lib/site";
 
 /**
+ * One part of a hosted page. On a real page it adds nothing. In the create page's preview (content.__sample, from
+ * lib/qr/previewSamples.js) it's faded while all its fields still hold example content, and its data-field lets the
+ * preview scroll to it when one of those fields is edited. fields: a field name or a list of them.
+ */
+export function Part({ content, fields, className = "", children }) {
+  const sample = content?.__sample;
+  if (!sample) return className ? <div className={className}>{children}</div> : children;
+  const list = Array.isArray(fields) ? fields : [fields];
+  const faded = list.every((field) => sample[field]);
+  return (
+    <div data-field={list.join(" ")} className={`${className} transition-opacity duration-300 ${faded ? "opacity-60" : ""}`}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * A full-width button in the theme's colours: an optional icon, a title and an optional second line. In the preview
  * (or without an address) it's drawn but not clickable. Links open in the same tab, without passing on where they came from.
  */
@@ -34,26 +51,33 @@ export function LandingButton({ href, preview = false, themeId, icon = null, tit
 }
 
 /**
- * Photo, title, an optional subtitle (e.g. job title) and description at the top of a hosted page; in the preview an
- * empty title shows a placeholder
+ * Photo, title, an optional subtitle (e.g. job title) and description at the top of a hosted page. content and fields
+ * (which form field each part comes from, when it isn't the usual name) are for the preview: see Part.
  */
-export function LandingHeader({ image, title, subtitle, description, themeId, preview = false, placeholder = "Your page title" }) {
+export function LandingHeader({ image, title, subtitle, description, themeId, content, fields = {} }) {
   const theme = landingTheme(themeId);
+  const names = { image: "avatar", title: "title", subtitle: "subtitle", description: "description", ...fields };
   return (
     <div className="text-center">
-      <LandingAvatar image={image} title={title} themeId={themeId} />
-      <h1 className={`mt-5 break-words font-display text-2xl font-bold tracking-tight ${title ? "" : "opacity-60"}`}>
-        {title || (preview ? placeholder : "")}
-      </h1>
+      <Part content={content} fields={names.image}>
+        <LandingAvatar image={image} title={title} themeId={themeId} />
+      </Part>
+      <Part content={content} fields={names.title}>
+        <h1 className="mt-5 break-words font-display text-2xl font-bold tracking-tight">{title}</h1>
+      </Part>
       {subtitle && (
-        <p className="mt-1 break-words text-sm font-semibold" style={{ color: theme.muted }}>
-          {subtitle}
-        </p>
+        <Part content={content} fields={names.subtitle}>
+          <p className="mt-1 break-words text-sm font-semibold" style={{ color: theme.muted }}>
+            {subtitle}
+          </p>
+        </Part>
       )}
       {description && (
-        <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
-          {description}
-        </p>
+        <Part content={content} fields={names.description}>
+          <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
+            {description}
+          </p>
+        </Part>
       )}
     </div>
   );

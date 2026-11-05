@@ -12,6 +12,7 @@ import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
 import { QR_TYPES, QR_TYPE_CATEGORIES, qrTypeById, isPageType } from "@/lib/qr/qrTypes";
 import { emptyContent, normalizeContent, contentToForm } from "@/lib/qr/qrContent";
+import { previewContent } from "@/lib/qr/previewSamples";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 import QrLanding from "@/components/qr/landing/QrLanding";
 import { socialProfileLink } from "@/lib/qr/socialPlatforms";
@@ -309,7 +310,27 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 };
 
 // Mobile Preview Component
-const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef }) => {
+const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef, showSamples = false }) => {
+  // While a hosted page is being edited, keep the part that's changing in view inside the phone
+  const screenRef = useRef(null);
+  const pageForm = isPageType(qrType) ? formData[qrType] : null;
+  const lastForm = useRef(pageForm);
+  useEffect(() => {
+    const before = lastForm.current || {};
+    const after = pageForm || {};
+    lastForm.current = pageForm;
+    const screen = screenRef.current;
+    if (!screen || before === after) return;
+    const changed = Object.keys(after).find((key) => before[key] !== after[key]);
+    const part = changed && screen.querySelector(`[data-field~="${changed}"]`);
+    if (!part) return;
+    const box = screen.getBoundingClientRect();
+    const rect = part.getBoundingClientRect();
+    if (rect.top < box.top + 40 || rect.bottom > box.bottom - 16) {
+      screen.scrollTo({ top: screen.scrollTop + rect.top - box.top - 56, behavior: "smooth" });
+    }
+  }, [pageForm]);
+
   const renderPreview = () => {
     if (previewMode === "qr") {
       // Show real QR code with blueprint/design
@@ -787,7 +808,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
                 <div className="px-4 py-3 flex justify-end">
                   <div className="max-w-[75%] relative">
                     <div className="bg-[#DCF8C6] rounded-lg px-3 py-2 shadow-sm relative">
-                      <p className="text-sm text-gray-500 italic">Type a message.</p>
+                      <p className="text-sm italic text-gray-500">Hi! I&apos;d like to book a table for two.</p>
                       <div className="flex items-center justify-end gap-1 mt-1">
                         <span className="text-[10px] text-gray-500">9:41</span>
                         {/* Double checkmarks */}
@@ -967,9 +988,9 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
               </p>
               <p className="truncate border-b border-gray-100 py-2.5 font-medium text-gray-900">
                 <span className="font-normal text-gray-400">Subject: </span>
-                {mail.subject}
+                {mail.subject || <span className="font-normal text-gray-300">Table for two on Friday</span>}
               </p>
-              <p className="whitespace-pre-line break-words py-3 text-gray-700">{mail.body || <span className="text-gray-300">Your message</span>}</p>
+              <p className="whitespace-pre-line break-words py-3 text-gray-700">{mail.body || <span className="text-gray-300">Hi, I&apos;d like to book a table for two at 8 pm. Thank you!</span>}</p>
             </div>
           </div>
         );
@@ -987,7 +1008,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             <div className="flex-1" />
             <div className="flex items-end gap-2 border-t border-gray-100 p-3">
               <div className="min-h-[2.25rem] flex-1 whitespace-pre-line break-words rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-900">
-                {sms.message || <span className="text-gray-300">Text Message</span>}
+                {sms.message || <span className="text-gray-300">Hi! I&apos;d like to book a table for two.</span>}
               </div>
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-emerald-500 text-white">
                 <FaArrowRight className="h-3 w-3 -rotate-90" />
@@ -1068,11 +1089,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
       default:
         // Hosted page types (list of links, ...): the real page, drawn from the form as it's filled in
         if (isPageType(qrType)) {
-          return (
-            <div className="h-full overflow-y-auto">
-              <QrLanding type={qrType} content={formData[qrType]} preview />
-            </div>
-          );
+          return <QrLanding type={qrType} content={showSamples ? previewContent(qrType, formData[qrType]) : { ...formData[qrType], __sample: {} }} preview />;
         }
         return (
           <div className="h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
@@ -1139,7 +1156,9 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
   };
 
   return (
-    <div className="relative mx-auto" style={{ width: "320px", height: "640px" }}>
+    // From lg the preview stays on screen while the page scrolls, so the phone is only as tall as the window has room for
+    // (below that it sits under the form at full height). Its screen scrolls inside.
+    <div className={`relative mx-auto w-[320px] h-[640px] ${previewMode === "qr" ? "lg:h-[min(640px,max(420px,calc(100dvh-18.5rem)))]" : "lg:h-[min(640px,max(420px,calc(100dvh-13.5rem)))]"}`}>
 
       {/* Modern iPhone Style - Dark Purplish-Gray Frame */}
       <div className="absolute inset-0 rounded-[3rem] p-1 shadow-2xl" style={{ 
@@ -1188,7 +1207,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
             
             {/* Screen Content */}
-            <div className="h-[calc(100%-2rem)] overflow-auto">
+            <div ref={screenRef} className="h-[calc(100%-2rem)] overflow-auto">
               {renderPreview()}
             </div>
             
@@ -1274,6 +1293,9 @@ const INITIAL_FORM_DATA = {
   apps: emptyContent("apps"),
   video: emptyContent("video"),
   menu: emptyContent("menu"),
+  images: emptyContent("images"),
+  mp3: emptyContent("mp3"),
+  pdf: emptyContent("pdf"),
   // Facebook
   facebook: { page: "" },
   // Email, SMS, Phone call and Location (lib/qr/qrActions.js)
@@ -2558,6 +2580,8 @@ export default function CreateQrPage() {
   const qrPreviewAvailable = !!success || canGenerateQR;
   const isWifi = selectedType === "wifi";
   const willBeDynamic = qrTypeById(selectedType)?.kind !== "static" && (isPageType(selectedType) || (formData.linkType || "DYNAMIC") === "DYNAMIC");
+  // Example content in the preview while choosing a type and filling in the form; after that it's the real page
+  const showSamples = !editId && !success && step < 3;
 
   return (
     <DashboardLayout
@@ -2765,6 +2789,18 @@ export default function CreateQrPage() {
               </div>
             </form>
           )}
+
+          {(step === 3 || success) && !editId && (
+            <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-500 shadow-sm">
+                <FaLightbulb className="h-3.5 w-3.5" />
+              </span>
+              <p className="text-xs leading-relaxed text-gray-600">
+                <span className="font-semibold text-gray-800">Tip:</span> print codes at least 2 cm wide and test them with a phone before a big
+                print run.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right: live preview */}
@@ -2774,7 +2810,13 @@ export default function CreateQrPage() {
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
                 <p className="truncate text-xs text-gray-500">
-                  {previewMode === "qr" ? (success ? "Your finished QR code" : "How your code will look") : "What people see after scanning"}
+                  {previewMode === "qr"
+                    ? success
+                      ? "Your finished QR code"
+                      : "How your code will look"
+                    : showSamples && isPageType(hoveredType || selectedType)
+                      ? "Faded parts are examples"
+                      : "What people see after scanning"}
                 </p>
               </div>
               {/* Editing a page doesn't change the printed code, so there's only the page to preview */}
@@ -2809,7 +2851,9 @@ export default function CreateQrPage() {
 
             <div className="flex justify-center">
               <MobilePreview
-                key={`preview-${selectedType}-${previewKey}`}
+                // Only the QR code is redrawn on each change: the page keeps its scroll position (and a playing video or audio)
+                key={previewMode === "qr" ? `qr-${selectedType}-${previewKey}` : `page-${hoveredType || selectedType}`}
+                showSamples={showSamples}
                 qrType={hoveredType || selectedType}
                 formData={formData}
                 designData={designData}
@@ -2825,16 +2869,6 @@ export default function CreateQrPage() {
                 Preview only. Your finished code will hold its own short link, created when you click Create QR code.
               </p>
             )}
-          </div>
-
-          <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
-            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-500 shadow-sm">
-              <FaLightbulb className="h-3.5 w-3.5" />
-            </span>
-            <p className="text-xs leading-relaxed text-gray-600">
-              <span className="font-semibold text-gray-800">Tip:</span> print codes at least 2 cm wide and test them with a phone before a big
-              print run.
-            </p>
           </div>
         </aside>
       </div>

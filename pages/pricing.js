@@ -12,6 +12,7 @@ import { container, sectionSpacing, SectionHeading, FeatureGrid, FaqList } from 
 import { formatPrice, formatMonthly, formatBilled, monthlyAmount, cheapestPlan, savingsFor } from "@/lib/billing/price";
 import { BEST_VALUE_TERM, termById } from "@/lib/billing/terms";
 import { releasedTypeCount } from "@/lib/qr/qrTypes";
+import { MAX_PAID_STORAGE_BYTES, MAX_TRIAL_STORAGE_BYTES, formatFileSize } from "@/lib/qr/fileRules";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { organizationSchema, breadcrumbSchema, faqPageSchema, softwareApplicationSchema } from "@/lib/seo";
 
@@ -106,6 +107,7 @@ function comparisonGroups(prices) {
       rows: [
         ["Dynamic QR codes", "Up to 2", ...all("Unlimited")],
         ["Scans", "Unlimited", ...all("Unlimited")],
+        ["File space for photos, MP3s and PDFs", formatFileSize(MAX_TRIAL_STORAGE_BYTES), ...all(formatFileSize(MAX_PAID_STORAGE_BYTES))],
         [`All ${releasedTypeCount()} QR code types`, true, ...all(true)],
         ["Change links after printing", true, ...all(true)],
         ["Pause and resume, with your own message", true, ...all(true)],

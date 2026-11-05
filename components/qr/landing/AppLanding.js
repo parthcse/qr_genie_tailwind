@@ -1,6 +1,6 @@
 import { FaApple, FaGooglePlay } from "react-icons/fa6";
 import { landingTheme } from "@/lib/qr/landingThemes";
-import LandingShell, { LandingButton } from "./LandingShell";
+import LandingShell, { LandingButton, Part } from "./LandingShell";
 
 function StoreButton({ href, preview, icon: Icon, small, big }) {
   const body = (
@@ -30,37 +30,48 @@ function StoreButton({ href, preview, icon: Icon, small, big }) {
 export default function AppLanding({ content = {}, preview = false }) {
   const theme = landingTheme(content.theme);
   const initials = (content.appName || "App").slice(0, 1).toUpperCase();
-  const noStores = preview && !content.ios && !content.android;
   return (
     <LandingShell themeId={content.theme} preview={preview}>
       <div className="text-center">
-        {content.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element -- a data URL saved with the code
-          <img src={content.avatar} alt="" className="mx-auto h-24 w-24 rounded-[22%] object-cover shadow-xl" />
-        ) : (
-          <span className="mx-auto flex h-24 w-24 items-center justify-center rounded-[22%] font-display text-4xl font-bold shadow-xl" style={{ background: theme.button, color: theme.buttonText }} aria-hidden="true">
-            {initials}
-          </span>
-        )}
-        <h1 className={`mt-5 break-words font-display text-2xl font-bold tracking-tight ${content.appName ? "" : "opacity-60"}`}>
-          {content.appName || (preview ? "Your app" : "")}
-        </h1>
+        <Part content={content} fields="avatar">
+          {content.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a data URL saved with the code
+            <img src={content.avatar} alt="" className="mx-auto h-24 w-24 rounded-[22%] object-cover shadow-xl" />
+          ) : (
+            <span className="mx-auto flex h-24 w-24 items-center justify-center rounded-[22%] font-display text-4xl font-bold shadow-xl" style={{ background: theme.button, color: theme.buttonText }} aria-hidden="true">
+              {initials}
+            </span>
+          )}
+        </Part>
+        <Part content={content} fields="appName">
+          <h1 className="mt-5 break-words font-display text-2xl font-bold tracking-tight">{content.appName}</h1>
+        </Part>
         {content.description && (
-          <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
-            {content.description}
-          </p>
+          <Part content={content} fields="description">
+            <p className="mx-auto mt-2 max-w-sm whitespace-pre-line break-words text-[15px] leading-relaxed" style={{ color: theme.muted }}>
+              {content.description}
+            </p>
+          </Part>
         )}
       </div>
 
-      <div className={`mt-8 space-y-3 ${noStores ? "opacity-60" : ""}`}>
-        {(content.ios || noStores) && <StoreButton href={content.ios} preview={preview} icon={FaApple} small="Download on the" big="App Store" />}
-        {(content.android || noStores) && <StoreButton href={content.android} preview={preview} icon={FaGooglePlay} small="Get it on" big="Google Play" />}
+      <div className="mt-8 space-y-3">
+        {content.ios && (
+          <Part content={content} fields="ios">
+            <StoreButton href={content.ios} preview={preview} icon={FaApple} small="Download on the" big="App Store" />
+          </Part>
+        )}
+        {content.android && (
+          <Part content={content} fields="android">
+            <StoreButton href={content.android} preview={preview} icon={FaGooglePlay} small="Get it on" big="Google Play" />
+          </Part>
+        )}
       </div>
 
       {content.website && (
-        <div className="mt-6">
+        <Part content={content} fields="website" className="mt-6">
           <LandingButton href={content.website} preview={preview} themeId={content.theme} title="Visit our website" subtitle={content.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")} />
-        </div>
+        </Part>
       )}
     </LandingShell>
   );

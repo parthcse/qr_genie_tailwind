@@ -9,7 +9,9 @@ New accounts get a 7-day trial (2 QR codes); the paid plans are 3, 6 or 12-month
 
 ## How it works
 
-- **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused). The types are listed in `lib/qr/qrTypes.js`; open now (17): Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Email, SMS, Phone call, Location, Business, Contact card, Coupon, App download, Menu, Video (all listed on `/qr-code-types`). WiFi codes are always static so phones can join the network straight from the camera; website codes can be password protected. List of links is a mobile page QR-Genie hosts (`components/qr/landing/`), checked by `lib/qr/qrContent.js` and editable after printing.
+- **Create:** `pages/api/create-dynamic.js` saves a code with a 6-character slug. Dynamic codes encode `/r/<slug>`; static codes encode the target directly (no tracking, can't be edited or paused). The types are listed in `lib/qr/qrTypes.js`; open now (20): Website, List of links, WiFi, WhatsApp, Instagram, Social media, Facebook, Email, SMS, Phone call, Location, Business, Contact card, Coupon, App download, Menu, Video, Images, MP3, PDF (all listed on `/qr-code-types`). WiFi codes are always static so phones can join the network straight from the camera; website codes can be password protected. List of links is a mobile page QR-Genie hosts (`components/qr/landing/`), checked by `lib/qr/qrContent.js` and editable after printing.
+- **Deleting an account:** `/dashboard/account`, with a warning, then typing CONFIRM and the password. The subscription is stopped first; if that fails nothing is deleted. Everything goes except GST invoices, which the law requires (`lib/accountDeletion.js`).
+- **Uploads:** Images pages hold up to 8 photos and 5 MB in total, MP3 and PDF pages one file of up to 5 MB. Files are uploaded through `pages/api/files/`, kept on disk in `UPLOADS_DIR` and checked by their real type (`lib/qr/fileStore.js`). On a server, Nginx must allow requests of at least 6 MB.
 - **Scan:** `pages/r/[slug].js` checks the code's status and the owner's plan, records a `ScanEvent` (hashed IP, device, country), asks for the password if the code is protected (`api/r/[slug]/unlock` checks it), then redirects, or shows the hosted page.
 - **Plans:** `lib/billing/subscription.js` decides what a user may do; `lib/billing/subscriptionSync.js` pauses codes when a trial or subscription ends; `lib/billing/activateBasicSubscription.js` restores them after payment. Paid codes keep working for 3 days after the end date to cover late renewals (not after a cancellation). Customers cancel themselves on the billing page (`api/billing/cancel`, `lib/billing/cancelSubscription.js`): the plan runs to the end of the paid period, except during the free days, when it's cancelled at once and refunded in full.
 - **Pricing:** the plan lengths are in `lib/billing/terms.js`; the prices come from the six Razorpay plans in `RAZORPAY_PLAN_ID_{INR|USD}_{3M|6M|12M}` (`lib/billing/plans.js`). `/pricing` has the cards, payment methods, what every plan includes and a full comparison; the home page shows the cards and links there.
@@ -24,10 +26,10 @@ Needs Node 22+ and a local PostgreSQL.
 cp .env.example .env        # then fill it in (see below)
 npm install
 npx prisma migrate deploy   # creates the tables
-npm run dev                 # http://localhost:3000
+npm run dev                 # http://localhost:3002
 ```
 
-For local work use `NEXT_PUBLIC_BASE_URL=http://localhost:3000`, Razorpay `rzp_test_` keys with test-mode plans, and Cloudflare's Turnstile test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`), which always pass. Leave the `SMTP_*` settings empty to see emails in the terminal instead of sending them. Restart `npm run dev` after `npm install` or `prisma generate`.
+For local work use `NEXT_PUBLIC_BASE_URL=http://localhost:3002`, Razorpay `rzp_test_` keys with test-mode plans, and Cloudflare's Turnstile test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`), which always pass. Leave the `SMTP_*` settings empty to see emails in the terminal instead of sending them. Restart `npm run dev` after `npm install` or `prisma generate`.
 
 ## Changing the database
 

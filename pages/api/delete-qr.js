@@ -1,6 +1,7 @@
 // pages/api/delete-qr.js
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import { fileIdsOfCode, removeUnusedFiles } from "@/lib/qr/fileStore";
 
 export default async function handler(req, res) {
   if (req.method !== "DELETE") {
@@ -41,6 +42,7 @@ export default async function handler(req, res) {
         deactivatedReason: "MANUAL",
       },
     });
+    await removeUnusedFiles(user.id, fileIdsOfCode(qrCode)); // its uploaded files, unless a copy of the code still uses them
 
     return res.status(200).json({ success: true, message: "QR code deleted successfully" });
   } catch (error) {
