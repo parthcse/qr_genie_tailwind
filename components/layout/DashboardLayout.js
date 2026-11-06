@@ -54,9 +54,11 @@ function SidebarPlan({ user, subscriptionStatus, onNavigate }) {
           <FaCrown className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-gray-900">{planNameFor(user.subscriptionMonths)}</span>
+          <span className="block truncate text-sm font-semibold text-gray-900">
+            {subscriptionStatus.adminPlan ? subscriptionStatus.planName : planNameFor(user.subscriptionMonths)}
+          </span>
           <span className="block truncate text-xs text-gray-500">
-            {renews ? `${user.subscriptionCancelledAt ? "Ends" : "Renews"} ${renews}` : "Active"}
+            {subscriptionStatus.adminPlan ? "Free, never ends" : renews ? `${user.subscriptionCancelledAt ? "Ends" : "Renews"} ${renews}` : "Active"}
           </span>
         </span>
         <FaChevronRight className="h-3 w-3 flex-none text-gray-400 transition group-hover:text-indigo-600" />

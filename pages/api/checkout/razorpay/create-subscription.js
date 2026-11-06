@@ -52,9 +52,12 @@ export default async function handler(req, res) {
 
   // Razorpay renews automatically; a second subscription would bill the user twice. A cancelled plan still runs to the
   // end of its paid period, and a new subscription would charge for days already paid for, so it waits until then.
-  if (getUserSubscriptionStatus(user).status === "SUBSCRIPTION_ACTIVE") {
+  const { status: planStatus, adminPlan } = getUserSubscriptionStatus(user);
+  if (planStatus === "SUBSCRIPTION_ACTIVE") {
     return res.status(400).json({
-      error: user.subscriptionCancelledAt
+      error: adminPlan
+        ? "Admin accounts are free, so there's nothing to pay for."
+        : user.subscriptionCancelledAt
         ? `Your plan is active until ${formatDate(user.subscriptionEndsAt)} and won't renew. You can choose a new plan from that date.`
         : "You already have an active plan. It renews automatically.",
     });

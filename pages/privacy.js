@@ -73,8 +73,9 @@ const sections = [
           count visits; they don&apos;t tell us who you are.
         </p>
         <p>
-          We also use Google&apos;s advertising measurement (Google Ads) to see whether visits and sign-ups came from our
-          ads. Google may set its own advertising cookies for this, and uses them as described in{" "}
+          We also use Google&apos;s advertising tools (Google Ads) to see whether visits and sign-ups came from our
+          ads, and we may show our ads to people who have visited our website, on Google and on other websites and apps.
+          Google may set its own advertising cookies for this, and uses them as described in{" "}
           <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
             Google&apos;s advertising policy
           </a>
@@ -112,8 +113,8 @@ const sections = [
           <li>to meet our legal and accounting obligations.</li>
         </ul>
         <p>
-          We don&apos;t sell your personal information. Apart from measuring our own ads on our website (see Cookies), we
-          don&apos;t use it for advertising.
+          We don&apos;t sell your personal information. Apart from measuring and showing our own ads through Google on our
+          website (see Cookies), we don&apos;t use it for advertising.
         </p>
       </>
     ),
@@ -128,7 +129,7 @@ const sections = [
           <li><strong>Razorpay</strong>, to take payments;</li>
           <li><strong>Amazon Web Services</strong>, which hosts our servers and database and sends our emails;</li>
           <li><strong>Cloudflare Turnstile</strong>, to check that contact-form messages come from people rather than bots;</li>
-          <li><strong>Google</strong> (Tag Manager, Analytics and Ads), to measure visits to our website and how well our ads work.</li>
+          <li><strong>Google</strong> (Tag Manager, Analytics and Ads), to measure visits to our website and how well our ads work, and to show our ads to people who have visited.</li>
           <li><strong>YouTube and Vimeo</strong>, to play videos on video QR codes, only after the viewer taps play.</li>
         </ul>
         <p>We may also disclose information if the law requires it.</p>

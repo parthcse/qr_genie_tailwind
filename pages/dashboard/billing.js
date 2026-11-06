@@ -101,7 +101,7 @@ function QrMotif({ className }) {
   );
 }
 
-function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, onCancel }) {
+function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, onCancel, adminPlan = false }) {
   return (
     <section
       aria-label="Your subscription"
@@ -122,7 +122,9 @@ function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, on
         )}
         <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{planName}</h2>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-indigo-200">
-          {cancelled
+          {adminPlan
+            ? "Admin accounts are free: every feature, no limits, and your QR codes never pause. There's nothing to pay or renew."
+            : cancelled
             ? "Your plan is cancelled and won't renew. Everything keeps working until the end date; after that your QR codes are paused."
             : startsOn
             ? `Your free days carry on until ${startsOn}, then your paid months begin. Cancel before then for a full refund.`
@@ -130,7 +132,7 @@ function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, on
         </p>
         <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-white/10 pt-6 sm:grid-cols-3">
           <div>
-            <dt className="text-xs text-indigo-300">{cancelled ? "Ends on" : "Renews on"}</dt>
+            <dt className="text-xs text-indigo-300">{cancelled || adminPlan ? "Ends on" : "Renews on"}</dt>
             <dd className="mt-1 text-lg font-semibold tabular-nums">{renewsOn || "—"}</dd>
           </div>
           <div>
@@ -142,24 +144,26 @@ function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, on
             <dd className="mt-1 text-lg font-semibold">{startsOn || "Unlimited"}</dd>
           </div>
         </dl>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-indigo-200">
-          <p>
-            {cancelled && renewsOn ? `Changed your mind? You can choose a new plan from ${renewsOn}. ` : ""}
-            Billing question?{" "}
-            <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
-              Contact us
-            </Link>
-          </p>
-          {!cancelled && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-md text-sm font-medium text-indigo-200 underline decoration-indigo-300/40 underline-offset-4 transition hover:text-white hover:decoration-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            >
-              Cancel subscription
-            </button>
-          )}
-        </div>
+        {!adminPlan && (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-indigo-200">
+            <p>
+              {cancelled && renewsOn ? `Changed your mind? You can choose a new plan from ${renewsOn}. ` : ""}
+              Billing question?{" "}
+              <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+                Contact us
+              </Link>
+            </p>
+            {!cancelled && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-md text-sm font-medium text-indigo-200 underline decoration-indigo-300/40 underline-offset-4 transition hover:text-white hover:decoration-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                Cancel subscription
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -390,18 +394,20 @@ export default function BillingPage() {
   const statusLoaded = subscriptionStatus !== null;
   const isSubscribed = status === "SUBSCRIPTION_ACTIVE";
   const isTrial = status === "TRIAL_ACTIVE";
+  // Admin accounts are free: whatever plan dates the account still has don't apply
+  const adminPlan = !!subscriptionStatus?.adminPlan;
   const daysLeft = subscriptionStatus?.daysLeft ?? 0;
-  const cancelled = !!account?.subscriptionCancelledAt;
-  const renewsOn = formatDate(account?.subscriptionEndsAt);
+  const cancelled = !adminPlan && !!account?.subscriptionCancelledAt;
+  const renewsOn = adminPlan ? "Never" : formatDate(account?.subscriptionEndsAt);
   // Bought during the free days: the paid months start later (and cancelling before then is refunded in full)
-  const startsAt = isSubscribed && account?.subscriptionStartedAt && new Date(account.subscriptionStartedAt) > new Date() ? account.subscriptionStartedAt : null;
+  const startsAt = isSubscribed && !adminPlan && account?.subscriptionStartedAt && new Date(account.subscriptionStartedAt) > new Date() ? account.subscriptionStartedAt : null;
 
   // Prices: the currency for this location, or for subscribers the one they pay in
   const shownCurrency = (isSubscribed && current?.currency) || currency;
   const prices = plans && shownCurrency ? plans[shownCurrency] || null : null;
   const currentPlan = isSubscribed && current ? plans?.[current.currency]?.[current.term] || null : null;
-  const planName = planNameFor(account?.subscriptionMonths || currentPlan?.months);
-  const priceText = currentPlan ? formatBilled(currentPlan) : null;
+  const planName = adminPlan ? subscriptionStatus.planName : planNameFor(account?.subscriptionMonths || currentPlan?.months);
+  const priceText = adminPlan ? "Free" : currentPlan ? formatBilled(currentPlan) : null;
 
   // "Subscribe" on the pricing page sends people here with ?plan=12m: open that checkout once everything has loaded
   useEffect(() => {
@@ -423,7 +429,7 @@ export default function BillingPage() {
         <header>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Billing</h1>
           <p className="mt-1 text-sm text-gray-600">
-            {isSubscribed ? "Your plan, renewal date and billing details." : "Choose a plan to keep your QR codes working."}
+            {adminPlan ? "Your plan and billing details." : isSubscribed ? "Your plan, renewal date and billing details." : "Choose a plan to keep your QR codes working."}
           </p>
         </header>
 
@@ -437,6 +443,7 @@ export default function BillingPage() {
             renewsOn={renewsOn}
             cancelled={cancelled}
             onCancel={() => setShowCancel(true)}
+            adminPlan={adminPlan}
           />
         )}
         {isTrial && <TrialProgress daysLeft={daysLeft} endsOn={formatDate(account?.trialEndsAt)} />}
@@ -453,12 +460,14 @@ export default function BillingPage() {
             currentUser={account}
             onSelect={handleBuyNow}
             busyTerm={buyingTerm}
-            currentTerm={isSubscribed ? current?.term : null}
+            currentTerm={isSubscribed && !adminPlan ? current?.term : null}
             disabled={!statusLoaded || isSubscribed}
           />
           {!isSubscribed && <PaymentMethods currency={shownCurrency || undefined} className="mt-10" />}
           <div className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-500">
-            {isSubscribed ? (
+            {adminPlan ? (
+              <p>Admin accounts don&apos;t need a plan. These are the plans customers see.</p>
+            ) : isSubscribed ? (
               <p>
                 {cancelled
                   ? `You can choose a new plan from ${renewsOn || "the end of your current plan"}.`

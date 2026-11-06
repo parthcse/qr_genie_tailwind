@@ -258,7 +258,7 @@ All are listed with comments in `.env.example`. Values never go into git.
 - **Changing the email** (account page) needs the current password and passes the same email checks. It doesn't switch straight away: the address is kept in `pendingEmail` and a 6-digit code is sent to it; the sign-in email changes only once that code is entered (`api/account/email-change`: GET the pending change, POST the code, PUT to resend, DELETE to cancel), and the old address then gets a notice that it was changed. Saving the form again within a minute doesn't send another code. The code is tied to the new address, follows the same expiry, tries and resend rules as sign-up, and an address taken by another account in the meantime is refused.
 - **Bot checks:** Cloudflare Turnstile (Managed mode) on sign-up, login, forgot-password and contact. `components/auth/Turnstile.js` renders the widget; `lib/turnstile.js` verifies the token.
 - **Rate limits** protect login, sign-up, email confirmation (checking and resending codes), password reset, password/email change, the contact form, scans and password guesses on protected QR codes. Each route sets its own limit with `isRateLimited`; limits are kept in memory, so they reset when the app restarts.
-- **Admin:** users with `role = "admin"` can open `/admin`. Everyone else gets a "not found" page, so the admin area can't be discovered.
+- **Admin:** users with `role = "admin"` can open `/admin`, and their account is free (see [Plans and the free trial](#plans-and-the-free-trial)). Everyone else gets a "not found" page, so the admin area can't be discovered.
 
 ### Deleting an account
 
@@ -283,9 +283,11 @@ Admin accounts can't be deleted this way, so the owner can't lock themselves out
 |---|---|
 | `TRIAL_ACTIVE` | New account: 7 days (`TRIAL_DAYS`), up to 2 QR codes (`TRIAL_QR_LIMIT`). Accounts keep the trial length they signed up with. |
 | `TRIAL_EXPIRED` | Trial over without paying; codes are paused. |
-| `SUBSCRIPTION_ACTIVE` | A paid plan (3, 6 or 12 months): unlimited codes. |
+| `SUBSCRIPTION_ACTIVE` | A paid plan (3, 6 or 12 months): unlimited codes. Also every admin account, with `adminPlan: true`. |
 | `SUBSCRIPTION_EXPIRED` | Plan lapsed; codes are paused. |
 | `NONE` | No plan. |
+
+**Admin accounts are free.** An account with `role = "admin"` counts as active whatever its plan dates say: unlimited codes, the paid file space, nothing to pay and nothing that ends, so the owner can use and check everything on the live site. Billing shows **Admin plan** with the plans for reference, and checkout refuses. Codes that plan expiry paused come back the next time that account signs in or opens a page (`syncSubscriptionState`). The role is set directly in the database, never through the site. Admins aren't counted as subscribers, because the count uses the plan dates. Code that checks a plan for a user loaded with a `select` must include `role`: `PLAN_STATUS_FIELDS` does.
 
 **The paid plans** (`lib/billing/terms.js`) differ only in length and price; every plan has every feature. The customer pays for the whole period upfront, and it renews for the same length until cancelled. Prices include GST and come from the Razorpay plans, so the site always shows what is charged. The site shows each plan per month (the amount divided by the months) and the saving against the 3-month plan.
 
@@ -489,8 +491,8 @@ To show something new from WordPress (a block type, an embed provider), allow it
   - Google's snippet is in `public/gtm-init.js`, a file rather than inline code, so the CSP allows it.
   - It runs only on qr-genie.co, and never on QR scan pages (`/r/…`, our customers' visitors) or on the password reset and email confirmation pages (their addresses carry one-time codes).
   - The CSP also allows the YouTube (`www.youtube-nocookie.com`) and Vimeo (`player.vimeo.com`) players in frames, for Video QR code pages.
-  - The CSP allows Google's domains for Tag Manager, its Preview mode, Google Analytics and the Google tag's advertising measurement (Google Ads conversions send to `www.google.com` and `*.doubleclick.net`, allowed in `connect-src` only). Tags that load anything else (other ads pixels, chat widgets, custom HTML) are blocked until their domains are added.
-  - The privacy policy's Cookies, How we use your information and Service providers sections describe Google Analytics and Google Ads measurement: update them if the tags change.
+  - The CSP allows Google's domains for Tag Manager, its Preview mode, Google Analytics and the Google tag's advertising (Google Ads conversions and remarketing send to `www.google.com` and `*.doubleclick.net`, allowed in `connect-src`, and load a script from `googleads.g.doubleclick.net`, allowed in `script-src`). Tags that load anything else (other ads pixels, chat widgets, custom HTML) are blocked until their domains are added. One inline script the container adds is still blocked, on purpose: allowing inline scripts would weaken the policy for the whole site.
+  - The privacy policy's Cookies, How we use your information and Service providers sections describe Google Analytics, and Google Ads measurement and remarketing: update them if the tags change.
 - **Pop-ups and dropdown menus inside dashboard pages** should be rendered with `createPortal(…, document.body)` (see `pages/dashboard/index.js`): the dashboard card clips its content and uses a blur effect, so otherwise a menu gets cut off at the card edge and overlays get trapped inside the card.
 - **Links styled as buttons** need `!text-…` color classes (e.g. `!text-white`), because the global link style sets link colors.
 - **Brand look:** indigo→purple gradient (`from-indigo-600 to-purple-600`) for primary actions, white cards with `rounded-2xl` and light borders, `max-w-site` for page width.

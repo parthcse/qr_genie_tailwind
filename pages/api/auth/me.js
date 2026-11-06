@@ -28,6 +28,7 @@ export default async function handler(req, res) {
           id: true,
           email: true,
           name: true,
+          role: true,
           subscriptionPlan: true,
           subscriptionMonths: true,
           trialStartedAt: true,

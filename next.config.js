@@ -1,16 +1,17 @@
 // Content Security Policy: only our own code plus Razorpay checkout, Cloudflare Turnstile and Google Tag Manager with
 // Google Analytics may run (Google's documented domains, including Tag Manager's Preview mode). The Google tag's
 // advertising measurement (Google Ads conversions) sends to www.google.com and doubleclick.net, so connect-src allows
-// those. Tags added in Tag Manager that load other services (other ads pixels, chat widgets) or run custom HTML need
-// their domains added here. Video QR code pages embed YouTube (youtube-nocookie.com) and Vimeo players after the visitor
+// those, and loads a script from googleads.g.doubleclick.net. Google Analytics can also send to analytics.google.com
+// itself, which *.analytics.google.com doesn't cover. Tags added in Tag Manager that load other services (other ads
+// pixels, chat widgets) or run custom HTML need their domains added here. Video QR code pages embed YouTube (youtube-nocookie.com) and Vimeo players after the visitor
 // taps play, hence those two in frame-src. Styles stay 'unsafe-inline' because React style props and styled-jsx need it.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' https://checkout.razorpay.com https://*.razorpay.com https://challenges.cloudflare.com https://*.googletagmanager.com https://tagmanager.google.com",
+  "script-src 'self' https://checkout.razorpay.com https://*.razorpay.com https://challenges.cloudflare.com https://*.googletagmanager.com https://tagmanager.google.com https://googleads.g.doubleclick.net",
   "style-src 'self' 'unsafe-inline' https://tagmanager.google.com https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com https://*.doubleclick.net",
+  "connect-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com https://*.doubleclick.net",
   "frame-src https://*.razorpay.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.youtube-nocookie.com https://player.vimeo.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
