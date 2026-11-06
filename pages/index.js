@@ -52,7 +52,7 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { QR_TYPES } from "@/lib/qr/qrTypes";
 
 const RELEASED_TYPE_COUNT = QR_TYPES.filter((type) => type.released).length;
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, DASHBOARD_HOME } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
 
 // Server-side auth check
@@ -746,7 +746,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
 
                 <div className="mx-auto mt-9 flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
                   {isAuthenticated ? (
-                    <Link href="/dashboard" className={primaryButton}>
+                    <Link href={DASHBOARD_HOME} className={primaryButton}>
                       Go to Dashboard
                       <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
                     </Link>

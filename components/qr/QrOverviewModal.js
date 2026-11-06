@@ -119,7 +119,7 @@ export default function QrOverviewModal({ qrCode, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -256,14 +256,14 @@ export default function QrOverviewModal({ qrCode, onClose }) {
       {/* Download Format Selection Modal */}
       {showDownloadModal && (
         <div 
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowDownloadModal(false);
             }
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl motion-safe:animate-modal-pop">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Download Format</h3>
               <button

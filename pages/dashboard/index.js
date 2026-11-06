@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -7,6 +6,7 @@ import QrOverviewModal from "@/components/qr/QrOverviewModal";
 import QrDownloadModal from "@/components/qr/QrDownloadModal";
 import DesignedQRCode from "@/components/qr/DesignedQRCode";
 import FolderHeader from "@/components/dashboard/FolderHeader";
+import { CountUp, Portal, SegmentedControl, ToastHost, useToast } from "@/components/dashboard/DashboardUi";
 import { TRIAL_QR_LIMIT } from "@/lib/billing/subscription";
 import { qrTypeById, isPageType, qrTypeLabel, releasedTypeCount } from "@/lib/qr/qrTypes";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
@@ -35,8 +35,6 @@ import {
   FaCheckCircle,
   FaPauseCircle,
   FaExternalLinkAlt,
-  FaExclamationTriangle,
-  FaExclamationCircle,
   FaLock,
 } from "react-icons/fa";
 
@@ -131,24 +129,21 @@ function pageList(current, total) {
   return [...new Set([1, total, current - 1, current, current + 1])].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
 }
 
-// The dashboard card uses backdrop-blur, which would trap fixed overlays inside it; render them on <body>
-function Portal({ children }) {
-  return typeof document === "undefined" ? null : createPortal(children, document.body);
-}
-
-function StatCard({ icon: Icon, label, value, hint, iconClass }) {
+function StatCard({ icon: Icon, label, value, hint, iconClass, order = 0 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+    <div className="glass glass-hover dash-rise group rounded-2xl p-4 sm:p-5" style={{ "--i": order }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-gray-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{value}</p>
+          <p className="truncate text-xs font-medium text-gray-600">{label}</p>
+          <p className="mt-1 font-sans text-2xl font-bold text-gray-900 sm:text-3xl">
+            <CountUp value={value} />
+          </p>
         </div>
-        <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${iconClass}`}>
+        <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl transition-transform duration-300 group-hover:-translate-y-0.5 motion-reduce:transform-none ${iconClass}`}>
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      {hint && <p className="mt-1.5 text-xs leading-snug text-gray-500">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs leading-snug text-gray-600">{hint}</p>}
     </div>
   );
 }
@@ -183,11 +178,11 @@ function SelectBox({ label, value, onChange, children, className = "" }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-white pl-3 pr-9 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+        className="dash-field h-10 w-full cursor-pointer appearance-none rounded-xl pl-3 pr-9 text-sm font-medium text-gray-700 transition hover:border-indigo-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
       >
         {children}
       </select>
-      <FaChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+      <FaChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-500" />
     </label>
   );
 }
@@ -201,12 +196,12 @@ function FolderChip({ icon: Icon, label, count, active, onClick }) {
       className={`inline-flex max-w-[16rem] flex-none items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
         active
           ? "border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/25"
-          : "border-gray-200 bg-white text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/60 hover:text-indigo-700"
+          : "border-white/80 bg-white/70 text-gray-700 hover:border-indigo-200 hover:bg-white hover:text-indigo-700"
       }`}
     >
       <Icon className={`h-4 w-4 flex-none ${active ? "text-white" : "text-indigo-500"}`} />
       <span className="truncate">{label}</span>
-      <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+      <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${active ? "bg-white/20 text-white" : "bg-indigo-950/[0.06] text-gray-600"}`}>
         {count}
       </span>
     </button>
@@ -267,7 +262,7 @@ function useMenuPosition(open, triggerRef) {
   return position;
 }
 
-function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onToggleMenu, canDownload, edit, actions }) {
+function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onToggleMenu, canDownload, edit, actions, order = 0 }) {
   const menuButtonRef = useRef(null);
   const menuPosition = useMenuPosition(menuOpen, menuButtonRef);
   const type = typeMeta(code.type);
@@ -283,11 +278,8 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
 
   return (
     <li
-      className={`relative rounded-2xl border p-4 transition sm:p-5 ${
-        selected
-          ? "border-indigo-300 bg-indigo-50/40 ring-2 ring-indigo-500/20"
-          : "border-gray-200/80 bg-white hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5"
-      }`}
+      style={{ "--i": Math.min(order, 8) }}
+      className={`glass glass-hover dash-rise relative rounded-2xl p-4 sm:p-5 ${selected ? "!border-indigo-300 ring-2 ring-indigo-500/20" : ""}`}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
         <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
@@ -378,16 +370,16 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
                   onClick={() => edit.start(code)}
                   aria-label="Rename"
                   title="Rename"
-                  className="flex-none rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-indigo-600 focus:opacity-100 sm:opacity-0 sm:group-hover/name:opacity-100"
+                  className="flex-none rounded-md p-1.5 text-gray-500 transition hover:bg-white hover:text-indigo-600 focus:opacity-100 sm:opacity-0 sm:group-hover/name:opacity-100"
                 >
                   <FaPen className="h-3 w-3" />
                 </button>
               </div>
             )}
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600">
               <span className="flex min-w-0 max-w-full items-center gap-1.5 sm:max-w-[18rem]">
-                <DestinationIcon className="h-3 w-3 flex-none text-gray-400" />
+                <DestinationIcon className="h-3 w-3 flex-none text-gray-500" />
                 {destination.href ? (
                   <a
                     href={destination.href}
@@ -407,14 +399,14 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
                   type="button"
                   onClick={() => actions.copyLink(code)}
                   title="Copy short link"
-                  className="inline-flex items-center gap-1.5 text-gray-500 transition hover:text-indigo-600"
+                  className="inline-flex items-center gap-1.5 text-gray-600 transition hover:text-indigo-600"
                 >
                   <FaLink className="h-3 w-3" />
                   {withoutProtocol(shortLink)}
                 </button>
               )}
               <span className="flex items-center gap-1.5">
-                <FaFolder className="h-3 w-3 text-gray-400" />
+                <FaFolder className="h-3 w-3 text-gray-500" />
                 {code.folder?.name || "No folder"}
               </span>
               <span title={updated ? `Last updated ${updated}` : undefined}>Created {formatDate(code.createdAt)}</span>
@@ -422,15 +414,15 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3 lg:justify-end lg:border-0 lg:pt-0">
+        <div className="flex items-center justify-between gap-3 border-t border-indigo-950/[0.06] pt-3 lg:justify-end lg:border-0 lg:pt-0">
           <div
-            className="lg:w-24 lg:border-x lg:border-gray-100 lg:px-3 lg:text-center"
+            className="lg:w-24 lg:border-x lg:border-indigo-950/[0.06] lg:px-3 lg:text-center"
             title={isDynamic ? "Total scans" : "Static codes aren't tracked"}
           >
             <p className="text-lg font-bold leading-tight tabular-nums text-gray-900">
               {isDynamic ? (code.scanCount || 0).toLocaleString() : "—"}
             </p>
-            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Scans</p>
+            <p className="text-xs font-medium text-gray-600">Scans</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -439,7 +431,7 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
               onClick={() => actions.download(code)}
               disabled={!canDownload}
               title={canDownload ? "Download" : "Renew your plan to download"}
-              className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-gray-700"
+              className="btn-shine btn-shine-soft dash-field inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-gray-700"
             >
               <FaDownload className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
@@ -459,8 +451,8 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-label="More actions"
-                className={`flex h-9 w-9 items-center justify-center rounded-xl border bg-white shadow-sm transition ${
-                  menuOpen ? "border-indigo-300 text-indigo-700" : "border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-700"
+                className={`dash-field flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                  menuOpen ? "!border-indigo-300 text-indigo-700" : "text-gray-500 hover:!border-indigo-300 hover:text-indigo-700"
                 }`}
               >
                 <FaEllipsisH className="h-3.5 w-3.5" />
@@ -471,7 +463,7 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
                   <div
                     role="menu"
                     style={menuPosition}
-                    className="qr-menu fixed z-[55] w-56 rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+                    className="qr-menu dash-tooltip fixed z-[55] w-56 rounded-xl bg-white p-1.5 shadow-2xl shadow-indigo-950/15 ring-1 ring-indigo-950/[0.06]"
                   >
                     <MenuItem icon={FaEye} onClick={() => actions.preview(code)}>Preview</MenuItem>
                     {isDynamic && <MenuItem icon={FaLink} onClick={() => actions.copyLink(code)}>Copy short link</MenuItem>}
@@ -501,12 +493,12 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
 
 function RowSkeleton() {
   return (
-    <li className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5">
-      <div className="h-[82px] w-[82px] flex-none animate-pulse rounded-lg bg-gray-100" />
+    <li className="glass flex items-center gap-4 rounded-2xl p-5">
+      <div className="dash-skeleton h-[82px] w-[82px] flex-none !rounded-lg" />
       <div className="min-w-0 flex-1 space-y-3">
-        <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
-        <div className="h-4 w-56 max-w-full animate-pulse rounded bg-gray-100" />
-        <div className="h-3 w-72 max-w-full animate-pulse rounded bg-gray-100" />
+        <div className="dash-skeleton h-3 w-40 !rounded" />
+        <div className="dash-skeleton h-4 w-56 max-w-full !rounded" />
+        <div className="dash-skeleton h-3 w-72 max-w-full !rounded" />
       </div>
     </li>
   );
@@ -526,9 +518,9 @@ function Modal({ title, icon: Icon, danger, onClose, children }) {
         aria-modal="true"
         aria-label={title}
         onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-        className="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/40 p-4 backdrop-blur-sm sm:items-center"
+        className="fixed inset-0 z-[60] flex items-end justify-center bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in sm:items-center"
       >
-        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl motion-safe:animate-modal-pop">
           <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
             {Icon && (
               <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${danger ? "bg-red-50 text-red-600" : "bg-indigo-50 text-indigo-600"}`}>
@@ -560,7 +552,7 @@ function BulkButton({ icon: Icon, label, onClick, danger, disabled }) {
       disabled={disabled}
       title={label}
       className={`btn-shine btn-shine-soft inline-flex h-9 flex-none items-center gap-2 rounded-xl px-3 text-sm font-medium transition disabled:opacity-50 ${
-        danger ? "text-rose-300 hover:bg-rose-500/15 hover:text-rose-200" : "text-gray-200 hover:bg-white/10 hover:text-white"
+        danger ? "text-rose-600 hover:bg-rose-50" : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
       }`}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -600,12 +592,10 @@ export default function Dashboard() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState(null);
+  const { toast, showToast } = useToast();
 
   const status = subscriptionStatus?.status;
   const hasExpiredAccess = !!status && !["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"].includes(status);
-
-  const showToast = (message, tone = "success") => setToast({ message, tone, id: Date.now() });
 
   const request = async (url, options = {}) => {
     try {
@@ -643,12 +633,6 @@ export default function Dashboard() {
       if (!["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"].includes(subscription.status)) loadCodes();
     });
   }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2800);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   // Close the actions menu on outside click or Escape
   useEffect(() => {
@@ -877,8 +861,6 @@ export default function Dashboard() {
       : status === "SUBSCRIPTION_ACTIVE"
         ? "Unlimited on your plan"
         : null;
-  const expiredTitle =
-    status === "TRIAL_EXPIRED" ? "Your free trial has ended" : status === "SUBSCRIPTION_EXPIRED" ? "Your subscription has ended" : "No active plan";
   const canBulkPause = selectedCodes.some((c) => c.status === "ACTIVE" && (c.linkType || "DYNAMIC") === "DYNAMIC");
   const canBulkResume = selectedCodes.some((c) => c.status === "PAUSED");
 
@@ -886,41 +868,9 @@ export default function Dashboard() {
     <DashboardLayout
       title="My QR codes"
       description="Manage, organise and track every QR code you've created."
-      actions={
-        <Link
-          href="/dashboard/create-qr"
-          className="btn-shine inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold !text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
-        >
-          <FaPlus className="h-3.5 w-3.5" />
-          New QR code
-        </Link>
-      }
     >
-      {hasExpiredAccess && (
-        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div className="flex gap-3">
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-              <FaExclamationTriangle className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-semibold text-amber-900">{expiredTitle}</p>
-              <p className="mt-0.5 text-sm text-amber-800">
-                Your QR codes are paused: scans show a paused page and downloads are off. Nothing is deleted, so subscribing switches
-                them straight back on.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/billing"
-            className="btn-shine inline-flex flex-none items-center justify-center rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-sm transition hover:bg-amber-700"
-          >
-            View plans
-          </Link>
-        </div>
-      )}
-
       {!loading && liveCodes.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <StatCard
             icon={FaQrcode}
             label="QR codes"
@@ -928,14 +878,14 @@ export default function Dashboard() {
             hint={totalHint}
             iconClass="bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/25"
           />
-          <StatCard icon={FaCheckCircle} label="Active" value={stats.active} hint="Redirecting normally" iconClass="bg-emerald-50 text-emerald-600" />
-          <StatCard icon={FaPauseCircle} label="Paused" value={stats.paused} hint="Showing a paused page" iconClass="bg-amber-50 text-amber-600" />
-          <StatCard icon={FaChartLine} label="Total scans" value={stats.scans.toLocaleString()} hint="All dynamic codes" iconClass="bg-indigo-50 text-indigo-600" />
+          <StatCard order={1} icon={FaCheckCircle} label="Active" value={stats.active} hint="Redirecting normally" iconClass="bg-emerald-100/80 text-emerald-700" />
+          <StatCard order={2} icon={FaPauseCircle} label="Paused" value={stats.paused} hint="Showing a paused page" iconClass="bg-amber-100/80 text-amber-700" />
+          <StatCard order={3} icon={FaChartLine} label="Total scans" value={stats.scans} hint="All dynamic codes" iconClass="bg-indigo-100/80 text-indigo-700" />
         </div>
       )}
 
-      <section className="mb-6" aria-labelledby="folders-heading">
-        <h2 id="folders-heading" className="mb-3 text-sm font-semibold text-gray-900">
+      <section className="mb-4" aria-labelledby="folders-heading">
+        <h2 id="folders-heading" className="mb-2 text-sm font-semibold text-gray-900">
           Folders
         </h2>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
@@ -953,7 +903,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setShowCreateFolder(true)}
-            className="btn-shine btn-shine-soft inline-flex flex-none items-center gap-2 whitespace-nowrap rounded-xl border border-dashed border-indigo-300 px-3.5 py-2 text-sm font-medium text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50"
+            className="btn-shine btn-shine-soft inline-flex flex-none items-center gap-2 whitespace-nowrap rounded-xl border border-dashed border-indigo-300 px-3.5 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-400 hover:bg-white/70"
           >
             <FaFolderPlus className="h-4 w-4" />
             New folder
@@ -970,41 +920,25 @@ export default function Dashboard() {
       )}
 
       {liveCodes.length > 0 && (
-        <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+        <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-3 xl:flex-row xl:items-center">
           <div className="relative flex-1">
-            <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, link or type"
               aria-label="Search QR codes"
-              className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 hover:border-indigo-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="dash-field h-10 w-full rounded-xl pl-10 pr-3 text-sm text-gray-900 transition placeholder:text-gray-500 hover:border-indigo-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div role="tablist" aria-label="Filter by status" className="inline-flex rounded-xl bg-gray-100 p-1">
-              {STATUS_FILTERS.map((s) => {
-                const active = statusFilter === s;
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setStatusFilter(s)}
-                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-                      active ? "bg-white font-semibold text-indigo-700 shadow-sm" : "font-medium text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {s}
-                    <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-indigo-50 text-indigo-700" : "bg-gray-200/70 text-gray-500"}`}>
-                      {statusCounts[s]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedControl
+              label="Filter by status"
+              options={STATUS_FILTERS.map((s) => ({ value: s, label: s, count: statusCounts[s] }))}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
             <SelectBox label="QR type" value={typeFilter} onChange={setTypeFilter}>
               <option value="">All types</option>
               {typesInUse.map((t) => (
@@ -1031,7 +965,7 @@ export default function Dashboard() {
           <RowSkeleton />
         </ul>
       ) : liveCodes.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-purple-50/60 px-6 py-14 text-center">
+        <div className="glass dash-rise rounded-3xl px-6 py-14 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
             <FaQrcode className="h-7 w-7" />
           </div>
@@ -1048,21 +982,21 @@ export default function Dashboard() {
           </Link>
         </div>
       ) : filteredCodes.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
+        <div className="glass dash-rise rounded-3xl px-6 py-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <FaSearch className="h-5 w-5" />
           </div>
           <h3 className="mt-4 font-semibold text-gray-900">
             {activeFolder && !hasFilters ? `No QR codes in "${activeFolder.name}" yet` : "No QR codes match your filters"}
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-600">
             {activeFolder && !hasFilters ? "Use “Move to folder” on any QR code to add it here." : "Try a different search, or clear the filters."}
           </p>
           {hasFilters && (
             <button
               type="button"
               onClick={clearFilters}
-              className="btn-shine btn-shine-soft mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
+              className="btn-shine btn-shine-soft dash-field mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
             >
               <FaTimes className="h-3 w-3" />
               Clear filters
@@ -1082,15 +1016,16 @@ export default function Dashboard() {
               />
               Select all
             </label>
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">{filteredCodes.length}</span> {filteredCodes.length === 1 ? "QR code" : "QR codes"}
+            <p className="text-sm text-gray-600">
+              <span className="font-semibold text-gray-900">{filteredCodes.length}</span> {filteredCodes.length === 1 ? "QR code" : "QR codes"}
             </p>
           </div>
 
           <ul className="space-y-3">
-            {pageCodes.map((code) => (
+            {pageCodes.map((code, index) => (
               <QrRow
                 key={code.id}
+                order={index}
                 code={code}
                 design={designs.get(code.id)}
                 origin={origin}
@@ -1105,8 +1040,8 @@ export default function Dashboard() {
             ))}
           </ul>
 
-          <div className="mt-6 flex flex-col-reverse items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
-            <p className="text-sm text-gray-500">
+          <div className="mt-5 flex flex-col-reverse items-center justify-between gap-3 border-t border-indigo-950/[0.06] pt-4 sm:flex-row">
+            <p className="text-sm text-gray-600">
               Showing{" "}
               <span className="font-medium text-gray-700">
                 {startIndex + 1}–{Math.min(startIndex + pageSize, filteredCodes.length)}
@@ -1130,7 +1065,7 @@ export default function Dashboard() {
                     onClick={() => setCurrentPage(page - 1)}
                     disabled={page === 1}
                     aria-label="Previous page"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition hover:bg-white/70 disabled:opacity-40 disabled:hover:bg-transparent"
                   >
                     <FaChevronLeft className="h-3 w-3" />
                   </button>
@@ -1144,7 +1079,7 @@ export default function Dashboard() {
                         className={`h-9 min-w-[2.25rem] rounded-lg px-2 text-sm font-medium tabular-nums transition ${
                           p === page
                             ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm"
-                            : "text-gray-600 hover:bg-gray-100"
+                            : "text-gray-600 hover:bg-white/70"
                         }`}
                       >
                         {p}
@@ -1156,7 +1091,7 @@ export default function Dashboard() {
                     onClick={() => setCurrentPage(page + 1)}
                     disabled={page === totalPages}
                     aria-label="Next page"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition hover:bg-white/70 disabled:opacity-40 disabled:hover:bg-transparent"
                   >
                     <FaChevronRight className="h-3 w-3" />
                   </button>
@@ -1173,9 +1108,9 @@ export default function Dashboard() {
       {selectedCodes.length > 0 && (
         <Portal>
           <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3 sm:bottom-6">
-            <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl bg-gray-900 p-1.5 pl-4 text-white shadow-2xl shadow-gray-900/30 ring-1 ring-white/10">
+            <div className="glass-strong dash-rise pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 pl-4 text-gray-900 shadow-2xl shadow-indigo-950/20">
               <span className="whitespace-nowrap pr-2 text-sm font-semibold">{selectedCodes.length} selected</span>
-              <span className="h-6 w-px flex-none bg-white/15" aria-hidden="true" />
+              <span className="h-6 w-px flex-none bg-indigo-950/10" aria-hidden="true" />
               <BulkButton icon={FaFolderOpen} label="Move" disabled={busy} onClick={() => actions.move(selectedCodes)} />
               {canBulkPause && <BulkButton icon={FaPause} label="Pause" disabled={busy} onClick={() => actions.setPaused(selectedCodes, true)} />}
               {canBulkResume && <BulkButton icon={FaPlay} label="Resume" disabled={busy} onClick={() => actions.setPaused(selectedCodes, false)} />}
@@ -1187,7 +1122,7 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
                 aria-label="Clear selection"
-                className="ml-1 flex h-9 w-9 flex-none items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white"
+                className="ml-1 flex h-9 w-9 flex-none items-center justify-center rounded-xl text-gray-500 transition hover:bg-indigo-50 hover:text-indigo-700"
               >
                 <FaTimes className="h-3.5 w-3.5" />
               </button>
@@ -1331,21 +1266,7 @@ export default function Dashboard() {
         </Portal>
       )}
 
-      {toast && (
-        <Portal>
-          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[70] flex justify-center px-4" role="status" aria-live="polite">
-            <div
-              key={toast.id}
-              className={`flex max-w-md items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-xl ${
-                toast.tone === "error" ? "bg-red-600" : "bg-gray-900"
-              }`}
-            >
-              {toast.tone === "error" ? <FaExclamationCircle className="h-4 w-4 flex-none" /> : <FaCheckCircle className="h-4 w-4 flex-none text-emerald-400" />}
-              <span className="break-words">{toast.message}</span>
-            </div>
-          </div>
-        </Portal>
-      )}
+      <ToastHost toast={toast} />
     </DashboardLayout>
   );
 }

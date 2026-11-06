@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaQrcode, FaThLarge, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
+import { DASHBOARD_HOME } from "@/lib/site";
 
 // Main menu. "/#..." glides to the section on the landing page and navigates there from anywhere else;
 // the others are pages of their own
@@ -41,18 +42,8 @@ function Logo({ onClick }) {
  * Site-wide header with a full-height menu that slides in from the right on smaller screens.
  * - isAuthenticated / loading: which account actions to show (icons when signed in, log in / get started otherwise)
  * - onLogout: defaults to logging out and showing the logged-out page
- * - drawerLinks: [{ href, label, active, icon? }] for the menu; defaults to the landing page sections
- * - drawerFooter: (close) => node pinned to the bottom of the menu; defaults to account buttons
- * - menuBreakpoint: "lg" (default) or "md" — the width from which the menu button is hidden
  */
-export default function SiteHeader({
-  isAuthenticated = false,
-  loading = false,
-  onLogout,
-  drawerLinks,
-  drawerFooter,
-  menuBreakpoint = "lg",
-}) {
+export default function SiteHeader({ isAuthenticated = false, loading = false, onLogout }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef(null);
@@ -118,8 +109,7 @@ export default function SiteHeader({
     });
 
   const container = "mx-auto max-w-site px-4 sm:px-6 lg:px-8";
-  const hiddenFrom = menuBreakpoint === "md" ? "md:hidden" : "lg:hidden";
-  const links = drawerLinks || SECTION_LINKS.map((link) => ({ ...link, active: isOnPage(link.href, router.pathname) }));
+  const links = SECTION_LINKS.map((link) => ({ ...link, active: isOnPage(link.href, router.pathname) }));
 
   let actions;
   if (loading) {
@@ -127,7 +117,7 @@ export default function SiteHeader({
   } else if (isAuthenticated) {
     actions = (
       <div className="flex items-center gap-1.5">
-        <Link href="/dashboard" aria-label="Dashboard" title="Dashboard" className={iconButton}>
+        <Link href={DASHBOARD_HOME} aria-label="Dashboard" title="Dashboard" className={iconButton}>
           <FaThLarge className="h-[18px] w-[18px]" />
         </Link>
         <button
@@ -168,7 +158,7 @@ export default function SiteHeader({
         Log out
       </button>
       <Link
-        href="/dashboard"
+        href={DASHBOARD_HOME}
         onClick={close}
         className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-sm font-semibold !text-white shadow-md"
       >
@@ -232,7 +222,7 @@ export default function SiteHeader({
                 aria-expanded={open}
                 aria-controls="site-drawer"
                 aria-label="Open menu"
-                className={`flex h-10 w-10 items-center justify-center rounded-xl text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${hiddenFrom}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:hidden`}
               >
                 <FaBars className="h-5 w-5" />
               </button>
@@ -242,7 +232,7 @@ export default function SiteHeader({
       </header>
 
       {/* Full-height menu sliding in from the right; stays mounted so it can animate out */}
-      <div className={`fixed inset-0 z-50 ${hiddenFrom} ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
+      <div className={`fixed inset-0 z-50 lg:hidden ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
         <div
           className={`absolute inset-0 bg-slate-900/40 transition-opacity duration-300 motion-reduce:transition-none ${
             open ? "opacity-100" : "opacity-0"
@@ -273,7 +263,6 @@ export default function SiteHeader({
 
           <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Menu">
             {links.map((link) => {
-              const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
@@ -286,10 +275,7 @@ export default function SiteHeader({
                       : "mb-1 flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium !text-gray-800 transition hover:bg-indigo-50 hover:!text-indigo-700"
                   }
                 >
-                  <span className="flex items-center gap-3">
-                    {Icon && <Icon className={`h-4 w-4 ${link.active ? "text-white" : "text-indigo-500"}`} />}
-                    {link.label}
-                  </span>
+                  {link.label}
                   <FaChevronRight className={`h-3 w-3 ${link.active ? "text-white/70" : "text-gray-300"}`} />
                 </Link>
               );
@@ -297,7 +283,7 @@ export default function SiteHeader({
           </nav>
 
           <div className="flex-none border-t border-gray-100 px-5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            {drawerFooter ? drawerFooter(close) : !loading && defaultDrawerFooter}
+            {!loading && defaultDrawerFooter}
           </div>
         </aside>
       </div>

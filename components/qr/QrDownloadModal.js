@@ -74,8 +74,8 @@ export default function QrDownloadModal({ qrCode, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl motion-safe:animate-modal-pop" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Select the format to download</h3>

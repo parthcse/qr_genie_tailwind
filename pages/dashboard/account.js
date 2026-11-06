@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldTick } from "@/components/auth/AuthShell";
 import CodeInput, { emptyCode } from "@/components/auth/CodeInput";
 import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
+import { SegmentedControl } from "@/components/dashboard/DashboardUi";
 import {
   FaUser,
   FaEnvelope,
@@ -48,12 +49,11 @@ export async function getServerSideProps(context) {
 
 const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Arabic"];
 
-// Open blocks divided by a rule on phones (the dashboard card already frames them), cards from sm up
 function Section({ icon: Icon, title, description, children }) {
   return (
-    <section className="border-t border-slate-100 pt-8 first:border-t-0 first:pt-0 motion-safe:animate-fade-up sm:rounded-2xl sm:border sm:border-slate-200/80 sm:bg-white sm:p-7 sm:shadow-sm sm:first:border-t sm:first:pt-7">
+    <section className="glass dash-rise rounded-2xl p-4 sm:p-7">
       <div className="flex items-start gap-4">
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </span>
         <div>
@@ -447,29 +447,20 @@ export default function AccountPage({ user: initialUser }) {
 
   return (
     <DashboardLayout title="My Account" description="Manage your personal details, password and billing information.">
-      {/* Tabs: full-width segmented control on phones */}
-      <div role="tablist" aria-label="Account sections" className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:mb-6 sm:w-fit sm:self-start">
-        {[
-          { id: "general", label: "General information" },
-          { id: "billing", label: "Billing information" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-              activeTab === tab.id ? "bg-white font-semibold text-indigo-700 shadow-sm" : "font-medium text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Tabs: full width on phones */}
+      <SegmentedControl
+        label="Account sections"
+        className="mb-4 flex w-full sm:w-fit sm:self-start"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: "general", label: "General information" },
+          { value: "billing", label: "Billing information" },
+        ]}
+      />
 
       {activeTab === "general" && (
-        <div className="space-y-8 sm:space-y-6">
+        <div className="space-y-4">
           <Section icon={FaIdCard} title="Personal information" description="Your name, contact details and the email you sign in with.">
             <AuthAlert shakeKey={personal.shake}>{personal.error}</AuthAlert>
             <AuthSuccess>{personal.success}</AuthSuccess>
@@ -641,11 +632,11 @@ export default function AccountPage({ user: initialUser }) {
       )}
 
       {activeTab === "general" && (
-        <div className="mt-8 sm:mt-6">
-          <section aria-labelledby="delete-account-heading" className="rounded-2xl border border-red-100 bg-red-50/40 p-5 sm:p-6">
+        <div className="mt-4">
+          <section aria-labelledby="delete-account-heading" className="glass dash-rise rounded-2xl !border-red-100 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-4">
-                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-inset ring-red-100">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-red-50 text-red-600">
                   <FaTrashAlt className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <div>
@@ -671,7 +662,7 @@ export default function AccountPage({ user: initialUser }) {
       )}
 
       {activeTab === "billing" && (
-        <div className="space-y-8 sm:space-y-6">
+        <div className="space-y-4">
           <Section icon={FaFileInvoice} title="Billing information" description="The name and address you'd like us to use for billing.">
             <AuthAlert shakeKey={billing.shake}>{billing.error}</AuthAlert>
             <AuthSuccess>{billing.success}</AuthSuccess>

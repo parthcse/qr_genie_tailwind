@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, FaEye, FaEyeSlash } from "react-icons/fa";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useReducedMotion } from "motion/react";
+import { BarList, CountUp, SegmentedControl, ToastHost, countryName, useToast } from "@/components/dashboard/DashboardUi";
 import { isPageType, qrTypeLabel } from "@/lib/qr/qrTypes";
 import { contentSummary, contentTitle } from "@/lib/qr/qrContent";
 
@@ -52,15 +54,15 @@ function PasswordCard({ qr, qrId, onChange }) {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex gap-3">
-          <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${qr.hasPassword ? "bg-violet-50 text-violet-600" : "bg-gray-100 text-gray-400"}`}>
+          <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${qr.hasPassword ? "bg-violet-50 text-violet-600" : "bg-white text-gray-500 shadow-sm"}`}>
             {qr.hasPassword ? <FaLock className="h-4 w-4" /> : <FaLockOpen className="h-4 w-4" />}
           </span>
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Password protection</h2>
-            <p className="mt-0.5 text-sm text-gray-500">
+            <p className="mt-0.5 text-sm text-gray-600">
               {qr.hasPassword
                 ? "On. People who scan this code must enter the password before they're sent on."
                 : "Off. Anyone who scans this code goes straight to the destination."}
@@ -75,7 +77,7 @@ function PasswordCard({ qr, qrId, onChange }) {
                 setEditing(true);
                 setMessage(null);
               }}
-              className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
+              className="btn-shine btn-shine-soft dash-field inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
             >
               {qr.hasPassword ? "Change password" : "Add a password"}
             </button>
@@ -84,7 +86,7 @@ function PasswordCard({ qr, qrId, onChange }) {
                 type="button"
                 disabled={saving}
                 onClick={() => save({ removePassword: true }, "Password removed. The code now opens without one.")}
-                className="btn-shine btn-shine-soft inline-flex h-9 items-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+                className="btn-shine btn-shine-soft dash-field inline-flex h-9 items-center rounded-xl px-3 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
               >
                 Remove
               </button>
@@ -112,7 +114,7 @@ function PasswordCard({ qr, qrId, onChange }) {
               maxLength={64}
               placeholder={qr.hasPassword ? "New password" : "Password (at least 4 characters)"}
               aria-label="Password"
-              className="h-10 w-full rounded-xl border border-gray-300 pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="dash-field h-10 w-full rounded-xl pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
             <button
               type="button"
@@ -126,7 +128,7 @@ function PasswordCard({ qr, qrId, onChange }) {
           <button
             type="submit"
             disabled={saving || password.length < 4}
-            className="inline-flex h-10 items-center gap-1 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="btn-shine inline-flex h-10 items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 text-sm font-semibold text-white transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
           >
             <FaCheck className="h-3.5 w-3.5" /> Save
           </button>
@@ -136,7 +138,7 @@ function PasswordCard({ qr, qrId, onChange }) {
               setEditing(false);
               setPassword("");
             }}
-            className="inline-flex h-10 items-center gap-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50"
+            className="btn-shine btn-shine-soft dash-field inline-flex h-10 items-center gap-1 rounded-xl px-4 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
           >
             Cancel
           </button>
@@ -152,8 +154,27 @@ function PasswordCard({ qr, qrId, onChange }) {
   );
 }
 
+// Charts take colours as plain values: brand.primary.light from tailwind.config.js and tints
+const SCANS_COLOR = "#6366f1";
+const AXIS_COLOR = "#64748b";
+const GRID_COLOR = "rgba(99, 102, 241, 0.1)";
+
+function ScansTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="glass-strong dash-tooltip rounded-xl px-3 py-2 text-xs shadow-lg">
+      <p className="mb-0.5 font-semibold text-gray-900">{new Date(label).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+      <p className="text-gray-600">
+        Scans: <span className="font-semibold tabular-nums text-gray-900">{payload[0].value.toLocaleString("en-US")}</span>
+      </p>
+    </div>
+  );
+}
+
 export default function QrDetailPage({ qrId }) {
   const router = useRouter();
+  const reducedMotion = useReducedMotion();
+  const { toast, showToast } = useToast();
   const [qr, setQr] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -232,11 +253,12 @@ export default function QrDetailPage({ qrId }) {
       if (res.ok) {
         setQr((prev) => (prev ? { ...prev, targetUrl: data.qrCode.targetUrl } : null));
         setEditingUrl(false);
+        showToast("Destination updated");
       } else {
-        alert(data.error || "Failed to update URL");
+        showToast(data.error || "Couldn't update the destination.", "error");
       }
     } catch (e) {
-      alert("An error occurred");
+      showToast("Couldn't update the destination. Check your connection and try again.", "error");
     } finally {
       setSavingUrl(false);
     }
@@ -256,11 +278,12 @@ export default function QrDetailPage({ qrId }) {
       if (res.ok) {
         setQr((prev) => (prev ? { ...prev, pausedMessage: data.qrCode?.pausedMessage ?? null } : null));
         setEditingPausedMessage(false);
+        showToast("Paused message updated");
       } else {
-        alert(data.error || "Failed to update message");
+        showToast(data.error || "Couldn't update the message.", "error");
       }
     } catch (e) {
-      alert("An error occurred");
+      showToast("Couldn't update the message. Check your connection and try again.", "error");
     } finally {
       setSavingPausedMessage(false);
     }
@@ -274,8 +297,13 @@ export default function QrDetailPage({ qrId }) {
   if (loading && !qr) {
     return (
       <DashboardLayout title="QR Code" description="View and edit QR code details.">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-600">Loading...</p>
+        <div className="space-y-4" aria-label="Loading">
+          <div className="glass rounded-2xl p-6">
+            <div className="dash-skeleton h-44" />
+          </div>
+          <div className="glass rounded-2xl p-6">
+            <div className="dash-skeleton h-64" />
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -284,9 +312,9 @@ export default function QrDetailPage({ qrId }) {
   if (error || !qr) {
     return (
       <DashboardLayout title="QR Code" description="View and edit QR code details.">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-800">{error || "QR code not found"}</p>
-          <Link href="/dashboard" className="mt-4 inline-flex items-center gap-2 text-indigo-600 hover:underline">
+        <div className="glass rounded-2xl p-8 text-center">
+          <p className="font-semibold text-gray-900">{error || "QR code not found"}</p>
+          <Link href="/dashboard" className="mt-4 inline-flex items-center gap-2 font-medium !text-indigo-700 hover:underline">
             <FaArrowLeft /> Back to My QR Codes
           </Link>
         </div>
@@ -299,42 +327,45 @@ export default function QrDetailPage({ qrId }) {
 
   return (
     <DashboardLayout title={qr.name || "QR Code"} description="View and edit QR code details and analytics.">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600"
+            className="inline-flex items-center gap-2 text-sm font-medium !text-gray-700 transition hover:!text-indigo-700"
           >
             <FaArrowLeft /> My QR Codes
           </Link>
         </div>
 
+        {/* Wide screens: the code's settings beside its scans */}
+        <div className={`grid gap-4 ${isDynamic ? "xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:items-start" : ""}`}>
+        <div className="min-w-0 space-y-4">
         {/* Meta card */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Details</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="text-gray-500">Name</dt>
+              <dt className="text-gray-600">Name</dt>
               <dd className="font-medium text-gray-900">{qr.name || "—"}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Slug</dt>
+              <dt className="text-gray-600">Slug</dt>
               <dd className="font-medium text-gray-900 font-mono">{qr.slug}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Type</dt>
+              <dt className="text-gray-600">Type</dt>
               <dd className="font-medium text-gray-900">{qrTypeLabel(qr.type || "website")}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Link type</dt>
+              <dt className="text-gray-600">Link type</dt>
               <dd className="font-medium text-gray-900">{isDynamic ? "Dynamic" : "Static"}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Status</dt>
+              <dt className="text-gray-600">Status</dt>
               <dd>
                 <span
-                  className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                    qr.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                    qr.status === "ACTIVE" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"
                   }`}
                 >
                   {qr.status === "PAUSED" ? "Paused" : qr.status === "ACTIVE" ? "Active" : qr.status}
@@ -342,27 +373,27 @@ export default function QrDetailPage({ qrId }) {
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Folder</dt>
+              <dt className="text-gray-600">Folder</dt>
               <dd className="font-medium text-gray-900">{qr.folder?.name || "—"}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Created</dt>
+              <dt className="text-gray-600">Created</dt>
               <dd className="font-medium text-gray-900">{formatDate(qr.createdAt)}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Updated</dt>
+              <dt className="text-gray-600">Updated</dt>
               <dd className="font-medium text-gray-900">{formatDate(qr.updatedAt)}</dd>
             </div>
           </dl>
           {isDynamic && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <dt className="text-gray-500 text-sm mb-1">Short link</dt>
+            <div className="mt-4 border-t border-indigo-950/[0.06] pt-4">
+              <dt className="mb-1 text-sm text-gray-600">Short link</dt>
               <dd className="flex flex-wrap items-center gap-2">
                 <a
                   href={shortLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono text-sm text-indigo-600 hover:underline break-all"
+                  className="break-all font-mono text-sm !text-indigo-700 hover:underline"
                 >
                   {shortLink || "…"}
                 </a>
@@ -370,7 +401,7 @@ export default function QrDetailPage({ qrId }) {
                   href={shortLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                  className="btn-shine btn-shine-soft rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-semibold !text-indigo-700 transition hover:bg-indigo-100"
                 >
                   {isPage ? "Open page" : "Test redirect"}
                 </a>
@@ -381,11 +412,11 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Hosted page (list of links, ...): its content is edited on the create page */}
         {isPage && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900">Page</h2>
-                <p className="mt-1 text-sm text-gray-500">What people see when they scan this code. Change it any time; the printed code stays the same.</p>
+                <p className="mt-1 text-sm text-gray-600">What people see when they scan this code. Change it any time; the printed code stays the same.</p>
               </div>
               <Link
                 href={`/dashboard/create-qr?edit=${qr.id}`}
@@ -397,7 +428,7 @@ export default function QrDetailPage({ qrId }) {
             {qr.content && (
               <p className="mt-4 text-sm text-gray-700">
                 <span className="font-medium text-gray-900">{contentTitle(qr.type, qr.content)}</span>
-                {contentSummary(qr.type, qr.content) ? <span className="text-gray-500"> · {contentSummary(qr.type, qr.content)}</span> : null}
+                {contentSummary(qr.type, qr.content) ? <span className="text-gray-600"> · {contentSummary(qr.type, qr.content)}</span> : null}
               </p>
             )}
           </div>
@@ -405,7 +436,7 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Target URL (Dynamic only) */}
         {isDynamic && !isPage && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Destination URL</h2>
             {editingUrl ? (
               <div className="flex flex-wrap gap-2">
@@ -413,21 +444,21 @@ export default function QrDetailPage({ qrId }) {
                   type="url"
                   value={editTargetUrl}
                   onChange={(e) => setEditTargetUrl(e.target.value)}
-                  className="flex-1 min-w-[200px] rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="dash-field min-w-[200px] flex-1 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   placeholder="https://..."
                 />
                 <button
                   type="button"
                   onClick={handleSaveTargetUrl}
                   disabled={savingUrl}
-                  className="btn-shine inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="btn-shine inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
                 >
                   <FaCheck className="w-4 h-4" /> Save
                 </button>
                 <button
                   type="button"
                   onClick={() => { setEditingUrl(false); setEditTargetUrl(qr.targetUrl); }}
-                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-gray-300 text-gray-700 text-sm hover:bg-gray-50"
+                  className="btn-shine btn-shine-soft dash-field inline-flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
                 >
                   <FaTimes className="w-4 h-4" /> Cancel
                 </button>
@@ -438,7 +469,7 @@ export default function QrDetailPage({ qrId }) {
                 <button
                   type="button"
                   onClick={() => setEditingUrl(true)}
-                  className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline"
+                  className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   <FaEdit className="w-4 h-4" /> Edit
                 </button>
@@ -454,30 +485,30 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Paused message (when Paused and Dynamic) */}
         {isDynamic && qr.status === "PAUSED" && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Paused message</h2>
-            <p className="text-sm text-gray-500 mb-2">Shown to users when they scan this QR while it is paused.</p>
+            <p className="mb-2 text-sm text-gray-600">Shown to people who scan this code while it's paused.</p>
             {editingPausedMessage ? (
               <div className="flex flex-wrap gap-2">
                 <input
                   type="text"
                   value={editPausedMessage}
                   onChange={(e) => setEditPausedMessage(e.target.value)}
-                  className="flex-1 min-w-[200px] rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="dash-field min-w-[200px] flex-1 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   placeholder="This campaign is not active right now."
                 />
                 <button
                   type="button"
                   onClick={handleSavePausedMessage}
                   disabled={savingPausedMessage}
-                  className="btn-shine inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="btn-shine inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50"
                 >
                   <FaCheck className="w-4 h-4" /> Save
                 </button>
                 <button
                   type="button"
                   onClick={() => { setEditingPausedMessage(false); setEditPausedMessage(qr.pausedMessage || ""); }}
-                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-gray-300 text-gray-700 text-sm hover:bg-gray-50"
+                  className="btn-shine btn-shine-soft dash-field inline-flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
                 >
                   <FaTimes className="w-4 h-4" /> Cancel
                 </button>
@@ -488,7 +519,7 @@ export default function QrDetailPage({ qrId }) {
                 <button
                   type="button"
                   onClick={() => setEditingPausedMessage(true)}
-                  className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline"
+                  className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   <FaEdit className="w-4 h-4" /> Edit
                 </button>
@@ -497,114 +528,109 @@ export default function QrDetailPage({ qrId }) {
           </div>
         )}
 
+        </div>
+
         {/* Analytics (Dynamic only) */}
         {isDynamic && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">Time period</span>
-              {[7, 30, 90].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDays(d)}
-                  className={`btn-shine px-3 py-1.5 rounded-lg text-sm font-medium ${
-                    days === d
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {d} days
-                </button>
-              ))}
-            </div>
+          <div className="min-w-0 space-y-4">
+            <SegmentedControl
+              label="Time period"
+              className="w-full sm:w-auto"
+              options={[7, 30, 90].map((d) => ({ value: d, label: `${d} days` }))}
+              value={days}
+              onChange={setDays}
+            />
 
             {analytics && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500">Total scans</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{analytics.totalScans?.toLocaleString() ?? 0}</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5">
+                    <p className="text-xs font-medium text-gray-600">Total scans</p>
+                    <p className="mt-1 font-sans text-3xl font-bold text-gray-900">
+                      <CountUp value={analytics.totalScans} />
+                    </p>
                   </div>
-                  <div className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500">Unique scanners</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{analytics.uniqueScans?.toLocaleString() ?? 0}</p>
+                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5" style={{ "--i": 1 }}>
+                    <p className="text-xs font-medium text-gray-600">Unique scanners</p>
+                    <p className="mt-1 font-sans text-3xl font-bold text-gray-900">
+                      <CountUp value={analytics.uniqueScans} />
+                    </p>
                   </div>
-                  <div className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
-                    <p className="text-xs font-medium text-gray-500">Last scan</p>
+                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5" style={{ "--i": 2 }}>
+                    <p className="text-xs font-medium text-gray-600">Last scan</p>
                     <p className="mt-1 text-lg font-semibold text-gray-900">{formatDate(analytics.lastScanAt)}</p>
                   </div>
                 </div>
 
                 {analytics.daily?.length > 0 && (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Scans over time</h3>
-                    <ResponsiveContainer width="100%" height={280}>
-                      <LineChart data={analytics.daily}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
-                        <YAxis tick={{ fontSize: 11 }} />
-                        <Tooltip labelFormatter={(v) => new Date(v).toLocaleDateString()} />
-                        <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={2} name="Scans" dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 3 }}>
+                    <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans over time</h3>
+                    <div className="h-64 sm:h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart key={days} data={analytics.daily} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="codeScansFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={SCANS_COLOR} stopOpacity={0.3} />
+                              <stop offset="100%" stopColor={SCANS_COLOR} stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid vertical={false} stroke={GRID_COLOR} />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 11, fill: AXIS_COLOR }}
+                            axisLine={false}
+                            tickLine={false}
+                            minTickGap={28}
+                            tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: AXIS_COLOR }} axisLine={false} tickLine={false} />
+                          <Tooltip content={<ScansTooltip />} cursor={{ stroke: "#c7d2fe" }} animationDuration={160} isAnimationActive={!reducedMotion} />
+                          <Area
+                            type="monotone"
+                            dataKey="count"
+                            name="Scans"
+                            stroke={SCANS_COLOR}
+                            strokeWidth={2.5}
+                            fill="url(#codeScansFill)"
+                            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+                            isAnimationActive={!reducedMotion}
+                            animationDuration={1200}
+                            animationEasing="ease-out"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 )}
 
                 {(analytics.countryStats?.length > 0 || analytics.deviceStats?.length > 0) && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {analytics.countryStats?.length > 0 && (
-                      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">By country</h3>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-200">
-                                <th className="text-left py-2 font-medium text-gray-700">Country</th>
-                                <th className="text-right py-2 font-medium text-gray-700">Scans</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {analytics.countryStats.map(({ country, count }) => (
-                                <tr key={country} className="border-b border-gray-100">
-                                  <td className="py-2 text-gray-900">{country}</td>
-                                  <td className="py-2 text-right text-gray-600">{count.toLocaleString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                      <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 4 }}>
+                        <h3 className="mb-4 text-sm font-semibold text-gray-900">By country</h3>
+                        <BarList
+                          items={analytics.countryStats.map(({ country, count }) => ({ name: country, count }))}
+                          total={analytics.totalScans}
+                          formatName={countryName}
+                          color="bg-sky-500"
+                        />
                       </div>
                     )}
                     {analytics.deviceStats?.length > 0 && (
-                      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">By device</h3>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-200">
-                                <th className="text-left py-2 font-medium text-gray-700">Device</th>
-                                <th className="text-right py-2 font-medium text-gray-700">Scans</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {analytics.deviceStats.map(({ device, count }) => (
-                                <tr key={device} className="border-b border-gray-100">
-                                  <td className="py-2 text-gray-900">{device}</td>
-                                  <td className="py-2 text-right text-gray-600">{count.toLocaleString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                      <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 5 }}>
+                        <h3 className="mb-4 text-sm font-semibold text-gray-900">By device</h3>
+                        <BarList items={analytics.deviceStats.map(({ device, count }) => ({ name: device, count }))} total={analytics.totalScans} />
                       </div>
                     )}
                   </div>
                 )}
               </>
             )}
-          </>
+          </div>
         )}
+        </div>
       </div>
+      <ToastHost toast={toast} />
     </DashboardLayout>
   );
 }

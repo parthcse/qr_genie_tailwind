@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { DASHBOARD_HOME } from "@/lib/site";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
@@ -67,7 +68,7 @@ export default function Login() {
         return;
       }
       // Accounts that haven't confirmed their email finish that first
-      router.push(data.emailVerified === false ? "/auth/verify-email" : "/dashboard");
+      router.push(data.emailVerified === false ? "/auth/verify-email" : DASHBOARD_HOME);
     } catch {
       fail("We couldn't reach the server. Check your connection and try again.");
       if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);

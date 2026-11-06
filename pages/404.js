@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { DASHBOARD_HOME } from "@/lib/site";
 import Link from "next/link";
 import PublicLayout from "@/components/layout/PublicLayout";
 
@@ -22,7 +23,8 @@ export default function NotFoundPage() {
             Go to the home page
           </Link>
           <Link
-            href="/dashboard"
+            href={DASHBOARD_HOME}
+            prefetch={false}
             className="btn-shine btn-shine-soft rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50"
           >
             Open your dashboard

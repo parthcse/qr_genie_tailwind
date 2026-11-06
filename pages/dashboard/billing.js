@@ -103,25 +103,22 @@ function QrMotif({ className }) {
 
 function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, onCancel, adminPlan = false }) {
   return (
-    <section
-      aria-label="Your subscription"
-      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 p-6 text-white shadow-xl shadow-indigo-900/20 sm:p-8"
-    >
-      <QrMotif className="pointer-events-none absolute -right-8 -top-8 h-60 w-60 text-white/[0.13] [mask-image:linear-gradient(to_bottom_left,black_30%,transparent_80%)] sm:h-72 sm:w-72" />
+    <section aria-label="Your subscription" className="glass dash-rise relative overflow-hidden rounded-3xl p-6 sm:p-8">
+      <QrMotif className="pointer-events-none absolute -right-8 -top-8 h-60 w-60 text-indigo-600/[0.12] [mask-image:linear-gradient(to_bottom_left,black_30%,transparent_80%)] sm:h-72 sm:w-72" />
       <div className="relative">
         {cancelled ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-medium text-amber-200 ring-1 ring-inset ring-amber-300/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             Cancelled
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-400/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Active
           </span>
         )}
-        <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{planName}</h2>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-indigo-200">
+        <h2 className="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">{planName}</h2>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-gray-700">
           {adminPlan
             ? "Admin accounts are free: every feature, no limits, and your QR codes never pause. There's nothing to pay or renew."
             : cancelled
@@ -130,26 +127,26 @@ function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, on
             ? `Your free days carry on until ${startsOn}, then your paid months begin. Cancel before then for a full refund.`
             : "Create as many QR codes as you need. Your printed codes keep working while your plan is active."}
         </p>
-        <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-white/10 pt-6 sm:grid-cols-3">
+        <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-indigo-950/[0.08] pt-6 sm:grid-cols-3">
           <div>
-            <dt className="text-xs text-indigo-300">{cancelled || adminPlan ? "Ends on" : "Renews on"}</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">{renewsOn || "—"}</dd>
+            <dt className="text-xs text-gray-600">{cancelled || adminPlan ? "Ends on" : "Renews on"}</dt>
+            <dd className="mt-1 text-lg font-semibold tabular-nums text-gray-900">{renewsOn || "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-indigo-300">Price</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">{priceText || "—"}</dd>
+            <dt className="text-xs text-gray-600">Price</dt>
+            <dd className="mt-1 text-lg font-semibold tabular-nums text-gray-900">{priceText || "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-indigo-300">{startsOn ? "Paid months start" : "QR codes"}</dt>
-            <dd className="mt-1 text-lg font-semibold">{startsOn || "Unlimited"}</dd>
+            <dt className="text-xs text-gray-600">{startsOn ? "Paid months start" : "QR codes"}</dt>
+            <dd className="mt-1 text-lg font-semibold text-gray-900">{startsOn || "Unlimited"}</dd>
           </div>
         </dl>
         {!adminPlan && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-indigo-200">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-gray-700">
             <p>
               {cancelled && renewsOn ? `Changed your mind? You can choose a new plan from ${renewsOn}. ` : ""}
               Billing question?{" "}
-              <Link href="/contact?topic=billing" className="font-semibold !text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+              <Link href="/contact?topic=billing" className="font-semibold !text-indigo-700 underline decoration-indigo-300 underline-offset-4 hover:decoration-indigo-600">
                 Contact us
               </Link>
             </p>
@@ -157,7 +154,7 @@ function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, on
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded-md text-sm font-medium text-indigo-200 underline decoration-indigo-300/40 underline-offset-4 transition hover:text-white hover:decoration-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                className="rounded-md text-sm font-medium text-gray-700 underline decoration-gray-300 underline-offset-4 transition hover:text-red-600 hover:decoration-red-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
                 Cancel subscription
               </button>
@@ -174,7 +171,7 @@ function TrialProgress({ daysLeft, endsOn }) {
   const total = Math.max(TRIAL_DAYS, daysLeft);
   const pct = Math.max(4, Math.min(100, (daysLeft / total) * 100));
   return (
-    <section aria-label="Your free trial" className="rounded-2xl border border-indigo-100 bg-white p-5 sm:p-6">
+    <section aria-label="Your free trial" className="glass dash-rise rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold text-gray-900">Free trial</h2>
         <p className="text-sm tabular-nums text-gray-600">
@@ -182,16 +179,16 @@ function TrialProgress({ daysLeft, endsOn }) {
         </p>
       </div>
       <div
-        className="mt-3 h-2 overflow-hidden rounded-full bg-indigo-100"
+        className="mt-3 h-2 overflow-hidden rounded-full bg-indigo-950/[0.08]"
         role="progressbar"
         aria-label="Trial days left"
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={daysLeft}
       >
-        <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" style={{ width: `${pct}%` }} />
+        <div className="h-full origin-left rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 motion-safe:animate-[dash-grow_1s_cubic-bezier(0.16,1,0.3,1)_backwards]" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-3 text-sm text-gray-600">
+      <p className="mt-3 text-sm text-gray-700">
         Choose a plan whenever you&apos;re ready: your paid months start when your free days end, so you don&apos;t lose any.
       </p>
     </section>
@@ -206,7 +203,7 @@ function PlanEndedNotice({ status }) {
       ? "Your subscription has ended"
       : "You don't have an active plan";
   return (
-    <section aria-label="Plan status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
+    <section aria-label="Plan status" className="dash-rise rounded-2xl bg-amber-50 p-5 ring-1 ring-inset ring-amber-200 sm:p-6">
       <h2 className="text-base font-semibold text-amber-900">{title}</h2>
       <p className="mt-1 text-sm text-amber-800">Your QR codes are paused. Choose a plan below to switch them back on.</p>
     </section>
@@ -424,17 +421,18 @@ export default function BillingPage() {
   const paidPlan = paymentResult?.term && prices ? prices[paymentResult.term] : null;
 
   return (
-    <DashboardLayout title="" description="">
-      <div className="mx-auto w-full max-w-5xl space-y-12 px-1 py-2 sm:px-4 sm:py-4">
-        <header>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Billing</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            {adminPlan ? "Your plan and billing details." : isSubscribed ? "Your plan, renewal date and billing details." : "Choose a plan to keep your QR codes working."}
-          </p>
-        </header>
+    <DashboardLayout
+      title="Billing"
+      description={adminPlan ? "Your plan and billing details." : isSubscribed ? "Your plan, renewal date and billing details." : "Choose a plan to keep your QR codes working."}
+    >
+      <div className="mx-auto w-full max-w-5xl space-y-10">
 
         {/* Plan status */}
-        {!statusLoaded && <div className="h-40 animate-pulse rounded-3xl bg-indigo-50" />}
+        {!statusLoaded && (
+          <div className="glass rounded-3xl p-6">
+            <div className="dash-skeleton h-40" />
+          </div>
+        )}
         {isSubscribed && (
           <MembershipPass
             planName={planName}
@@ -453,7 +451,7 @@ export default function BillingPage() {
         <section aria-labelledby="plans-heading">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
-            <p className="text-sm text-gray-500">Every plan has every feature. Prices include 18% GST.</p>
+            <p className="text-sm text-gray-600">Every plan has every feature. Prices include 18% GST.</p>
           </div>
           <PricingCards
             prices={prices}
@@ -464,7 +462,7 @@ export default function BillingPage() {
             disabled={!statusLoaded || isSubscribed}
           />
           {!isSubscribed && <PaymentMethods currency={shownCurrency || undefined} className="mt-10" />}
-          <div className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-500">
+          <div className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-600">
             {adminPlan ? (
               <p>Admin accounts don&apos;t need a plan. These are the plans customers see.</p>
             ) : isSubscribed ? (
@@ -483,7 +481,7 @@ export default function BillingPage() {
               </p>
             )}
           </div>
-          <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-600">
+          <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-700">
             {PAID_PLAN_FEATURES.map((feature) => (
               <li key={feature} className="inline-flex items-center gap-2">
                 <FaCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
@@ -550,7 +548,7 @@ function BillingDetails({ account }) {
   const hasBillingInfo = account && (account.billingName || account.billingCompany || addressLines.length > 0 || account.taxId);
 
   return (
-    <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 sm:p-7">
+    <div className="glass mt-4 rounded-2xl p-6 sm:p-7">
       {hasBillingInfo ? (
         <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
           {account.billingName && (
@@ -583,7 +581,7 @@ function BillingDetails({ account }) {
           )}
         </dl>
       ) : (
-        <p className="text-sm text-gray-500">No billing details saved yet.</p>
+        <p className="text-sm text-gray-600">No billing details saved yet.</p>
       )}
     </div>
   );

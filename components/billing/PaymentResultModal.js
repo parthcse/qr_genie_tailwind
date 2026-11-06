@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { DASHBOARD_HOME } from "@/lib/site";
 import Link from "next/link";
 import { FaTimes, FaBolt, FaRedo } from "react-icons/fa";
 
@@ -170,7 +171,7 @@ export default function PaymentResultModal({ result, planName, priceLabel, onClo
                   Create a QR code
                 </Link>
                 <Link
-                  href="/dashboard"
+                  href={DASHBOARD_HOME}
                   className="btn-shine btn-shine-soft flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold !text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200"
                 >
                   Go to dashboard

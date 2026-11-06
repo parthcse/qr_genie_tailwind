@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FaQrcode, FaCheck, FaEnvelope, FaLock, FaArrowUp } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
-import { SUPPORT_EMAIL, SITE_URL } from "@/lib/site";
+import { SUPPORT_EMAIL, SITE_URL, DASHBOARD_HOME } from "@/lib/site";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
 
 const SIGNUP_URL = `${SITE_URL}/auth/register`;
@@ -44,7 +44,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
                 </p>
                 <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Link
-                    href={isAuthenticated ? "/dashboard" : "/auth/register"}
+                    href={isAuthenticated ? DASHBOARD_HOME : "/auth/register"}
                     className="btn-shine btn-shine-soft inline-flex items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-semibold !text-indigo-950 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                   >
                     {isAuthenticated ? "Go to dashboard" : "Start free trial"}

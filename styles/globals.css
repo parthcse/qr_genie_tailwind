@@ -111,6 +111,300 @@ body {
   }
 }
 
+/* Dashboard only (components/layout/DashboardLayout.js, components/dashboard/DashboardUi.js): light frosted glass in the
+   brand colours, over a backdrop of three large QR finder patterns placed like the corners of a QR code. The other pages
+   of the site stay as they are. Blur only from md up: repainting it on every scroll frame makes phones stutter, so
+   phones get a more solid surface instead. */
+@layer components {
+  .dash-shell {
+    isolation: isolate;
+  }
+  .dash-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(140deg, theme('colors.indigo.100') 0%, theme('colors.violet.100') 52%, theme('colors.sky.100') 100%);
+  }
+  /* A finder pattern is 7 modules wide: a ring of 1, a gap of 1 and a core of 3 */
+  .dash-finder {
+    --s: clamp(16rem, 42vw, 40rem);
+    position: absolute;
+    width: var(--s);
+    height: var(--s);
+    border: calc(var(--s) / 7) solid var(--c);
+    border-radius: 22%;
+    /* Soft edges, so they read as light behind the glass and not as shapes showing through the gaps between cards */
+    filter: blur(22px);
+  }
+  .dash-finder::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--s) / 7);
+    border-radius: 18%;
+    background: var(--c);
+  }
+  @media (max-width: 767px) {
+    .dash-finder {
+      display: none;
+    }
+  }
+  .dash-finder-a {
+    --c: rgb(99 102 241 / 0.16);
+    top: -5rem;
+    left: -4rem;
+  }
+  .dash-finder-b {
+    --c: rgb(168 85 247 / 0.14);
+    top: -7rem;
+    right: -6rem;
+  }
+  .dash-finder-c {
+    --c: rgb(56 189 248 / 0.14);
+    bottom: -9rem;
+    left: 14%;
+  }
+
+  .glass,
+  .glass-strong {
+    border: 1px solid rgb(255 255 255 / 0.8);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(49 46 129 / 0.04), 0 12px 32px -16px rgb(49 46 129 / 0.18);
+  }
+  .glass {
+    background: rgb(255 255 255 / 0.82);
+  }
+  .glass-strong {
+    background: rgb(255 255 255 / 0.94);
+  }
+  @media (min-width: 768px) {
+    .glass {
+      background: rgb(255 255 255 / 0.68);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+    .glass-strong {
+      background: rgb(255 255 255 / 0.86);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      backdrop-filter: blur(24px) saturate(160%);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .glass-strong {
+      background: theme('colors.white');
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+  /* A card that answers the pointer: it lifts a little, and the shadow and border follow */
+  .glass-hover {
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+  }
+  @media (hover: hover) {
+    .glass-hover:hover {
+      transform: translateY(-2px);
+      border-color: theme('colors.indigo.200');
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 2px 4px rgb(49 46 129 / 0.05), 0 20px 40px -18px rgb(79 70 229 / 0.3);
+    }
+  }
+
+  /* The field a form or filter sits in, so controls read clearly against the glass */
+  .dash-field {
+    border: 1px solid rgb(99 102 241 / 0.16);
+    background: rgb(255 255 255 / 0.85);
+  }
+
+  /* Sliding tabs: the white pill moves between options (SegmentedControl) */
+  .dash-segment {
+    display: inline-flex;
+    gap: 0.125rem;
+    padding: 0.25rem;
+    border-radius: 0.875rem;
+    background: rgb(79 70 229 / 0.08);
+  }
+  .dash-segment-pill {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.625rem;
+    background: theme('colors.white');
+    box-shadow: 0 1px 2px rgb(49 46 129 / 0.1), 0 4px 10px -4px rgb(49 46 129 / 0.16);
+  }
+
+  /* Placeholder while data loads: a band of light passes over it */
+  .dash-skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 0.55);
+  }
+  .dash-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.75) 50%, transparent 80%);
+    transform: translateX(-100%);
+    animation: dash-shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* The compact sidebar: icons only, opening over the page on hover or keyboard focus, or held open with its pin
+     (which moves the page aside from lg up). The labels never move, so nothing jumps while it opens. */
+  .dash-rail {
+    position: fixed;
+    z-index: 40;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: 4.5rem;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dash-rail[data-open="true"],
+  .dash-rail:has(:focus-visible) {
+    width: 15.5rem;
+  }
+  .dash-rail-label {
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+  .dash-rail[data-open="true"] .dash-rail-label,
+  .dash-rail:has(:focus-visible) .dash-rail-label {
+    opacity: 1;
+  }
+  @media (hover: hover) {
+    .dash-rail:hover {
+      width: 15.5rem;
+      transition-delay: 0.12s;
+    }
+    .dash-rail:hover .dash-rail-label {
+      opacity: 1;
+      transition-delay: 0.1s;
+    }
+  }
+  @media (min-width: 768px) {
+    .dash-main {
+      padding-left: 6rem;
+      transition: padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+  @media (min-width: 1024px) {
+    .dash-main[data-pinned="true"] {
+      padding-left: 17rem;
+    }
+  }
+
+  /* One orchestrated entrance: the sidebar on first load, then the cards in turn (style="--i: n") */
+  .dash-rail-enter {
+    animation: dash-rail-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+  .dash-page {
+    animation: dash-fade 0.3s ease-out backwards;
+  }
+  .dash-rise {
+    animation: dash-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+  .dash-tooltip {
+    animation: dash-fade 0.15s ease-out backwards;
+  }
+  /* Thin bar at the top while the next page loads; it waits a moment so quick loads show nothing */
+  .dash-progress {
+    position: fixed;
+    z-index: 70;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform-origin: left;
+    background: linear-gradient(90deg, theme('colors.brand.gradient.from'), theme('colors.brand.gradient.to'));
+    animation: dash-progress 8s cubic-bezier(0.1, 0.8, 0.2, 1) 0.12s backwards;
+  }
+}
+
+@keyframes dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dash-rail-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dash-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes dash-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dash-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-rail-enter,
+  .dash-page,
+  .dash-rise,
+  .dash-tooltip,
+  .dash-skeleton::after {
+    animation: none;
+  }
+  .dash-rail,
+  .dash-rail-label,
+  .dash-main {
+    transition: none;
+  }
+  .dash-rail:hover,
+  .dash-rail:hover .dash-rail-label {
+    transition-delay: 0s;
+  }
+  .glass-hover:hover {
+    transform: none;
+  }
+  .dash-progress {
+    animation: none;
+    transform: scaleX(0.6);
+  }
+}
+
 /* Blog articles (pages/blog/[slug].js): the HTML written in WordPress, cleaned by lib/blog/postHtml.js, which keeps
    only the tags and WordPress block classes styled here. A comfortable reading size and line length, headings in the
    display font, brand-coloured links and list markers. */

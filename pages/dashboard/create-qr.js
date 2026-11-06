@@ -4,7 +4,10 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
+import { AnimatePresence, m } from "motion/react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { SegmentedControl } from "@/components/dashboard/DashboardUi";
+import QrTypePicker from "@/components/qr/QrTypePicker";
 import DynamicForm from "@/components/qr/fields/DynamicForm";
 import { getSchemaForType } from "@/lib/qr/qrSchemas";
 import { createQRConfig } from "@/lib/qr/qrConfig";
@@ -310,12 +313,28 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 };
 
 // Mobile Preview Component
-const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef, showSamples = false }) => {
+// How tall the phone may be beside the page from lg up, so it always fits the window while sticky: what's around it differs
+const PHONE_HEIGHT = {
+  choosing: "lg:h-[min(640px,max(420px,calc(100dvh-18rem)))]",
+  page: "lg:h-[min(640px,max(420px,calc(100dvh-12.5rem)))]",
+  qr: "lg:h-[min(640px,max(420px,calc(100dvh-17.5rem)))]",
+  sheet: "!h-[min(640px,calc(100dvh-18rem))]",
+};
+
+const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef, showSamples = false, qrKey = "qr", heightClass = PHONE_HEIGHT.page }) => {
   // While a hosted page is being edited, keep the part that's changing in view inside the phone
   const screenRef = useRef(null);
   const pageForm = isPageType(qrType) ? formData[qrType] : null;
   const lastForm = useRef(pageForm);
+  const lastType = useRef(qrType);
   useEffect(() => {
+    // Another type: start at the top of its page. Only edits to the same page follow the part being changed.
+    if (lastType.current !== qrType) {
+      lastType.current = qrType;
+      lastForm.current = pageForm;
+      screenRef.current?.scrollTo({ top: 0 });
+      return;
+    }
     const before = lastForm.current || {};
     const after = pageForm || {};
     lastForm.current = pageForm;
@@ -329,7 +348,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
     if (rect.top < box.top + 40 || rect.bottom > box.bottom - 16) {
       screen.scrollTo({ top: screen.scrollTop + rect.top - box.top - 56, behavior: "smooth" });
     }
-  }, [pageForm]);
+  }, [pageForm, qrType]);
 
   const renderPreview = () => {
     if (previewMode === "qr") {
@@ -1092,64 +1111,12 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
           return <QrLanding type={qrType} content={showSamples ? previewContent(qrType, formData[qrType]) : { ...formData[qrType], __sample: {} }} preview />;
         }
         return (
-          <div className="h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
-            <div className="text-center max-w-xs">
-              {/* QR Genie Logo/Brand */}
-              <div className="mb-6 flex justify-center">
-                <div className="relative">
-                  {/* QR Code Icon Style Logo */}
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <div className="grid grid-cols-3 gap-1 p-2">
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-indigo-700 rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                      <div className="w-3 h-3 bg-white rounded-sm"></div>
-                    </div>
-                  </div>
-                  {/* Sparkle effect */}
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-                  <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                </div>
-              </div>
-              
-              {/* Brand Name */}
-              <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                QR Genie
-              </h3>
-              
-              {/* Tagline */}
-              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                Create beautiful, dynamic QR codes in seconds
-              </p>
-              
-              {/* Feature Highlights */}
-              <div className="space-y-2 text-xs text-slate-500">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                  <span>Customize colors & styles</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                  <span>Add logos & frames</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
-                  <span>Track scans & analytics</span>
-                </div>
-              </div>
-              
-              {/* CTA Hint */}
-              <div className="mt-6 pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-400 italic">
-                  Select a QR type to get started
-                </p>
-              </div>
-            </div>
+          <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
+              <FaQrcode className="h-7 w-7" />
+            </span>
+            <h3 className="mt-5 text-lg font-bold text-gray-900">Your preview appears here</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-gray-600">Choose a type to see what people get when they scan your code.</p>
           </div>
         );
     }
@@ -1158,7 +1125,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
   return (
     // From lg the preview stays on screen while the page scrolls, so the phone is only as tall as the window has room for
     // (below that it sits under the form at full height). Its screen scrolls inside.
-    <div className={`relative mx-auto w-[320px] h-[640px] ${previewMode === "qr" ? "lg:h-[min(640px,max(420px,calc(100dvh-18.5rem)))]" : "lg:h-[min(640px,max(420px,calc(100dvh-13.5rem)))]"}`}>
+    <div className={`relative mx-auto h-[640px] w-[320px] max-w-full ${heightClass}`}>
 
       {/* Modern iPhone Style - Dark Purplish-Gray Frame */}
       <div className="absolute inset-0 rounded-[3rem] p-1 shadow-2xl" style={{ 
@@ -1207,8 +1174,20 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
             
             {/* Screen Content */}
-            <div ref={screenRef} className="h-[calc(100%-2rem)] overflow-auto">
-              {renderPreview()}
+            <div ref={screenRef} className="relative h-[calc(100%-2rem)] overflow-auto">
+              {/* One page fades into the next while the phone stays still. A QR code redraws on each design change without fading. */}
+              <AnimatePresence mode="popLayout" initial={false}>
+                <m.div
+                  key={previewMode === "qr" ? "qr" : `page-${qrType || "none"}`}
+                  className="h-full"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <React.Fragment key={previewMode === "qr" ? qrKey : "page"}>{renderPreview()}</React.Fragment>
+                </m.div>
+              </AnimatePresence>
             </div>
             
             {/* Home Indicator (modern iPhone style) */}
@@ -1232,7 +1211,7 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
   ];
 
   return (
-    <ol className="grid grid-cols-3 gap-1.5 rounded-2xl border border-gray-100 bg-gray-50/80 p-1.5" aria-label="Steps">
+    <ol className="glass grid grid-cols-3 gap-1.5 rounded-2xl p-1.5" aria-label="Steps">
       {steps.map((step) => {
         const done = currentStep > step.id || allDone;
         const active = currentStep === step.id && !allDone;
@@ -1245,7 +1224,7 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
               disabled={!canClick}
               aria-current={active ? "step" : undefined}
               className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-2 py-2 text-left transition sm:gap-2.5 sm:px-3 sm:py-2.5 ${
-                active ? "bg-white shadow-sm ring-1 ring-indigo-100" : canClick ? "hover:bg-white/70" : "cursor-default"
+                active ? "bg-white shadow-sm" : canClick ? "hover:bg-white/70" : "cursor-default"
               }`}
             >
               <span
@@ -1254,14 +1233,14 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
                     ? "bg-emerald-500 text-white"
                     : active
                       ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30"
-                      : "bg-white text-gray-400 ring-1 ring-gray-200"
+                      : "bg-white text-gray-600 ring-1 ring-indigo-950/10"
                 }`}
               >
                 {done ? <FaCheck className="h-3 w-3" /> : step.id}
               </span>
               <span className="min-w-0">
-                <span className="hidden text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:block">Step {step.id}</span>
-                <span className={`block truncate text-xs font-semibold sm:text-sm ${active || done ? "text-gray-900" : "text-gray-500"}`}>
+                <span className="hidden text-xs font-medium text-gray-600 sm:block">Step {step.id}</span>
+                <span className={`block truncate text-xs font-semibold sm:text-sm ${active || done ? "text-gray-900" : "text-gray-600"}`}>
                   <span className="hidden md:inline">{step.label}</span>
                   <span className="md:hidden">{step.shortLabel}</span>
                 </span>
@@ -1271,6 +1250,90 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
         );
       })}
     </ol>
+  );
+};
+
+const KIND_NOTES = {
+  redirect: "Change where it points after printing, and see every scan.",
+  page: "We host this page. Change it any time, and see every scan.",
+  static: "Works straight from the camera. It can't be changed or counted later.",
+};
+
+/** Which type is being previewed, and what's useful to know before choosing it */
+const TypeSummary = ({ type }) => {
+  const Icon = qrTypeVisual(type.id).icon;
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${typeAccent(type.id)}`}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold text-gray-900">{type.label}</h3>
+        <p className="text-xs leading-snug text-gray-600">{KIND_NOTES[type.kind] || type.description}</p>
+      </div>
+    </div>
+  );
+};
+
+/** Choosing on a phone: a tap opens this sheet with the preview, and only its button chooses the type */
+const TypePreviewSheet = ({ type, onClose, onUse, children }) => {
+  const closeButton = useRef(null);
+  const open = !!type;
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButton.current?.focus();
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <m.div className="absolute inset-0 bg-indigo-950/30" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={onClose} />
+          <m.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${type.label} preview`}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-x-0 bottom-0 flex max-h-[100dvh] flex-col rounded-t-3xl bg-white shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-3 p-4 pb-3">
+              <TypeSummary type={type} />
+              <button
+                ref={closeButton}
+                type="button"
+                onClick={onClose}
+                aria-label="Close preview"
+                className="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              >
+                <FaTimes className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 pb-3">{children}</div>
+            <div className="flex-none border-t border-gray-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={onUse}
+                className="btn-shine flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25"
+              >
+                Use {type.label}
+                <FaArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+          </m.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -1377,8 +1440,12 @@ export default function CreateQrPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState(null);
-  const [hoveredType, setHoveredType] = useState(null);
+  // The type shown in the preview while choosing. It stays until another one is previewed, and never counts as chosen.
+  const [previewType, setPreviewType] = useState(null);
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState("destination"); // "destination" | "qr"
+  const previewPanel = useRef(null);
+  const shownType = step === 1 ? previewType || selectedType : selectedType;
 
   // ?type=wifi (used by the landing page) starts at step 2 with that type picked; unknown or
   // unreleased types are ignored
@@ -1524,15 +1591,15 @@ export default function CreateQrPage() {
       ? window.location.origin 
       : process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://qr-genie.co";
     
-    const previewTargetUrl = generatePreviewUrl(selectedType || hoveredType, formData);
+    const previewTargetUrl = generatePreviewUrl(shownType, formData);
     
-    if (!previewTargetUrl || !(selectedType || hoveredType)) return null;
+    if (!previewTargetUrl || !shownType) return null;
     
     // For preview, we'll encode the target URL directly so users can see what the QR will link to
     // In production, the QR code will encode: ${baseUrl}/r/${slug} which redirects to targetUrl
     // For preview purposes, we show the target URL so users can test scanning
     return previewTargetUrl;
-  }, [selectedType, hoveredType, formData]);
+  }, [shownType, formData]);
   // Validation
   const canContinueFromStep1 = !!selectedType;
   // Hosted pages are checked with the same rules the server uses (lib/qr/qrContent.js)
@@ -1693,94 +1760,33 @@ export default function CreateQrPage() {
     }
   };
 
-  // Render Step 1 - QR Type Selection, grouped (lib/qr/qrTypes.js)
-  const renderStep1 = () => {
-    const upcoming = qrTypes.filter((type) => type.active === false);
-    const groups = QR_TYPE_CATEGORIES.map((category) => ({
-      ...category,
-      types: qrTypes.filter((type) => type.active && type.category === category.id),
-    })).filter((group) => group.types.length > 0);
-
-    return (
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">What should your QR code do?</h2>
-        <p className="mt-1 text-sm text-gray-500">Pick a type. You'll add the details in the next step.</p>
-
-        {groups.map((group) => (
-          <section key={group.id} className="mt-6 first-of-type:mt-5" aria-labelledby={`type-group-${group.id}`}>
-            <h3 id={`type-group-${group.id}`} className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {group.label}
-            </h3>
-            <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {group.types.map((type) => {
-                const Icon = type.icon;
-                const isSelected = selectedType === type.id;
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => {
-                      setSelectedType(type.id);
-                      setTimeout(() => setStep(2), 250);
-                    }}
-                    onMouseEnter={() => setHoveredType(type.id)}
-                    onMouseLeave={() => setHoveredType(null)}
-                    className={`group relative flex flex-col rounded-2xl border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-5 ${
-                      isSelected
-                        ? "border-indigo-300 bg-indigo-50/50 ring-2 ring-indigo-500/20"
-                        : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5"
-                    }`}
-                  >
-                    <span className="flex items-start justify-between">
-                      <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${typeAccent(type.id)}`}>
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <span className="flex items-center gap-2">
-                        {type.isNew && (
-                          <span className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                            New
-                          </span>
-                        )}
-                        {isSelected ? (
-                          <FaCheckCircle className="h-5 w-5 text-indigo-600" />
-                        ) : (
-                          <FaArrowRight className="h-3.5 w-3.5 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500" />
-                        )}
-                      </span>
-                    </span>
-                    <span className="mt-3 font-semibold text-gray-900">{type.label}</span>
-                    <span className="mt-0.5 text-sm text-gray-500">{type.description}</span>
-                    {type.hint && <span className="mt-2 text-xs text-gray-400">{type.hint}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-
-        {upcoming.length > 0 && (
-          <div className="mt-8 border-t border-gray-100 pt-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Coming soon</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {upcoming.map((type) => {
-                const Icon = type.icon;
-                return (
-                  <span
-                    key={type.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-dashed border-gray-200 bg-gray-50/60 px-3 py-1.5 text-xs font-medium text-gray-400"
-                  >
-                    <Icon className="h-3 w-3" />
-                    {type.label}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    );
+  // Choosing a type moves on to its form. Previewing one only changes what the phone shows.
+  const chooseType = (id) => {
+    setPreviewType(id);
+    setPreviewSheetOpen(false);
+    setSelectedType(id);
+    setTimeout(() => setStep(2), 250);
   };
+
+  // A tap on a touch screen: below lg the preview isn't beside the types, so it opens in a sheet
+  const tapType = (id) => {
+    setPreviewType(id);
+    if (!window.matchMedia("(min-width: 1024px)").matches) setPreviewSheetOpen(true);
+  };
+
+  // Render Step 1 - QR Type Selection, grouped (lib/qr/qrTypes.js)
+  const renderStep1 = () => (
+    <QrTypePicker
+      types={qrTypes}
+      categories={QR_TYPE_CATEGORIES}
+      selectedType={selectedType}
+      previewType={previewType}
+      onPreview={setPreviewType}
+      onTap={tapType}
+      onSelect={chooseType}
+      accentFor={typeAccent}
+    />
+  );
 
   // Render Step 2 - Dynamic Content Form
   const renderStep2 = () => {
@@ -2540,7 +2546,8 @@ export default function CreateQrPage() {
     setFormData(INITIAL_FORM_DATA);
     setDesignData(INITIAL_DESIGN_DATA);
     setSelectedType(null);
-    setHoveredType(null);
+    setPreviewType(null);
+    setPreviewSheetOpen(false);
     setSuccess(null);
     setError("");
     setErrorJSX(null);
@@ -2582,17 +2589,20 @@ export default function CreateQrPage() {
   const willBeDynamic = qrTypeById(selectedType)?.kind !== "static" && (isPageType(selectedType) || (formData.linkType || "DYNAMIC") === "DYNAMIC");
   // Example content in the preview while choosing a type and filling in the form; after that it's the real page
   const showSamples = !editId && !success && step < 3;
+  const choosing = step === 1 && !editId && !success;
+  const shownInfo = shownType ? qrTypeById(shownType) : null;
+  const closePreviewSheet = () => setPreviewSheetOpen(false);
 
   return (
     <DashboardLayout
       title={editId ? "Edit page" : "Create a QR code"}
       description={editId ? "Change what people see when they scan. Your printed code stays the same." : "Choose a type, add your content and make it yours."}
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* Left: steps */}
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 space-y-4">
           {editId ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+            <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
               <p className="min-w-0 truncate text-sm text-gray-600">
                 Editing <span className="font-semibold text-gray-900">{editing?.name || "your page"}</span>
               </p>
@@ -2605,7 +2615,9 @@ export default function CreateQrPage() {
           )}
 
           {editId && editState === "loading" ? (
-            <div className="h-72 animate-pulse rounded-2xl border border-gray-200 bg-gray-50" aria-label="Loading" />
+            <div className="glass rounded-2xl p-5" aria-label="Loading">
+              <div className="dash-skeleton h-72" />
+            </div>
           ) : editId && editState === "failed" ? (
             <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
               <FaExclamationTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
@@ -2705,7 +2717,7 @@ export default function CreateQrPage() {
             </div>
           ) : (
             <form
-              className="space-y-5"
+              className="space-y-4"
               onSubmit={(e) => {
                 // Enter in a field only moves forward; the code is created by the Create QR code button alone
                 // (and an edited page is saved by Save changes alone)
@@ -2713,10 +2725,12 @@ export default function CreateQrPage() {
                 if (step < 3 && !editId) goNext();
               }}
             >
-              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-                {step === 1 && renderStep1()}
-                {step === 2 && renderStep2()}
-                {step === 3 && renderStep3()}
+              <div className="glass rounded-2xl p-4 sm:p-6">
+                <div key={step} className="dash-rise">
+                  {step === 1 && renderStep1()}
+                  {step === 2 && renderStep2()}
+                  {step === 3 && renderStep3()}
+                </div>
 
                 {errorJSX && <div className="mt-5">{errorJSX}</div>}
                 {error && !errorJSX && (
@@ -2791,70 +2805,87 @@ export default function CreateQrPage() {
           )}
 
           {(step === 3 || success) && !editId && (
-            <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
-              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-500 shadow-sm">
+            <div className="glass flex items-start gap-3 rounded-2xl p-4">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-600 shadow-sm">
                 <FaLightbulb className="h-3.5 w-3.5" />
               </span>
-              <p className="text-xs leading-relaxed text-gray-600">
-                <span className="font-semibold text-gray-800">Tip:</span> print codes at least 2 cm wide and test them with a phone before a big
+              <p className="text-xs leading-relaxed text-gray-700">
+                <span className="font-semibold text-gray-900">Tip:</span> print codes at least 2 cm wide and test them with a phone before a big
                 print run.
               </p>
             </div>
           )}
         </div>
 
-        {/* Right: live preview */}
-        <aside className="min-w-0 space-y-4 lg:sticky lg:top-[6.5rem] lg:self-start">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
-                <p className="truncate text-xs text-gray-500">
-                  {previewMode === "qr"
-                    ? success
-                      ? "Your finished QR code"
-                      : "How your code will look"
-                    : showSamples && isPageType(hoveredType || selectedType)
-                      ? "Faded parts are examples"
-                      : "What people see after scanning"}
-                </p>
+        {/* Right: live preview. While choosing a type on smaller screens, it opens in a sheet instead. */}
+        <aside ref={previewPanel} className={`min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[5.5rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
+          <div className="glass rounded-2xl p-4 sm:p-5">
+            {choosing ? (
+              <div className="mb-3 min-h-[6.25rem]">
+                {shownInfo ? (
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <m.div key={shownInfo.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>
+                      <TypeSummary type={shownInfo} />
+                      <button
+                        type="button"
+                        onClick={() => chooseType(shownInfo.id)}
+                        className="btn-shine mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+                      >
+                        Use {shownInfo.label}
+                        <FaArrowRight className="h-3 w-3" />
+                      </button>
+                    </m.div>
+                  </AnimatePresence>
+                ) : (
+                  <>
+                    <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
+                    <p className="text-xs text-gray-600">Nothing is chosen yet, so look around.</p>
+                  </>
+                )}
               </div>
-              {/* Editing a page doesn't change the printed code, so there's only the page to preview */}
-              <div role="tablist" aria-label="Preview" className={`inline-flex flex-none rounded-lg bg-gray-100 p-0.5 ${editId ? "hidden" : ""}`}>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={previewMode === "destination"}
-                  onClick={() => setPreviewMode("destination")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                    previewMode === "destination" ? "bg-white text-indigo-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Page
-                </button>
-                <span title={qrPreviewAvailable ? undefined : selectedType ? getRequiredFieldsMessage(selectedType) : "Choose a QR type first"}>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={previewMode === "qr"}
-                    disabled={!qrPreviewAvailable}
-                    onClick={() => setPreviewMode("qr")}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                      previewMode === "qr" ? "bg-white text-indigo-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    QR code
-                  </button>
-                </span>
+            ) : (
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
+                  <p className="truncate text-xs text-gray-600">
+                    {previewMode === "qr"
+                      ? success
+                        ? "Your finished QR code"
+                        : "How your code will look"
+                      : showSamples && isPageType(shownType)
+                        ? "Faded parts are examples"
+                        : "What people see after scanning"}
+                  </p>
+                </div>
+                {/* Editing a page doesn't change the printed code, so there's only the page to preview */}
+                {!editId && (
+                  <SegmentedControl
+                    label="Preview"
+                    size="sm"
+                    className="flex-none"
+                    value={previewMode}
+                    onChange={setPreviewMode}
+                    options={[
+                      { value: "destination", label: "Page" },
+                      {
+                        value: "qr",
+                        label: "QR code",
+                        disabled: !qrPreviewAvailable,
+                        title: qrPreviewAvailable ? undefined : selectedType ? getRequiredFieldsMessage(selectedType) : "Choose a QR type first",
+                      },
+                    ]}
+                  />
+                )}
               </div>
-            </div>
+            )}
 
             <div className="flex justify-center">
               <MobilePreview
                 // Only the QR code is redrawn on each change: the page keeps its scroll position (and a playing video or audio)
-                key={previewMode === "qr" ? `qr-${selectedType}-${previewKey}` : `page-${hoveredType || selectedType}`}
+                qrKey={`qr-${selectedType}-${previewKey}`}
+                heightClass={choosing ? PHONE_HEIGHT.choosing : previewMode === "qr" ? PHONE_HEIGHT.qr : PHONE_HEIGHT.page}
                 showSamples={showSamples}
-                qrType={hoveredType || selectedType}
+                qrType={shownType}
                 formData={formData}
                 designData={designData}
                 previewMode={previewMode}
@@ -2862,6 +2893,8 @@ export default function CreateQrPage() {
                 qrPreviewRef={qrPreviewRef}
               />
             </div>
+
+            {choosing && isPageType(shownType) && <p className="mt-2 text-center text-xs text-gray-600">Faded parts are examples</p>}
 
             {previewMode === "qr" && !success && willBeDynamic && selectedType && (
               <p className="mt-4 flex items-start gap-2 rounded-xl bg-indigo-50/70 p-3 text-xs leading-relaxed text-indigo-800">
@@ -2873,16 +2906,33 @@ export default function CreateQrPage() {
         </aside>
       </div>
 
+      {/* Phones and tablets: tapping a type previews it here. Only this sheet's button chooses it. */}
+      <TypePreviewSheet type={previewSheetOpen && previewType ? qrTypeById(previewType) : null} onClose={closePreviewSheet} onUse={() => chooseType(previewType)}>
+        <MobilePreview heightClass={PHONE_HEIGHT.sheet} showSamples qrType={previewType} formData={formData} designData={designData} previewMode="destination" />
+      </TypePreviewSheet>
+
+      {/* Below lg the preview is under the form, so this jumps to it */}
+      {!choosing && !editId && !success && (
+        <button
+          type="button"
+          onClick={() => previewPanel.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="btn-shine btn-shine-soft glass-strong fixed bottom-4 right-4 z-20 inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold text-indigo-700 shadow-xl shadow-indigo-950/15 lg:hidden"
+        >
+          <FaEye className="h-3.5 w-3.5" />
+          Preview
+        </button>
+      )}
+
       {/* Download dialog */}
       {showDownloadModal && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Download QR code"
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/40 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in sm:items-center"
           onMouseDown={(e) => e.target === e.currentTarget && setShowDownloadModal(false)}
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl motion-safe:animate-modal-pop">
             <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                 <FaDownload className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DASHBOARD_HOME } from "@/lib/site";
 import { useRouter } from "next/router";
 import { FaEnvelopeOpenText, FaCheck, FaRedoAlt } from "react-icons/fa";
 import AuthShell, { AuthHeading, AuthAlert } from "@/components/auth/AuthShell";
@@ -10,7 +11,7 @@ export async function getServerSideProps({ req }) {
   const { getUserFromRequest } = await import("@/lib/auth");
   const user = await getUserFromRequest(req);
   if (!user) return { redirect: { destination: "/auth/login", permanent: false } };
-  if (user.emailVerified) return { redirect: { destination: "/dashboard", permanent: false } };
+  if (user.emailVerified) return { redirect: { destination: DASHBOARD_HOME, permanent: false } };
 
   const { default: prisma } = await import("@/lib/prisma");
   const { resendWaitSeconds } = await import("@/lib/emailVerification");
@@ -56,7 +57,7 @@ export default function VerifyEmail({ email, initialWait, codeExpired }) {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.verified) {
         setStatus("done");
-        setTimeout(() => router.push("/dashboard"), 1400);
+        setTimeout(() => router.push(DASHBOARD_HOME), 1400);
         return;
       }
       if (res.status === 401) {
@@ -83,7 +84,7 @@ export default function VerifyEmail({ email, initialWait, codeExpired }) {
       const res = await fetch("/api/auth/resend-verification", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        if (data.verified) return router.push("/dashboard");
+        if (data.verified) return router.push(DASHBOARD_HOME);
         setNotice(`We've sent a new code to ${email}. The old one no longer works.`);
         setWait(data.retryAfter || 60);
         setDigits(Array(LENGTH).fill(""));

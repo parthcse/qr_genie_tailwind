@@ -239,7 +239,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleRenameStart}
                 disabled={isLoading || showDeleteConfirm}
-                className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-shine btn-shine-soft dash-field inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Rename folder"
               >
                 <FaEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -249,7 +249,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
                 type="button"
                 onClick={handleDeleteClick}
                 disabled={isLoading || showDeleteConfirm}
-                className="btn-shine btn-shine-soft inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-shine btn-shine-soft dash-field inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Delete folder"
               >
                 <FaTrash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -263,7 +263,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
       {/* Delete Confirmation Modal, on <body> so the dashboard card's backdrop-blur can't trap it */}
       {showDeleteConfirm && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/30 p-4 backdrop-blur-sm motion-safe:animate-fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               handleDeleteCancel();
@@ -274,7 +274,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
           aria-labelledby="delete-dialog-title"
           aria-describedby="delete-dialog-description"
         >
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl motion-safe:animate-modal-pop">
             <div className="flex items-start gap-4 mb-4">
               <div className="flex-shrink-0 p-3 rounded-full bg-red-100">
                 <FaTrash className="w-6 h-6 text-red-600" />
