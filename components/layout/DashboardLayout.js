@@ -560,7 +560,7 @@ export default function DashboardLayout({ children, title, description, actions 
 
           <div className="dash-main flex min-h-screen min-w-0 flex-1 flex-col" data-pinned={pinned}>
             {/* Solid on phones (no blur, see .glass), so text scrolling under it can't show through; a floating bar from md */}
-            <header className="glass sticky top-0 z-30 flex h-16 flex-none items-center gap-2 border-x-0 border-t-0 px-3 max-md:!bg-white sm:gap-3 sm:px-4 md:top-3 md:mx-3 md:mt-3 md:rounded-2xl md:border-x md:border-t">
+            <header className="glass sticky top-0 z-30 flex h-16 flex-none items-center gap-2 border-x-0 border-t-0 px-4 max-md:!bg-white sm:gap-3 sm:px-6 md:top-3 md:mt-3 md:rounded-2xl md:border-x md:border-t md:px-4">
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
@@ -574,13 +574,13 @@ export default function DashboardLayout({ children, title, description, actions 
                 {movingTo ? (
                   <div className="dash-skeleton h-5 w-40 !rounded" />
                 ) : (
-                  <>
+                  <div className="rise">
                     {title && <h1 className="truncate text-base font-bold tracking-tight text-gray-900 sm:text-lg">{title}</h1>}
                     {description && <p className="hidden truncate text-xs text-gray-600 lg:block">{description}</p>}
-                  </>
+                  </div>
                 )}
               </div>
-              {actions && !movingTo && <div className="flex flex-none items-center gap-2">{actions}</div>}
+              {actions && !movingTo && <div className="rise flex flex-none items-center gap-2">{actions}</div>}
               {plan && (plan.trial || plan.ended) && (
                 <Link
                   href="/dashboard/billing"
@@ -604,13 +604,14 @@ export default function DashboardLayout({ children, title, description, actions 
               <AccountMenu user={user} subscriptionStatus={subscriptionStatus} onLogout={handleLogout} />
             </header>
 
-            {/* overflow-x-clip (not hidden), so the create page's sticky preview isn't trapped in a scroll container */}
-            <main className={`dash-page flex w-full min-w-0 flex-1 flex-col overflow-x-clip px-3 pt-4 md:pt-3 ${onCreatePage ? "pb-3" : "pb-6"}`}>
+            {/* overflow-x-clip (not hidden), so the create page's sticky preview isn't trapped in a scroll container. From md it
+                reaches 12px past the content box on each side, so that clip doesn't cut the cards' shadows and focus rings. */}
+            <main className={`flex min-w-0 flex-1 flex-col overflow-x-clip px-4 pt-4 sm:px-6 md:-mx-3 md:px-3 md:pt-3 ${onCreatePage ? "pb-3" : "pb-6"}`}>
               {movingTo && <DashboardContentSkeleton path={movingTo} />}
               <div className={movingTo ? "hidden" : "contents"}>
-              {description && !onCreatePage && <p className="mb-4 text-sm text-gray-700 lg:hidden">{description}</p>}
+              {description && !onCreatePage && <p className="rise mb-4 text-sm text-gray-700 lg:hidden">{description}</p>}
               {showEndedNotice && (
-                <div className="mb-4 flex flex-col gap-4 rounded-2xl bg-amber-50 p-4 ring-1 ring-inset ring-amber-200 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                <div className="rise mb-4 flex flex-col gap-4 rounded-2xl bg-amber-50 p-4 ring-1 ring-inset ring-amber-200 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                   <div className="flex gap-3">
                     <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-amber-100 text-amber-700">
                       <FaExclamationTriangle className="h-4 w-4" />
@@ -638,7 +639,7 @@ export default function DashboardLayout({ children, title, description, actions 
 
             {/* The create page is a workspace that should fit the window */}
             {!onCreatePage && (
-            <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pb-5 text-xs text-gray-600">
+            <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pb-5 text-xs text-gray-600 sm:px-6 md:px-1">
               <p>&copy; {year} QR-Genie</p>
               <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1">
                 <Link href="/contact" className="!text-gray-600 hover:!text-indigo-700">Help</Link>

@@ -127,7 +127,7 @@ export default function VerifyEmail({ email, initialWait, codeExpired }) {
           <p className="mt-2 text-slate-600 motion-safe:animate-fade-up">Taking you to your dashboard…</p>
         </div>
       ) : (
-        <div className="auth-stagger space-y-6">
+        <div className="rise-group space-y-6">
           <div className="relative w-fit">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
               <FaEnvelopeOpenText className="h-6 w-6" aria-hidden="true" />

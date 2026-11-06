@@ -43,7 +43,7 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
 
   return (
     <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+      <div className="rise flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 [--i:1]">
         <h2 className="text-base font-semibold text-gray-900">What should your QR code do?</h2>
         <p className="text-xs text-gray-600">
           <span className="hidden [@media(hover:hover)]:inline">Point at a type to preview it, then click to choose it.</span>
@@ -54,7 +54,7 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
       <div className="dash-type-grid mt-3">
         {types
           .filter((type) => type.active)
-          .map((type) => {
+          .map((type, index) => {
             const Icon = type.icon;
             const selected = selectedType === type.id;
             const previewing = previewType === type.id && !selected;
@@ -64,6 +64,8 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
                 type="button"
                 aria-pressed={selected}
                 title={type.hint}
+                // A quick wave across all 20, about half a second from the first to the last
+                style={{ "--i": 2 + index * 0.35 }}
                 onPointerDown={(event) => {
                   lastPointer.current = event.pointerType;
                 }}
@@ -71,7 +73,7 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
                 onPointerLeave={onLeave}
                 onFocus={(event) => event.target.matches(":focus-visible") && onPreview(type.id)}
                 onClick={(event) => onClick(type.id, event)}
-                className={`group relative flex min-w-0 items-center gap-2.5 rounded-xl border p-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 max-sm:flex-col max-sm:justify-center max-sm:gap-1 max-sm:text-center sm:p-2.5 ${
+                className={`rise group relative flex min-w-0 items-center gap-2.5 rounded-xl border p-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 max-sm:flex-col max-sm:justify-center max-sm:gap-1 max-sm:text-center sm:p-2.5 ${
                   selected
                     ? "border-transparent bg-gradient-to-br from-indigo-50 to-purple-50 ring-2 ring-indigo-600"
                     : previewing

@@ -62,34 +62,106 @@ body {
   }
 }
 
-/* Login / register / verify: the form's rows rise in one after another */
+/* How things arrive across the whole site: they fade in and rise from below, one after another.
+   - .rise: this element. Its turn is --i (style="--i: 2" or [--i:2]), each turn starting 70ms after the one before.
+   - .rise-group: each child, in order.
+   - .rise-wait: added by components/layout/useRiseOnScroll.js to whatever is below the fold, so it rises when it's scrolled to.
+   Only a "from" keyframe, so an element ends at its own transform, and nothing is left on it afterwards to trap fixed or
+   sticky children. Don't put these on an element a link jumps to (the jump would be measured from the raised position), or
+   around a .glass card (a parent fading in stops the card's blur until it ends): put them on the card itself. */
 @layer components {
-  .auth-stagger > * {
-    animation: auth-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  .rise,
+  .rise-group > * {
+    animation: rise 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
   }
-  .auth-stagger > *:nth-child(1) { animation-delay: 0.08s; }
-  .auth-stagger > *:nth-child(2) { animation-delay: 0.14s; }
-  .auth-stagger > *:nth-child(3) { animation-delay: 0.2s; }
-  .auth-stagger > *:nth-child(4) { animation-delay: 0.26s; }
-  .auth-stagger > *:nth-child(5) { animation-delay: 0.32s; }
-  .auth-stagger > *:nth-child(6) { animation-delay: 0.38s; }
-  .auth-stagger > *:nth-child(7) { animation-delay: 0.44s; }
-  .auth-stagger > *:nth-child(n + 8) { animation-delay: 0.5s; }
+  .rise-group > :nth-child(1) { --i: 0; }
+  .rise-group > :nth-child(2) { --i: 1; }
+  .rise-group > :nth-child(3) { --i: 2; }
+  .rise-group > :nth-child(4) { --i: 3; }
+  .rise-group > :nth-child(5) { --i: 4; }
+  .rise-group > :nth-child(6) { --i: 5; }
+  .rise-group > :nth-child(7) { --i: 6; }
+  .rise-group > :nth-child(n + 8) { --i: 7; }
+  .rise-wait {
+    animation: rise-held 1s paused backwards;
+  }
 }
 
-@keyframes auth-rise {
+/* The changing word in the home page hero (components/landing/RotatingWord.js). The window is a little taller than the
+   line, so a "g" isn't cut, and it clips the letters as they slide in and out. */
+@layer components {
+  .word-swap {
+    position: absolute;
+    inset: -0.2em 0;
+    overflow: hidden;
+  }
+  .word-swap-in,
+  .word-swap-out {
+    position: absolute;
+    inset: 0.2em 0 auto;
+  }
+  .word-swap-letter {
+    display: inline-block;
+  }
+  .word-swap-letter::before {
+    content: attr(data-letter);
+  }
+  .word-swap-in .word-swap-letter {
+    animation: letter-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(0.12s + var(--n) * 40ms);
+  }
+  .word-swap-out .word-swap-letter {
+    animation: letter-out 0.38s cubic-bezier(0.55, 0, 0.8, 0.3) forwards;
+    animation-delay: calc(var(--n) * 28ms);
+  }
+}
+
+@keyframes letter-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(105%);
   }
+}
+
+@keyframes letter-out {
   to {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 0;
+    transform: translateY(-105%);
+  }
+}
+
+/* From 0.01, not 0: browsers don't count text at opacity 0 as painted, so the page's speed score (Largest Contentful Paint)
+   would wait for the end of the entrance, about a second later. It looks the same. */
+@keyframes rise {
+  from {
+    opacity: 0.01;
+    transform: translateY(32px);
+  }
+}
+
+/* The same keyframes under another name: going back to "rise" starts the entrance from the beginning */
+@keyframes rise-held {
+  from {
+    opacity: 0.01;
+    transform: translateY(32px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-stagger > * {
+  .rise,
+  .rise-group > *,
+  .rise-wait,
+  .word-swap-in .word-swap-letter {
+    animation: none;
+  }
+  .word-swap-out {
+    display: none;
+  }
+}
+
+@media print {
+  .rise-wait {
     animation: none;
   }
 }
@@ -327,42 +399,34 @@ body {
       transition-delay: 0.1s;
     }
   }
+  /* The same content box as the public pages (max-w-site and its side padding), so nothing shifts between the website and
+     the dashboard. Only the left edge can differ, when the sidebar needs the room. The gutters match px-4 sm:px-6 lg:px-8.
+     Percentages rather than vw, so a scrollbar is allowed for. */
+  .dash-main {
+    --dash-gutter: 1.5rem;
+    --dash-edge: max(var(--dash-gutter), calc((100% - theme('maxWidth.site')) / 2 + var(--dash-gutter)));
+  }
   @media (min-width: 768px) {
     .dash-main {
-      padding-left: 6rem;
+      padding-left: max(6rem, var(--dash-edge));
+      padding-right: var(--dash-edge);
       transition: padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
   }
   @media (min-width: 1024px) {
+    .dash-main {
+      --dash-gutter: 2rem;
+    }
     .dash-main[data-pinned="true"] {
-      padding-left: 17rem;
+      padding-left: max(17rem, var(--dash-edge));
     }
   }
 
-  /* One orchestrated entrance: the sidebar on first load, then the cards in turn (style="--i: n") */
   .dash-rail-enter {
     animation: dash-rail-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
-  .dash-page {
-    animation: dash-fade 0.3s ease-out backwards;
-  }
-  .dash-rise {
-    animation: dash-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-    animation-delay: calc(var(--i, 0) * 60ms);
-  }
   .dash-tooltip {
     animation: dash-fade 0.15s ease-out backwards;
-  }
-}
-
-@keyframes dash-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -403,8 +467,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .dash-rail-enter,
-  .dash-page,
-  .dash-rise,
   .dash-tooltip,
   .dash-skeleton::after,
   .site-skeleton::after {

@@ -159,7 +159,7 @@ export default function ContactPage() {
         path="/contact"
       />
 
-      <div className="mx-auto grid w-full max-w-site grid-cols-[minmax(0,1fr)] gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16 lg:px-8 lg:py-6">
+      <div className="rise-group mx-auto grid w-full max-w-site grid-cols-[minmax(0,1fr)] gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16 lg:px-8 lg:py-6">
         {/* How to reach us */}
         <section aria-labelledby="contact-heading" className="lg:pt-4">
           <span className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-inset ring-indigo-100">

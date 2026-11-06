@@ -90,7 +90,7 @@ export default function Login() {
         description="Log in to QR-Genie to create, edit and track your dynamic QR codes."
         path="/auth/login"
       />
-      <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-6">
+      <form onSubmit={handleSubmit} noValidate className="rise-group space-y-6">
         <AuthHeading title="Welcome back">Log in to manage your QR codes.</AuthHeading>
 
         <AuthAlert shakeKey={shakeKey}>{error}</AuthAlert>

@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { FaPlus } from "react-icons/fa";
+import RotatingWord from "./RotatingWord";
 
 /**
  * Building blocks shared by the home page, the QR type and industry pages and the pricing page, so every
@@ -35,12 +36,13 @@ export function HeroBackground() {
  * The page's h1: the search phrase large, its last words (highlight) in the brand gradient, and the promise as a calm
  * tagline underneath, with a short line on its left on large screens (where the text is left-aligned). Search engines
  * and screen readers read it as one heading, "Title highlight: subtitle".
- * compact: the smaller size used in the inner pages' banners (PageBanner).
+ * compact: the smaller size used in the inner pages' banners (PageBanner). moreWords: other words the highlight changes to
+ * on screen (see RotatingWord); the highlight itself stays the real heading text.
  */
-export function HeroTitle({ title, highlight, subtitle, compact = false, className = "mt-7" }) {
+export function HeroTitle({ title, highlight, moreWords, subtitle, compact = false, className = "mt-7" }) {
   const titleSize = compact
     ? "text-[2.15rem] leading-[1.1] sm:text-5xl sm:leading-[1.08] lg:text-[3.1rem] xl:text-[3.35rem]"
-    : "text-[2.5rem] leading-[1.05] sm:text-6xl sm:leading-[1.05] lg:text-[3.6rem] xl:text-[4.1rem]";
+    : "text-[min(2.5rem,10.3vw)] leading-[1.05] sm:text-6xl sm:leading-[1.05] lg:text-[3.6rem] xl:text-[4.1rem]"; // "Dynamic QR Code" stays on one line on small phones
   const taglineSize = compact ? "text-base sm:text-lg xl:text-xl" : "text-lg sm:text-xl xl:text-[1.375rem]";
   return (
     <h1 className={`${className} font-bold tracking-[-0.025em] text-slate-900`}>
@@ -49,9 +51,13 @@ export function HeroTitle({ title, highlight, subtitle, compact = false, classNa
         {highlight && (
           <>
             {" "}
-            <span className="whitespace-nowrap bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text pb-1 text-transparent">
-              {highlight}
-            </span>
+            {moreWords ? (
+              <RotatingWord words={[highlight, ...moreWords]} />
+            ) : (
+              <span className="whitespace-nowrap bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text pb-1 text-transparent">
+                {highlight}
+              </span>
+            )}
           </>
         )}
         <span className="sr-only">:</span>
@@ -69,7 +75,7 @@ export function HeroTitle({ title, highlight, subtitle, compact = false, classNa
 // Eyebrow, heading and intro shared by the sections below the hero
 export function SectionHeading({ eyebrow, title, description, children }) {
   return (
-    <div className="mx-auto max-w-5xl text-center">
+    <div className="rise mx-auto max-w-5xl text-center">
       <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
         <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" aria-hidden="true" />
         {eyebrow}
@@ -86,7 +92,7 @@ export function SectionHeading({ eyebrow, title, description, children }) {
 /** Feature cards: icon tile, title (h3) and text. items: [{ icon: <Icon />, title, description }] */
 export function FeatureGrid({ items }) {
   return (
-    <div className="mt-14 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:mt-16 lg:grid-cols-3 lg:gap-6">
+    <div className="rise-group mt-14 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:mt-16 lg:grid-cols-3 lg:gap-6">
       {items.map((feature) => (
         <div
           key={feature.title}
@@ -135,7 +141,7 @@ export function StepsList({ steps }) {
       />
       <div className="absolute bottom-8 left-8 top-8 w-px bg-gradient-to-b from-indigo-200 via-purple-300 to-indigo-200 lg:hidden" aria-hidden="true" />
 
-      <ol className={`relative grid gap-10 ${layout.grid} lg:gap-8`}>
+      <ol className={`rise-group relative grid gap-10 ${layout.grid} lg:gap-8`}>
         {steps.map((step, i) => (
           <li key={step.title} className="group flex cursor-pointer gap-6 lg:flex-col lg:items-center lg:text-center">
             {/* Hover: the tile lifts and fills, the icon tilts, the number spins with a pulse */}
@@ -173,7 +179,7 @@ export function FaqList({ faqs, className = "mx-auto mt-10 max-w-3xl sm:mt-12" }
   const baseId = useId();
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`rise-group space-y-3 ${className}`}>
       {faqs.map((faq, i) => {
         const open = openIndex === i;
         const buttonId = `${baseId}-question-${i}`;

@@ -35,7 +35,7 @@ function Pagination({ page, pageCount, category }) {
   if (pageCount < 2) return null;
   const href = (n) => `${blogListPath({ page: n, category })}#${LIST_ID}`;
   return (
-    <nav aria-label="Article pages" className="mt-14 flex items-center justify-center gap-2">
+    <nav aria-label="Article pages" className="rise mt-14 flex items-center justify-center gap-2">
       {page > 1 ? (
         <Link href={href(page - 1)} rel="prev" className={pageButton} aria-label="Previous page">
           <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
@@ -90,7 +90,7 @@ function Pagination({ page, pageCount, category }) {
 function TopicLinks({ categories, allTotal, current }) {
   const items = [{ slug: null, name: "All articles", count: allTotal }, ...categories];
   return (
-    <nav aria-label="Topics" className="-mx-4 mt-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <nav aria-label="Topics" className="rise -mx-4 mt-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
         {items.map((item) => {
           const selected = (current?.slug || null) === item.slug;
@@ -159,7 +159,7 @@ export default function BlogListPage({ list }) {
         <section id={LIST_ID} className="scroll-mt-20 bg-white pb-6 pt-12 sm:scroll-mt-24 sm:pt-16" aria-label="Articles">
           <div className={container}>
             {total === 0 && !category ? (
-              <div className="mx-auto max-w-xl rounded-3xl border border-dashed border-indigo-200 bg-indigo-50/40 px-6 py-14 text-center">
+              <div className="rise mx-auto max-w-xl rounded-3xl border border-dashed border-indigo-200 bg-indigo-50/40 px-6 py-14 text-center">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-100">
                   <FaBookOpen className="h-5 w-5" />
                 </span>
@@ -172,18 +172,18 @@ export default function BlogListPage({ list }) {
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="rise flex flex-wrap items-end justify-between gap-3">
                   <h2 className="font-display text-2xl font-bold tracking-[-0.015em] text-slate-900 sm:text-3xl">{category ? category.name : "Latest articles"}</h2>
                   <p className="text-sm text-slate-500">
                     {total} {total === 1 ? "article" : "articles"}
                     {pageCount > 1 && ` · page ${page} of ${pageCount}`}
                   </p>
                 </div>
-                {category?.description && <p className="mt-3 max-w-3xl text-pretty leading-relaxed text-slate-600">{category.description}</p>}
+                {category?.description && <p className="rise mt-3 max-w-3xl text-pretty leading-relaxed text-slate-600">{category.description}</p>}
 
                 {categories.length > 1 && <TopicLinks categories={categories} allTotal={list.allTotal} current={category} />}
 
-                <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <ul className="rise-group mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {posts.map((post) => (
                     <li key={post.slug}>
                       <PostCard post={post} />

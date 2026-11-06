@@ -5,7 +5,7 @@ import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
 /**
  * Parts shared by the dashboard pages. The glass look itself is CSS (styles/globals.css): `glass`, `glass-strong`,
- * `glass-hover`, `dash-rise`, `dash-skeleton`. Motion components here need the <LazyMotion> in DashboardLayout.
+ * `glass-hover`, `dash-skeleton`, and `rise` for entrances. Motion components here need the <LazyMotion> in DashboardLayout.
  */
 
 // Country codes (from the scan's IP) as names, e.g. "IN" -> "India"
@@ -80,7 +80,8 @@ export function CountUp({ value, format = plainNumber, decimals = 0, duration = 
     const start = performance.now();
     const round = (n) => Number(n.toFixed(decimals));
     const tick = (now) => {
-      const progress = Math.min(1, (now - start) / duration);
+      // A frame's timestamp can be from just before `start`, which would make the number negative for a moment
+      const progress = Math.max(0, Math.min(1, (now - start) / duration));
       const next = progress === 1 ? target : round(from + (target - from) * easeOut(progress));
       current.current = next;
       setShown(next);

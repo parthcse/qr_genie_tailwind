@@ -12,7 +12,7 @@ export default function AuthShell({ panel, children }) {
   return (
     <PublicLayout>
       <div className="relative mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="grid overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-indigo-900/10 ring-1 ring-indigo-100 motion-safe:animate-auth-in lg:grid-cols-[1fr_1.1fr]">
+        <div className="grid overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-indigo-900/10 ring-1 ring-indigo-100 lg:grid-cols-[1fr_1.1fr]">
           <BrandPanel {...panel} />
           <div className="px-5 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">{children}</div>
         </div>

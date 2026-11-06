@@ -24,7 +24,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
         <div className={`${container} pt-16 md:pt-20`}>
           <section
             aria-labelledby="footer-cta-heading"
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 px-6 py-12 shadow-2xl shadow-indigo-900/20 sm:px-10 md:px-14 md:py-16"
+            className="rise relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 px-6 py-12 shadow-2xl shadow-indigo-900/20 sm:px-10 md:px-14 md:py-16"
           >
             <div
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(167,139,250,0.3)_0%,transparent_55%)]"

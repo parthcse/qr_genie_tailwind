@@ -132,7 +132,7 @@ function pageList(current, total) {
 
 function StatCard({ icon: Icon, label, value, hint, iconClass, order = 0 }) {
   return (
-    <div className="glass glass-hover dash-rise group rounded-2xl p-4 sm:p-5" style={{ "--i": order }}>
+    <div className="glass glass-hover rise group rounded-2xl p-4 sm:p-5" style={{ "--i": order }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-gray-600">{label}</p>
@@ -279,8 +279,8 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
 
   return (
     <li
-      style={{ "--i": Math.min(order, 8) }}
-      className={`glass glass-hover dash-rise relative rounded-2xl p-4 sm:p-5 ${selected ? "!border-indigo-300 ring-2 ring-indigo-500/20" : ""}`}
+      style={{ "--i": 4 + Math.min(order, 5) }}
+      className={`glass glass-hover rise relative rounded-2xl p-4 sm:p-5 ${selected ? "!border-indigo-300 ring-2 ring-indigo-500/20" : ""}`}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
         <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
@@ -875,7 +875,7 @@ export default function Dashboard() {
       )}
 
       {!loading && (
-      <section className="mb-4" aria-labelledby="folders-heading">
+      <section className="rise mb-4 [--i:2]" aria-labelledby="folders-heading">
         <h2 id="folders-heading" className="mb-2 text-sm font-semibold text-gray-900">
           Folders
         </h2>
@@ -912,7 +912,7 @@ export default function Dashboard() {
       )}
 
       {liveCodes.length > 0 && (
-        <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-3 xl:flex-row xl:items-center">
+        <div className="glass rise mb-4 flex flex-col gap-3 rounded-2xl p-3 [--i:3] xl:flex-row xl:items-center">
           <div className="relative flex-1">
             <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
             <input
@@ -951,7 +951,7 @@ export default function Dashboard() {
       )}
 
       {loading ? null : liveCodes.length === 0 ? (
-        <div className="glass dash-rise rounded-3xl px-6 py-14 text-center">
+        <div className="glass rise rounded-3xl px-6 py-14 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
             <FaQrcode className="h-7 w-7" />
           </div>
@@ -968,7 +968,7 @@ export default function Dashboard() {
           </Link>
         </div>
       ) : filteredCodes.length === 0 ? (
-        <div className="glass dash-rise rounded-3xl px-6 py-12 text-center">
+        <div className="glass rise rounded-3xl px-6 py-12 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <FaSearch className="h-5 w-5" />
           </div>
@@ -991,7 +991,7 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <div className="rise mb-3 flex items-center justify-between gap-3 px-1 [--i:4]">
             <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-gray-600">
               <input
                 type="checkbox"
@@ -1026,7 +1026,7 @@ export default function Dashboard() {
             ))}
           </ul>
 
-          <div className="mt-5 flex flex-col-reverse items-center justify-between gap-3 border-t border-indigo-950/[0.06] pt-4 sm:flex-row">
+          <div className="rise mt-5 flex flex-col-reverse items-center justify-between gap-3 border-t border-indigo-950/[0.06] pt-4 sm:flex-row">
             <p className="text-sm text-gray-600">
               Showing{" "}
               <span className="font-medium text-gray-700">
@@ -1094,7 +1094,7 @@ export default function Dashboard() {
       {selectedCodes.length > 0 && (
         <Portal>
           <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3 sm:bottom-6">
-            <div className="glass-strong dash-rise pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 pl-4 text-gray-900 shadow-2xl shadow-indigo-950/20">
+            <div className="glass-strong rise pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 pl-4 text-gray-900 shadow-2xl shadow-indigo-950/20">
               <span className="whitespace-nowrap pr-2 text-sm font-semibold">{selectedCodes.length} selected</span>
               <span className="h-6 w-px flex-none bg-indigo-950/10" aria-hidden="true" />
               <BulkButton icon={FaFolderOpen} label="Move" disabled={busy} onClick={() => actions.move(selectedCodes)} />

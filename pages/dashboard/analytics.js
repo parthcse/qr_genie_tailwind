@@ -85,7 +85,7 @@ function trendOf(current, previous) {
 
 function Card({ title, icon: Icon, action, children, className = "", order = 0 }) {
   return (
-    <section className={`glass dash-rise rounded-2xl p-4 sm:p-5 ${className}`} style={{ "--i": order }}>
+    <section className={`glass rise rounded-2xl p-4 sm:p-5 ${className}`} style={{ "--i": order + 1 }}>
       {(title || action) && (
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
@@ -314,7 +314,7 @@ export default function AnalyticsPage({ initialQrId }) {
     >
       {/* Filters */}
       {!hasNoCodes && (
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="rise mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <SegmentedControl
           label="Time period"
           className="w-full sm:w-auto"
@@ -357,7 +357,7 @@ export default function AnalyticsPage({ initialQrId }) {
       {loading && !data ? (
         <AnalyticsSkeleton />
       ) : hasNoCodes ? (
-        <div className="glass dash-rise rounded-3xl px-6 py-14 text-center">
+        <div className="glass rise rounded-3xl px-6 py-14 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
             <FaChartLine className="h-7 w-7" />
           </div>
@@ -374,7 +374,7 @@ export default function AnalyticsPage({ initialQrId }) {
       ) : data ? (
         <div className={`space-y-4 transition-opacity duration-300 ${loading ? "opacity-60" : ""}`}>
           {/* The headline: total scans beside their line, with the other numbers under it */}
-          <section className="glass dash-rise grid gap-5 rounded-3xl p-4 sm:p-6 xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-8" style={{ "--i": 0 }}>
+          <section className="glass rise grid gap-5 rounded-3xl p-4 sm:p-6 xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-8" style={{ "--i": 1 }}>
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-600">Total scans</p>
               <p className="mt-1 font-sans text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
@@ -611,7 +611,7 @@ export default function AnalyticsPage({ initialQrId }) {
           )}
 
           {staticCodes > 0 && !selectedCode && (
-            <p className="flex items-start gap-2 text-xs text-gray-600">
+            <p className="rise flex items-start gap-2 text-xs text-gray-600">
               <FaInfoCircle className="mt-0.5 h-3 w-3 flex-none" />
               {staticCodes === 1 ? "1 of your codes is static" : `${staticCodes} of your codes are static`}: static codes hold their content
               directly, so their scans can't be counted. Only dynamic codes appear here.

@@ -172,7 +172,7 @@ export default function QrCodeTypesPage() {
         {groups.map((group, index) => (
           <section key={group.id} className={`${index % 2 ? "bg-slate-50/70" : "bg-white"} py-14 sm:py-20`} aria-labelledby={`group-${group.id}`}>
             <div className={container}>
-              <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="rise flex flex-wrap items-end justify-between gap-3">
                 <h2 id={`group-${group.id}`} className="font-display text-2xl font-bold tracking-[-0.015em] text-slate-900 sm:text-3xl">
                   {group.label}
                 </h2>
@@ -180,7 +180,7 @@ export default function QrCodeTypesPage() {
                   {group.types.length} {group.types.length === 1 ? "type" : "types"}
                 </p>
               </div>
-              <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="rise-group mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {group.types.map((type) => (
                   <TypeCard key={type.id} type={type} createHref={createHref} />
                 ))}
@@ -192,10 +192,10 @@ export default function QrCodeTypesPage() {
         {upcoming.length > 0 && (
           <section className="border-t border-slate-100 bg-white py-14 sm:py-16" aria-labelledby="coming-soon">
             <div className={container}>
-              <h2 id="coming-soon" className="font-display text-xl font-bold text-slate-900">
+              <h2 id="coming-soon" className="rise font-display text-xl font-bold text-slate-900">
                 Coming soon
               </h2>
-              <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <ul className="rise-group mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {upcoming.map((type) => {
                   const visual = qrTypeVisual(type.id);
                   const Icon = visual.icon;
@@ -221,7 +221,7 @@ export default function QrCodeTypesPage() {
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgb(224_231_255/0.8),transparent)]" aria-hidden="true" />
           <div className={container}>
             <SectionHeading eyebrow="Dynamic or static" title="Two ways a QR code can work" description="Every type tells you which it is when you create it." />
-            <div className="mx-auto mt-12 grid max-w-4xl gap-5 sm:grid-cols-2">
+            <div className="rise-group mx-auto mt-12 grid max-w-4xl gap-5 sm:grid-cols-2">
               <div className="rounded-3xl bg-white p-7 ring-1 ring-slate-200">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <FaSyncAlt className="h-4 w-4" />

@@ -76,7 +76,7 @@ export default function BlogPostPage({ post, related }) {
             <div className="pointer-events-none absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
             <div className="pointer-events-none absolute -left-32 bottom-0 -z-10 h-72 w-72 rounded-full bg-indigo-200/30 blur-3xl" aria-hidden="true" />
             <div className={`${container} py-12 text-center sm:py-14 lg:py-16 lg:text-left xl:py-20`}>
-              <div className="mx-auto max-w-4xl lg:mx-0">
+              <div className="rise-group mx-auto max-w-4xl lg:mx-0">
                 {post.categories.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
                     {post.categories.map((item) => (
@@ -100,7 +100,7 @@ export default function BlogPostPage({ post, related }) {
           {/* Without "Keep reading" the footer's sign-up panel comes next, which has its own space above it */}
           <div className={`${container} pt-10 sm:pt-12 ${related.length ? "pb-16 sm:pb-24" : "pb-4 sm:pb-6"}`}>
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-16">
-              <div className="min-w-0">
+              <div className="rise-group min-w-0">
                 {post.image && (
                   <PostImage
                     image={post.image}
@@ -140,7 +140,7 @@ export default function BlogPostPage({ post, related }) {
               </div>
 
               {/* Beside the picture and the text, staying in view while the article scrolls */}
-              <aside className="hidden lg:block" aria-label="About this article">
+              <aside className="rise hidden [--i:1] lg:block" aria-label="About this article">
                 <div className="sticky top-28 space-y-5">
                   {showContents && <TableOfContents headings={post.headings} />}
                   <ArticleCta signedIn={!!user} />
@@ -153,7 +153,7 @@ export default function BlogPostPage({ post, related }) {
         {related.length > 0 && (
           <section className="border-t border-slate-100 bg-slate-50/70 py-16 sm:py-20" aria-labelledby="related-heading">
             <div className={container}>
-              <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="rise flex flex-wrap items-end justify-between gap-4">
                 <h2 id="related-heading" className="font-display text-2xl font-bold tracking-[-0.015em] text-slate-900 sm:text-3xl">
                   Keep reading
                 </h2>
@@ -162,7 +162,7 @@ export default function BlogPostPage({ post, related }) {
                   <FaArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
                 </Link>
               </div>
-              <ul className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              <ul className="rise-group mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 {related.map((item) => (
                   <li key={item.slug}>
                     <PostCard post={item} />

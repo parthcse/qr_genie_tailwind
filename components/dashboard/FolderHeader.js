@@ -141,7 +141,7 @@ export default function FolderHeader({ folder, onFolderUpdated, onFolderDeleted 
   return (
     <>
       {/* Folder Header */}
-      <div className="mb-4 sm:mb-6 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5">
+      <div className="rise mb-4 sm:mb-6 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* Left: Folder Info */}
           <div className="flex-1 min-w-0 w-full sm:w-auto">

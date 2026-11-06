@@ -220,7 +220,7 @@ export function DetailsSkeleton() {
 
 export function BillingSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10" role="status" aria-label="Loading">
+    <div className="w-full space-y-10" role="status" aria-label="Loading">
       <div className="glass space-y-4 rounded-3xl p-6 sm:p-8">
         <G className="h-6 w-20 !rounded-full" />
         <G className="h-10 w-56 !rounded-xl" />
@@ -234,7 +234,7 @@ export function BillingSkeleton() {
           ))}
         </div>
       </div>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
         {repeat(3).map((i) => (
           <div key={i} className="glass space-y-4 rounded-3xl p-7">
             <G className="h-6 w-24 !rounded-lg" />
@@ -312,7 +312,7 @@ function DashboardPageSkeleton({ path }) {
         ))}
       </div>
       <div className="dash-main" data-pinned={pinned}>
-        <div className="glass flex h-16 items-center gap-3 px-3 sm:px-4 md:mx-3 md:mt-3 md:rounded-2xl">
+        <div className="glass flex h-16 items-center gap-3 px-4 sm:px-6 md:mt-3 md:rounded-2xl md:px-4">
           <div className="flex-1 space-y-2">
             <G className="h-4 w-40 !rounded" />
             <G className="hidden h-3 w-72 max-w-full !rounded lg:block" />
@@ -320,7 +320,7 @@ function DashboardPageSkeleton({ path }) {
           <G className="h-10 w-10 !rounded-xl sm:w-32" />
           <G className="h-9 w-9 !rounded-full" />
         </div>
-        <div className="px-3 pt-4 md:pt-3">
+        <div className="px-4 pt-4 sm:px-6 md:px-0 md:pt-3">
           <DashboardContentSkeleton path={path} />
         </div>
       </div>

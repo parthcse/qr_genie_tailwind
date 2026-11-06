@@ -38,7 +38,7 @@ export default function PricingCards({ prices = null, currentUser = null, onSele
   const signedIn = !!currentUser;
 
   return (
-    <div className="mx-auto mt-14 grid max-w-5xl items-stretch gap-6 md:grid-cols-3 lg:mt-16 lg:gap-7">
+    <div className="rise-group mx-auto mt-14 grid max-w-5xl items-stretch gap-6 md:grid-cols-3 lg:mt-16 lg:gap-7">
       {PHONE_ORDER.map((id) => {
         const term = PLAN_TERMS.find((t) => t.id === id);
         const plan = prices?.[id] || null;
@@ -162,7 +162,7 @@ export default function PricingCards({ prices = null, currentUser = null, onSele
 /** One line under the cards: GST, upfront billing and renewal (plus Razorpay, unless PaymentMethods already says so) */
 export function PricingFootnote({ className = "mt-10", razorpay = true }) {
   return (
-    <p className={`mx-auto max-w-2xl text-center text-sm leading-relaxed text-slate-500 ${className}`}>
+    <p className={`rise mx-auto max-w-2xl text-center text-sm leading-relaxed text-slate-500 ${className}`}>
       Prices include 18% GST. You pay upfront for the months you choose, and the plan renews for the same length until you
       cancel.{razorpay ? " Payments are processed securely by Razorpay." : ""}
     </p>
@@ -227,7 +227,7 @@ const PAYMENT_METHODS = { INR: ["visa", "mastercard", "rupay", "upi", "netbankin
 export function PaymentMethods({ currency = "INR", className = "mt-12" }) {
   const methods = PAYMENT_METHODS[currency] || PAYMENT_METHODS.INR;
   return (
-    <div className={`mx-auto max-w-3xl text-center ${className}`}>
+    <div className={`rise mx-auto max-w-3xl text-center ${className}`}>
       <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Payment methods</h3>
       <ul className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
         {methods.map((id) => (
@@ -271,8 +271,8 @@ const PLAN_INCLUDES = [
 export function AllPlansInclude() {
   return (
     <div className="mx-auto mt-20 max-w-6xl">
-      <h3 className="text-center text-2xl font-bold tracking-[-0.015em] text-slate-900 sm:text-3xl">All plans include</h3>
-      <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <h3 className="rise text-center text-2xl font-bold tracking-[-0.015em] text-slate-900 sm:text-3xl">All plans include</h3>
+      <ul className="rise-group mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PLAN_INCLUDES.map(({ icon: Icon, title, text }) => (
           <li
             key={title}

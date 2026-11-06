@@ -16,7 +16,7 @@ export default function PublicLayout({ children, session, centered = true }) {
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <SiteHeader isAuthenticated={!!user} loading={loading} />
       <main
-        className={`relative flex flex-1 flex-col overflow-hidden py-12 ${centered ? "justify-center sm:px-6 lg:px-8" : ""}`}
+        className={`relative flex flex-1 flex-col overflow-hidden py-12 ${centered ? "rise-group justify-center sm:px-6 lg:px-8" : ""}`}
       >
         {children}
       </main>

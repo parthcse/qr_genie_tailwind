@@ -157,7 +157,7 @@ export default function Register() {
         description={`Create a QR-Genie account and try dynamic QR codes with scan tracking free for ${TRIAL_DAYS} days.`}
         path="/auth/register"
       />
-      <form onSubmit={handleSubmit} noValidate className="auth-stagger space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="rise-group space-y-5">
         <AuthHeading title="Create your account">Start your free {TRIAL_DAYS}-day trial. No card needed.</AuthHeading>
 
         <AuthAlert shakeKey={shakeKey}>{error}</AuthAlert>

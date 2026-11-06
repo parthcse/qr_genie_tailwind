@@ -188,7 +188,7 @@ function PlanComparison({ prices, currentUser }) {
   const rowHover = (featured) => (featured ? "bg-[#f5f7ff] group-hover:bg-indigo-50" : "group-hover:bg-[#f8f9ff]");
 
   return (
-    <div className="mx-auto mt-12 max-w-6xl sm:mt-14">
+    <div className="rise mx-auto mt-12 max-w-6xl sm:mt-14">
       <p className="mb-3 text-center text-xs text-slate-500 md:hidden">Swipe sideways to see every plan</p>
       {/* relative: the screen-reader labels in the cells are positioned inside this scroll box, not the page */}
       <div className="relative overflow-x-auto rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -449,7 +449,7 @@ export default function PricingPage({ initialUser, prices = null, plans = {} }) 
           <div className={container}>
             <SectionHeading eyebrow="FAQ" title="Pricing questions" />
             <FaqList faqs={faqs} />
-            <p className="mt-10 text-center text-[15px] text-slate-600">
+            <p className="rise mt-10 text-center text-[15px] text-slate-600">
               More about payments in our{" "}
               <Link href="/refund-policy" className="font-semibold !text-indigo-700 hover:!text-purple-700">
                 refund policy

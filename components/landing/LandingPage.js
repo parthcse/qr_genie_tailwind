@@ -194,7 +194,7 @@ export default function LandingPage({ page }) {
 
         {/* Overview: the full introduction, the main points and the buttons */}
         <section className="bg-white py-12 sm:py-16">
-          <div className={`${container} grid items-center gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16`}>
+          <div className={`rise-group ${container} grid items-center gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16`}>
             <div>
               <p className="border-l-2 border-indigo-200 pl-5 text-pretty text-[17px] leading-[1.8] text-slate-700 sm:pl-6">{page.intro}</p>
               <ul className="mt-6 flex flex-wrap gap-2.5">
@@ -255,7 +255,7 @@ export default function LandingPage({ page }) {
         <section className={`bg-white ${sectionSpacing}`}>
           <div className={container}>
             <SectionHeading eyebrow="Ideas" title={page.ideas.title} />
-            <ul className="mx-auto mt-12 grid max-w-5xl gap-4 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            <ul className="rise-group mx-auto mt-12 grid max-w-5xl gap-4 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
               {page.ideas.items.map((idea) => (
                 <li
                   key={idea.title}
@@ -294,8 +294,8 @@ export default function LandingPage({ page }) {
         {/* Other pages */}
         <section className="bg-white pb-4 pt-16 sm:pt-20">
           <div className={container}>
-            <h2 className="text-center text-xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-2xl">More ways to use QR-Genie</h2>
-            <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-3">
+            <h2 className="rise text-center text-xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-2xl">More ways to use QR-Genie</h2>
+            <ul className="rise-group mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-3">
               {page.related.map((path) => (
                 <li key={path}>
                   <Link

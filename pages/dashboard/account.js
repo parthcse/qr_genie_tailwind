@@ -50,9 +50,9 @@ export async function getServerSideProps(context) {
 
 const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Arabic"];
 
-function Section({ icon: Icon, title, description, children }) {
+function Section({ icon: Icon, title, description, order = 1, children }) {
   return (
-    <section className="glass dash-rise rounded-2xl p-4 sm:p-7">
+    <section className="glass rise rounded-2xl p-4 sm:p-7" style={{ "--i": order }}>
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
           <Icon className="h-4 w-4" aria-hidden="true" />
@@ -452,11 +452,12 @@ export default function AccountPage({ user: initialUser }) {
   return (
     <DashboardLayout title="My Account" description="Manage your personal details, password and billing information.">
       {!loaded && <AccountSkeleton />}
-      <div className={loaded ? "contents" : "hidden"}>
+      {loaded && (
+      <>
       {/* Tabs: full width on phones */}
       <SegmentedControl
         label="Account sections"
-        className="mb-4 flex w-full sm:w-fit sm:self-start"
+        className="rise mb-4 flex w-full sm:w-fit sm:self-start"
         value={activeTab}
         onChange={setActiveTab}
         options={[
@@ -551,7 +552,7 @@ export default function AccountPage({ user: initialUser }) {
             </form>
           </Section>
 
-          <Section icon={FaKey} title="Change password" description="Use at least 8 characters. Changing it signs you out on your other devices.">
+          <Section order={2} icon={FaKey} title="Change password" description="Use at least 8 characters. Changing it signs you out on your other devices.">
             <AuthAlert shakeKey={pw.shake}>{pw.error}</AuthAlert>
             <AuthSuccess>{pw.success}</AuthSuccess>
             <form onSubmit={savePassword} noValidate className="space-y-5">
@@ -609,7 +610,7 @@ export default function AccountPage({ user: initialUser }) {
             </form>
           </Section>
 
-          <Section icon={FaLanguage} title="Language" description="The language for your account.">
+          <Section order={3} icon={FaLanguage} title="Language" description="The language for your account.">
             <AuthAlert shakeKey={lang.shake}>{lang.error}</AuthAlert>
             <AuthSuccess>{lang.success}</AuthSuccess>
             <form onSubmit={saveLanguage} className="space-y-5">
@@ -639,7 +640,7 @@ export default function AccountPage({ user: initialUser }) {
 
       {activeTab === "general" && (
         <div className="mt-4">
-          <section aria-labelledby="delete-account-heading" className="glass dash-rise rounded-2xl !border-red-100 p-5 sm:p-6">
+          <section aria-labelledby="delete-account-heading" className="glass rise rounded-2xl !border-red-100 p-5 [--i:4] sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-4">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-red-50 text-red-600">
@@ -692,7 +693,8 @@ export default function AccountPage({ user: initialUser }) {
           </Section>
         </div>
       )}
-      </div>
+      </>
+      )}
     </DashboardLayout>
   );
 }

@@ -55,7 +55,7 @@ function PasswordCard({ qr, qrId, onChange }) {
   };
 
   return (
-    <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
+    <div className="glass rise rounded-2xl p-4 [--i:1] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex gap-3">
           <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${qr.hasPassword ? "bg-violet-50 text-violet-600" : "bg-white text-gray-500 shadow-sm"}`}>
@@ -306,7 +306,7 @@ export default function QrDetailPage({ qrId }) {
   if (error || !qr) {
     return (
       <DashboardLayout title="QR Code" description="View and edit QR code details.">
-        <div className="glass rounded-2xl p-8 text-center">
+        <div className="glass rise rounded-2xl p-8 text-center">
           <p className="font-semibold text-gray-900">{error || "QR code not found"}</p>
           <Link href="/dashboard" className="mt-4 inline-flex items-center gap-2 font-medium !text-indigo-700 hover:underline">
             <FaArrowLeft /> Back to My QR Codes
@@ -322,7 +322,7 @@ export default function QrDetailPage({ qrId }) {
   return (
     <DashboardLayout title={qr.name || "QR Code"} description="View and edit QR code details and analytics.">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="rise flex flex-wrap items-center gap-2">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 text-sm font-medium !text-gray-700 transition hover:!text-indigo-700"
@@ -335,7 +335,7 @@ export default function QrDetailPage({ qrId }) {
         <div className={`grid gap-4 ${isDynamic ? "xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:items-start" : ""}`}>
         <div className="min-w-0 space-y-4">
         {/* Meta card */}
-        <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
+        <div className="glass rise rounded-2xl p-4 [--i:1] sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Details</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
@@ -406,7 +406,7 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Hosted page (list of links, ...): its content is edited on the create page */}
         {isPage && (
-          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
+          <div className="glass rise rounded-2xl p-4 [--i:1] sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900">Page</h2>
@@ -430,7 +430,7 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Target URL (Dynamic only) */}
         {isDynamic && !isPage && (
-          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
+          <div className="glass rise rounded-2xl p-4 [--i:1] sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Destination URL</h2>
             {editingUrl ? (
               <div className="flex flex-wrap gap-2">
@@ -479,7 +479,7 @@ export default function QrDetailPage({ qrId }) {
 
         {/* Paused message (when Paused and Dynamic) */}
         {isDynamic && qr.status === "PAUSED" && (
-          <div className="glass dash-rise rounded-2xl p-4 sm:p-6">
+          <div className="glass rise rounded-2xl p-4 [--i:1] sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Paused message</h2>
             <p className="mb-2 text-sm text-gray-600">Shown to people who scan this code while it's paused.</p>
             {editingPausedMessage ? (
@@ -529,7 +529,7 @@ export default function QrDetailPage({ qrId }) {
           <div className="min-w-0 space-y-4">
             <SegmentedControl
               label="Time period"
-              className="w-full sm:w-auto"
+              className="rise w-full [--i:1] sm:w-auto"
               options={[7, 30, 90].map((d) => ({ value: d, label: `${d} days` }))}
               value={days}
               onChange={setDays}
@@ -538,26 +538,26 @@ export default function QrDetailPage({ qrId }) {
             {analytics && (
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5">
+                  <div className="glass glass-hover rise rounded-2xl p-4 sm:p-5">
                     <p className="text-xs font-medium text-gray-600">Total scans</p>
                     <p className="mt-1 font-sans text-3xl font-bold text-gray-900">
                       <CountUp value={analytics.totalScans} />
                     </p>
                   </div>
-                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5" style={{ "--i": 1 }}>
+                  <div className="glass glass-hover rise rounded-2xl p-4 sm:p-5" style={{ "--i": 1 }}>
                     <p className="text-xs font-medium text-gray-600">Unique scanners</p>
                     <p className="mt-1 font-sans text-3xl font-bold text-gray-900">
                       <CountUp value={analytics.uniqueScans} />
                     </p>
                   </div>
-                  <div className="glass glass-hover dash-rise rounded-2xl p-4 sm:p-5" style={{ "--i": 2 }}>
+                  <div className="glass glass-hover rise rounded-2xl p-4 sm:p-5" style={{ "--i": 2 }}>
                     <p className="text-xs font-medium text-gray-600">Last scan</p>
                     <p className="mt-1 text-lg font-semibold text-gray-900">{formatDate(analytics.lastScanAt)}</p>
                   </div>
                 </div>
 
                 {analytics.daily?.length > 0 && (
-                  <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 3 }}>
+                  <div className="glass rise rounded-2xl p-4 sm:p-6" style={{ "--i": 3 }}>
                     <h3 className="mb-4 text-sm font-semibold text-gray-900">Scans over time</h3>
                     <div className="h-64 sm:h-72">
                       <ResponsiveContainer width="100%" height="100%">
@@ -600,7 +600,7 @@ export default function QrDetailPage({ qrId }) {
                 {(analytics.countryStats?.length > 0 || analytics.deviceStats?.length > 0) && (
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {analytics.countryStats?.length > 0 && (
-                      <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 4 }}>
+                      <div className="glass rise rounded-2xl p-4 sm:p-6" style={{ "--i": 4 }}>
                         <h3 className="mb-4 text-sm font-semibold text-gray-900">By country</h3>
                         <BarList
                           items={analytics.countryStats.map(({ country, count }) => ({ name: country, count }))}
@@ -611,7 +611,7 @@ export default function QrDetailPage({ qrId }) {
                       </div>
                     )}
                     {analytics.deviceStats?.length > 0 && (
-                      <div className="glass dash-rise rounded-2xl p-4 sm:p-6" style={{ "--i": 5 }}>
+                      <div className="glass rise rounded-2xl p-4 sm:p-6" style={{ "--i": 5 }}>
                         <h3 className="mb-4 text-sm font-semibold text-gray-900">By device</h3>
                         <BarList items={analytics.deviceStats.map(({ device, count }) => ({ name: device, count }))} total={analytics.totalScans} />
                       </div>

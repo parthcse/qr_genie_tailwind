@@ -2,6 +2,7 @@ import Head from "next/head";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "@/styles/globals.css";
 import RouteSkeleton from "@/components/layout/PageSkeleton";
+import useRiseOnScroll from "@/components/layout/useRiseOnScroll";
 
 // Downloaded at build time and served from our own domain, so the CSP needs no font hosts.
 // Inter for text and UI, Plus Jakarta Sans for headings (tailwind.config.js: font-sans / font-display).
@@ -9,6 +10,8 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap" });
 
 export default function MyApp({ Component, pageProps }) {
+  useRiseOnScroll();
+
   return (
     <>
       <Head>

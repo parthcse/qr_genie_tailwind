@@ -103,7 +103,7 @@ function QrMotif({ className }) {
 
 function MembershipPass({ planName, priceText, startsOn, renewsOn, cancelled, onCancel, adminPlan = false }) {
   return (
-    <section aria-label="Your subscription" className="glass dash-rise relative overflow-hidden rounded-3xl p-6 sm:p-8">
+    <section aria-label="Your subscription" className="glass rise relative overflow-hidden rounded-3xl p-6 sm:p-8">
       <QrMotif className="pointer-events-none absolute -right-8 -top-8 h-60 w-60 text-indigo-600/[0.12] [mask-image:linear-gradient(to_bottom_left,black_30%,transparent_80%)] sm:h-72 sm:w-72" />
       <div className="relative">
         {cancelled ? (
@@ -171,7 +171,7 @@ function TrialProgress({ daysLeft, endsOn }) {
   const total = Math.max(TRIAL_DAYS, daysLeft);
   const pct = Math.max(4, Math.min(100, (daysLeft / total) * 100));
   return (
-    <section aria-label="Your free trial" className="glass dash-rise rounded-2xl p-5 sm:p-6">
+    <section aria-label="Your free trial" className="glass rise rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold text-gray-900">Free trial</h2>
         <p className="text-sm tabular-nums text-gray-600">
@@ -203,7 +203,7 @@ function PlanEndedNotice({ status }) {
       ? "Your subscription has ended"
       : "You don't have an active plan";
   return (
-    <section aria-label="Plan status" className="dash-rise rounded-2xl bg-amber-50 p-5 ring-1 ring-inset ring-amber-200 sm:p-6">
+    <section aria-label="Plan status" className="rise rounded-2xl bg-amber-50 p-5 ring-1 ring-inset ring-amber-200 sm:p-6">
       <h2 className="text-base font-semibold text-amber-900">{title}</h2>
       <p className="mt-1 text-sm text-amber-800">Your QR codes are paused. Choose a plan below to switch them back on.</p>
     </section>
@@ -425,7 +425,7 @@ export default function BillingPage() {
       title="Billing"
       description={adminPlan ? "Your plan and billing details." : isSubscribed ? "Your plan, renewal date and billing details." : "Choose a plan to keep your QR codes working."}
     >
-      <div className="mx-auto w-full max-w-5xl space-y-10">
+      <div className="w-full space-y-10">
 
         {/* Plan status */}
         {!statusLoaded && (
@@ -449,7 +449,7 @@ export default function BillingPage() {
 
         {/* Plans */}
         <section aria-labelledby="plans-heading">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div className="rise flex flex-wrap items-baseline justify-between gap-2 [--i:1]">
             <h2 id="plans-heading" className="text-lg font-semibold text-gray-900">Plans</h2>
             <p className="text-sm text-gray-600">Every plan has every feature. Prices include 18% GST.</p>
           </div>
@@ -462,7 +462,7 @@ export default function BillingPage() {
             disabled={!statusLoaded || isSubscribed}
           />
           {!isSubscribed && <PaymentMethods currency={shownCurrency || undefined} className="mt-10" />}
-          <div className="mx-auto mt-8 max-w-3xl text-center text-sm text-gray-600">
+          <div className="rise mx-auto mt-8 max-w-3xl text-center text-sm text-gray-600">
             {adminPlan ? (
               <p>Admin accounts don&apos;t need a plan. These are the plans customers see.</p>
             ) : isSubscribed ? (
@@ -481,7 +481,7 @@ export default function BillingPage() {
               </p>
             )}
           </div>
-          <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-700">
+          <ul className="rise mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-700">
             {PAID_PLAN_FEATURES.map((feature) => (
               <li key={feature} className="inline-flex items-center gap-2">
                 <FaCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
@@ -493,7 +493,7 @@ export default function BillingPage() {
 
         {/* Billing details */}
         <section aria-labelledby="billing-details-heading">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div className="rise flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="billing-details-heading" className="text-lg font-semibold text-gray-900">Billing details</h2>
             <Link
               href="/dashboard/account?tab=billing"
@@ -507,7 +507,7 @@ export default function BillingPage() {
 
         {/* FAQ: the same accordion as the public pages */}
         <section aria-labelledby="faq-heading" className="pb-4">
-          <h2 id="faq-heading" className="text-lg font-semibold text-gray-900">Questions about billing</h2>
+          <h2 id="faq-heading" className="rise text-lg font-semibold text-gray-900">Questions about billing</h2>
           <FaqList faqs={faqItems} className="mt-5" />
         </section>
       </div>
@@ -548,7 +548,7 @@ function BillingDetails({ account }) {
   const hasBillingInfo = account && (account.billingName || account.billingCompany || addressLines.length > 0 || account.taxId);
 
   return (
-    <div className="glass mt-4 rounded-2xl p-6 sm:p-7">
+    <div className="glass rise mt-4 rounded-2xl p-6 sm:p-7">
       {hasBillingInfo ? (
         <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
           {account.billingName && (

@@ -424,7 +424,8 @@ function CountUp({ text, duration = 1600 }) {
         observer.disconnect();
         const start = performance.now();
         const tick = (now) => {
-          const progress = Math.min((now - start) / duration, 1);
+          // A frame's timestamp can be from just before `start`, which would make the number negative for a moment
+          const progress = Math.max(0, Math.min((now - start) / duration, 1));
           const eased = 1 - Math.pow(1 - progress, 3);
           setDisplay(progress < 1 ? `${(value * eased).toFixed(decimals)}${suffix}` : text);
           if (progress < 1) frame = requestAnimationFrame(tick);
@@ -454,7 +455,7 @@ function CountUp({ text, duration = 1600 }) {
 // Decorative product preview next to the hero text: a dynamic code, its editable link and a scans chart
 function HeroVisual() {
   return (
-    <div className="relative mx-auto hidden w-full max-w-md md:block" aria-hidden="true">
+    <div className="rise relative mx-auto hidden w-full max-w-md [--i:2] md:block" aria-hidden="true">
       <div className="absolute inset-8 -z-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-500/30 to-purple-500/30 blur-2xl" />
 
       <div className="relative rounded-[2rem] bg-white p-6 shadow-2xl shadow-indigo-900/10 ring-1 ring-slate-900/5">
@@ -547,6 +548,7 @@ function QrTypesShowcase({ isAuthenticated }) {
           return (
             <button
               key={type.id}
+              style={{ "--i": index }}
               ref={(el) => (tabRefs.current[index] = el)}
               id={`qr-type-tab-${type.id}`}
               type="button"
@@ -556,7 +558,7 @@ function QrTypesShowcase({ isAuthenticated }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(type.id)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
-              className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-3 py-3 text-left shadow-lg transition duration-300 ease-out focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:flex-col sm:gap-0 sm:py-5 sm:text-center ${
+              className={`rise group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-3 py-3 text-left shadow-lg transition duration-300 ease-out focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:flex-col sm:gap-0 sm:py-5 sm:text-center ${
                 selected
                   ? type.tab.selected
                   : `shadow-transparent ring-1 ring-slate-200 hover:-translate-y-1 ${type.tab.hover}`
@@ -605,7 +607,8 @@ function QrTypesShowcase({ isAuthenticated }) {
 
         <Link
           href="/qr-code-types"
-          className="group relative col-span-2 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-3 py-3 text-left ring-1 ring-indigo-200 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/15 hover:ring-indigo-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:col-span-1 sm:flex-col sm:gap-0 sm:py-5 sm:text-center"
+          style={{ "--i": qrTypeShowcase.length }}
+          className="rise group relative col-span-2 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-3 py-3 text-left ring-1 ring-indigo-200 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/15 hover:ring-indigo-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:col-span-1 sm:flex-col sm:gap-0 sm:py-5 sm:text-center"
         >
           <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30 transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transform-none sm:h-12 sm:w-12">
             <FaThLarge className="h-5 w-5" />
@@ -618,7 +621,7 @@ function QrTypesShowcase({ isAuthenticated }) {
         </Link>
       </div>
 
-      <div className="relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10">
+      <div className="rise relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10">
         <div className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />
 
@@ -731,13 +734,13 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
 
           <div className={`${container} pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pt-24`}>
             <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 xl:gap-16">
-              <div className="text-center lg:text-left">
+              <div className="rise-group text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-100">
                   <FaRocket className="h-3.5 w-3.5" />
                   Trusted by 50,000+ businesses worldwide
                 </div>
 
-                <HeroTitle title="Dynamic QR Code" highlight="Generator" subtitle="Edit links anytime, track every scan" />
+                <HeroTitle title="Dynamic QR Code" highlight="Generator" moreWords={["Maker", "Creator", "Tracker", "Manager"]} subtitle="Edit links anytime, track every scan" />
 
                 <p className={`${heroIntro} lg:mx-0`}>
                   Create, manage, and track editable QR codes. Update your links anytime without reprinting.
@@ -774,7 +777,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
                 aria-hidden="true"
               />
               <div className="mx-auto h-px max-w-4xl bg-gradient-to-r from-transparent via-indigo-200 to-transparent" aria-hidden="true" />
-              <div className="grid grid-cols-2 gap-y-8 pt-10 sm:grid-cols-4 sm:gap-y-10 sm:pt-14">
+              <div className="rise-group grid grid-cols-2 gap-y-8 pt-10 sm:grid-cols-4 sm:gap-y-10 sm:pt-14">
                 {stats.map((stat, i) => (
                   <div key={stat.label} className="group relative cursor-pointer px-2 text-center">
                     {i > 0 && (
@@ -808,7 +811,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
             aria-hidden="true"
           />
           <div className={`relative ${container}`}>
-            <div className="mb-10 text-center sm:mb-12">
+            <div className="rise mb-10 text-center sm:mb-12">
               <div className="flex items-center justify-center gap-4">
                 <span className="hidden h-px w-16 bg-gradient-to-r from-transparent to-indigo-300 sm:block" aria-hidden="true" />
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700 sm:text-sm">
@@ -822,7 +825,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
             </div>
 
             {/* Cards with their own page (restaurants, events, hotels, real estate) link to it */}
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 max-w-5xl mx-auto">
+            <div className="rise-group grid grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6 max-w-5xl mx-auto">
               {businessTypes.map((business) => {
                 const Card = business.href ? Link : "div";
                 return (
@@ -869,7 +872,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
             </div>
 
             {/* Additional Trust Badge */}
-            <div className="mt-10 text-center sm:mt-12">
+            <div className="rise mt-10 text-center sm:mt-12">
               <div className="inline-flex items-center gap-3 rounded-full bg-white py-2 pl-2 pr-5 shadow-sm ring-1 ring-slate-200/80">
                 <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-sm shadow-indigo-600/30">
                   <FaCheck className="h-3 w-3" />
@@ -933,7 +936,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
             <PricingCards prices={prices} currentUser={currentUser} />
             <PricingFootnote />
             {/* Leads to the full pricing page: plan comparison, payment methods and everything included */}
-            <div className="mx-auto mt-12 flex max-w-4xl flex-col items-center gap-6 rounded-3xl bg-gradient-to-r from-indigo-50 via-white to-purple-50 px-6 py-8 text-center ring-1 ring-indigo-100 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 sm:px-10 md:flex-row md:justify-between md:text-left">
+            <div className="rise mx-auto mt-12 flex max-w-4xl flex-col items-center gap-6 rounded-3xl bg-gradient-to-r from-indigo-50 via-white to-purple-50 px-6 py-8 text-center ring-1 ring-indigo-100 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/5 sm:px-10 md:flex-row md:justify-between md:text-left">
               <div>
                 <h3 className="font-display text-xl font-bold tracking-[-0.015em] text-slate-900">Compare every plan side by side</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
@@ -964,7 +967,7 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
               description="See what our customers have to say about QR-Genie"
             />
 
-            <div className="mt-12 grid gap-4 sm:mt-14 sm:gap-6 md:grid-cols-2 lg:mt-16 lg:gap-8">
+            <div className="rise-group mt-12 grid gap-4 sm:mt-14 sm:gap-6 md:grid-cols-2 lg:mt-16 lg:gap-8">
               {testimonials.map((testimonial) => (
                 <figure
                   key={testimonial.name}

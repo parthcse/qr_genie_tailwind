@@ -1205,7 +1205,7 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
   ];
 
   return (
-    <ol className="glass grid grid-cols-3 gap-1.5 rounded-2xl p-1.5" aria-label="Steps">
+    <ol className="glass rise grid grid-cols-3 gap-1.5 rounded-2xl p-1.5" aria-label="Steps">
       {steps.map((step) => {
         const done = currentStep > step.id || allDone;
         const active = currentStep === step.id && !allDone;
@@ -2533,7 +2533,7 @@ export default function CreateQrPage() {
     const trialEnded = subscriptionStatus.status === "TRIAL_EXPIRED";
     return (
       <DashboardLayout title="Create a QR code" description="">
-        <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-6 text-center sm:p-10">
+        <div className="rise mx-auto max-w-xl rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-6 text-center sm:p-10">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
             <FaExclamationTriangle className="h-5 w-5" />
           </span>
@@ -2573,9 +2573,9 @@ export default function CreateQrPage() {
         {/* Left: steps */}
         <div className="min-w-0 space-y-4">
           {editId ? (
-            <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+            <div className="glass rise flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
               <p className="min-w-0 truncate text-sm text-gray-600">
-                Editing <span className="font-semibold text-gray-900">{editing?.name || "your page"}</span>
+                Editing<span className="font-semibold text-gray-900">{editing?.name || "your page"}</span>
               </p>
               <Link href={`/dashboard/qrs/${editId}`} className="text-sm font-medium !text-indigo-600 hover:!text-indigo-700">
                 Back to details
@@ -2598,7 +2598,7 @@ export default function CreateQrPage() {
               {error}
             </div>
           ) : editId && editState === "saved" ? (
-            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
+            <div className="rise rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
                 <FaCheck className="h-6 w-6" />
               </span>
@@ -2623,7 +2623,7 @@ export default function CreateQrPage() {
               </div>
             </div>
           ) : success ? (
-            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
+            <div className="rise rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-6 text-center shadow-sm sm:p-10">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
                 <FaCheck className="h-6 w-6" />
               </span>
@@ -2699,8 +2699,9 @@ export default function CreateQrPage() {
                 if (step < 3 && !editId) goNext();
               }}
             >
-              <div className={`glass rounded-2xl ${choosing ? "p-3 sm:p-4" : "p-4 sm:p-6"}`}>
-                <div key={step} className="dash-rise">
+              <div className={`glass rise rounded-2xl [--i:1] ${choosing ? "p-3 sm:p-4" : "p-4 sm:p-6"}`}>
+                {/* The types in step 1 rise one by one (QrTypePicker), so only the other steps rise as a whole */}
+                <div key={step} className={step === 1 ? undefined : "rise"}>
                   {step === 1 && renderStep1()}
                   {step === 2 && renderStep2()}
                   {step === 3 && renderStep3()}
@@ -2780,7 +2781,7 @@ export default function CreateQrPage() {
           )}
 
           {(step === 3 || success) && !editId && (
-            <div className="glass flex items-start gap-3 rounded-2xl p-4">
+            <div className="glass rise flex items-start gap-3 rounded-2xl p-4">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-white text-amber-600 shadow-sm">
                 <FaLightbulb className="h-3.5 w-3.5" />
               </span>
@@ -2794,7 +2795,7 @@ export default function CreateQrPage() {
 
         {/* Right: live preview. While choosing a type on smaller screens, it opens in a sheet instead. */}
         <aside ref={previewPanel} className={`min-w-0 scroll-mt-20 lg:sticky lg:top-[5.5rem] lg:min-w-[19rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
-          <div className="glass rounded-2xl p-4">
+          <div className="glass rise rounded-2xl p-4 [--i:2]">
             {!choosing && (
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
