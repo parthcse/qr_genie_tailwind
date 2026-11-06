@@ -145,15 +145,15 @@ function PlanCard({ user, subscriptionStatus, onNavigate }) {
 /** Icon-only sidebar. See .dash-rail in styles/globals.css for how it opens. */
 function Sidebar({ isActive, open, pinned, onTogglePin, user, subscriptionStatus, entering }) {
   const plan = subscriptionStatus ? planSummary(user, subscriptionStatus) : null;
-  const itemBase = "flex h-11 items-center gap-3.5 rounded-xl px-[0.6875rem] text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400";
+  const itemBase = "flex h-11 items-center gap-3.5 rounded-xl px-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400";
   return (
-    <aside className={`dash-rail glass hidden flex-col px-2 py-3 md:flex ${entering ? "dash-rail-enter" : ""}`} data-open={open} aria-label="Sidebar">
-      <Link href="/" title="QR-Genie home" className="mb-3 flex h-11 flex-none items-center gap-3 rounded-xl px-[0.4375rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400">
+    <aside className={`dash-rail glass hidden flex-col px-1 py-3 md:flex ${entering ? "dash-rail-enter" : ""}`} data-open={open} aria-label="Sidebar">
+      <Link href="/" title="QR-Genie home" className="mb-3 flex h-11 flex-none items-center gap-3 rounded-xl px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400">
         <BrandMark />
         <span className="dash-rail-label bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text font-display text-xl font-bold tracking-tight text-transparent">QR-Genie</span>
       </Link>
 
-      <nav className="-mx-2 flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Dashboard">
+      <nav className="-mx-1 flex-1 overflow-y-auto overflow-x-hidden px-1" aria-label="Dashboard">
         <Link
           href={createItem.href}
           title={createItem.label}
@@ -376,7 +376,7 @@ function PhoneDrawer({ open, onClose, isActive, user, subscriptionStatus, onLogo
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.28, ease: EASE }}
-            className="absolute inset-y-0 left-0 flex h-[100dvh] w-[86vw] max-w-sm flex-col rounded-r-3xl bg-white shadow-2xl"
+            className="absolute inset-y-0 left-0 flex h-[100dvh] w-[86vw] max-w-sm flex-col rounded-r-2xl bg-white shadow-2xl"
           >
             <div className="flex h-16 flex-none items-center justify-between border-b border-gray-100 px-4">
               <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
@@ -453,7 +453,7 @@ export default function DashboardLayout({ children, title, description, actions 
   const [user, setUser] = useState(cachedAccount?.user || null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(cachedAccount?.subscriptionStatus || null);
   const [pinned, setPinned] = useState(pinnedChoice);
-  // Touch screens have no hover: between md and lg the pin opens the sidebar over the page, and tapping away closes it
+  // Below xl the pin opens the sidebar over the page, and tapping away closes it (touch screens have no hover)
   const [drawerOpen, setDrawerOpen] = useState(false);
   const entering = useRef(!sidebarEntered);
 
@@ -554,13 +554,13 @@ export default function DashboardLayout({ children, title, description, actions 
             subscriptionStatus={subscriptionStatus}
             entering={entering.current}
           />
-          {/* Below lg an open sidebar lies over the page, so tapping beside it closes it */}
-          {pinned && <button type="button" tabIndex={-1} aria-hidden="true" className="fixed inset-0 z-30 hidden cursor-default md:block lg:hidden" onClick={togglePin} />}
+          {/* Below xl an open sidebar lies over the page, which would be too squeezed beside it, so tapping beside it closes it */}
+          {pinned && <button type="button" tabIndex={-1} aria-hidden="true" className="fixed inset-0 z-30 hidden cursor-default md:block xl:hidden" onClick={togglePin} />}
           <PhoneDrawer open={drawerOpen} onClose={closeDrawer} isActive={isActive} user={user} subscriptionStatus={subscriptionStatus} onLogout={handleLogout} />
 
           <div className="dash-main flex min-h-screen min-w-0 flex-1 flex-col" data-pinned={pinned}>
-            {/* Solid on phones (no blur, see .glass), so text scrolling under it can't show through; a floating bar from md */}
-            <header className="glass sticky top-0 z-30 flex h-16 flex-none items-center gap-2 border-x-0 border-t-0 px-4 max-md:!bg-white sm:gap-3 sm:px-6 md:top-3 md:mt-3 md:rounded-2xl md:border-x md:border-t md:px-4">
+            {/* A white bar across the top on phones, a floating one from md. It scrolls away with the page; z-30 keeps its menu above the cards. */}
+            <header className="glass relative z-30 flex h-16 flex-none items-center gap-2 border-x-0 border-t-0 px-4 max-md:!bg-white sm:gap-3 sm:px-6 md:mt-3 md:rounded-xl md:border-x md:border-t md:px-4">
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}

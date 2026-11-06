@@ -97,7 +97,7 @@ export function AnalyticsSkeleton() {
 function FilterBones() {
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <G className="h-10 w-full !rounded-[0.875rem] sm:w-80" />
+      <G className="h-10 w-full !rounded-[0.625rem] sm:w-80" />
       <G className="h-10 w-full !rounded-xl sm:w-72" />
     </div>
   );
@@ -163,7 +163,7 @@ export function CreateSkeleton() {
             <G key={i} className="h-14 !rounded-xl" />
           ))}
         </div>
-        <div className="glass rounded-2xl p-3 sm:p-4">
+        <div className="glass dash-type-box rounded-2xl p-3 sm:p-4">
           <G className="h-5 w-64 max-w-full !rounded" />
           <div className="dash-type-grid mt-3">
             {repeat(20).map((i) => (
@@ -201,7 +201,7 @@ export function DetailsSkeleton() {
         </div>
       </div>
       <div className="min-w-0 space-y-4">
-        <G className="h-10 w-64 !rounded-[0.875rem]" />
+        <G className="h-10 w-64 !rounded-[0.625rem]" />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           {repeat(3).map((i) => (
             <div key={i} className="glass space-y-3 rounded-2xl p-4 sm:p-5">
@@ -251,7 +251,7 @@ export function BillingSkeleton() {
 export function AccountSkeleton() {
   return (
     <div className="space-y-4" role="status" aria-label="Loading your account">
-      <G className="h-10 w-full !rounded-[0.875rem] sm:w-96" />
+      <G className="h-10 w-full !rounded-[0.625rem] sm:w-96" />
       <div className="glass rounded-2xl p-4 sm:p-7">
         <div className="flex items-center gap-4">
           <G className="h-11 w-11 flex-none !rounded-xl" />
@@ -305,14 +305,14 @@ function DashboardPageSkeleton({ path }) {
         <span className="dash-finder dash-finder-b" />
         <span className="dash-finder dash-finder-c" />
       </div>
-      <div className="dash-rail glass hidden flex-col gap-2 px-2 py-3 md:flex" data-open={pinned}>
+      <div className="dash-rail glass hidden flex-col gap-2 px-1 py-3 md:flex" data-open={pinned}>
         <G className="h-11 w-11 flex-none !rounded-xl" />
         {repeat(6).map((i) => (
           <G key={i} className="mt-1 h-11 flex-none !rounded-xl" />
         ))}
       </div>
       <div className="dash-main" data-pinned={pinned}>
-        <div className="glass flex h-16 items-center gap-3 px-4 sm:px-6 md:mt-3 md:rounded-2xl md:px-4">
+        <div className="glass flex h-16 items-center gap-3 px-4 sm:px-6 md:mt-3 md:rounded-xl md:px-4">
           <div className="flex-1 space-y-2">
             <G className="h-4 w-40 !rounded" />
             <G className="hidden h-3 w-72 max-w-full !rounded lg:block" />

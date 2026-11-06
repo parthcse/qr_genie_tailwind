@@ -42,7 +42,7 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
   const chip = "absolute -top-1.5 right-1.5 z-10 inline-flex h-[1.125rem] items-center gap-1 rounded-full px-1.5 text-[10px] font-semibold shadow-sm";
 
   return (
-    <div>
+    <div className="dash-type-box">
       <div className="rise flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 [--i:1]">
         <h2 className="text-base font-semibold text-gray-900">What should your QR code do?</h2>
         <p className="text-xs text-gray-600">
@@ -73,7 +73,7 @@ export default function QrTypePicker({ types, selectedType, previewType, onPrevi
                 onPointerLeave={onLeave}
                 onFocus={(event) => event.target.matches(":focus-visible") && onPreview(type.id)}
                 onClick={(event) => onClick(type.id, event)}
-                className={`rise group relative flex min-w-0 items-center gap-2.5 rounded-xl border p-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 max-sm:flex-col max-sm:justify-center max-sm:gap-1 max-sm:text-center sm:p-2.5 ${
+                className={`rise group relative flex min-w-0 items-center gap-2 rounded-xl border p-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 max-sm:flex-col max-sm:justify-center max-sm:gap-1 max-sm:text-center ${
                   selected
                     ? "border-transparent bg-gradient-to-br from-indigo-50 to-purple-50 ring-2 ring-indigo-600"
                     : previewing

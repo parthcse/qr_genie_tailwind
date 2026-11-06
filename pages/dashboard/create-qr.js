@@ -284,7 +284,7 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 // never end up wide and squat, and everything on its screen keeps its proportions.
 const PHONE_WIDTH = 320;
 const PHONE_HEIGHT = 693;
-// What's around the phone, in px, when it has to fit the window: the sticky panel's offset, padding and the row with it
+// What's around the phone, in px, when it has to fit the window: the top bar above the panel, its padding and the row with it
 const PHONE_ROOM = { beside: 186, besideWithNote: 266, sheet: 168 };
 
 const usePhoneScale = (holder, reserve, alwaysFitHeight) => {
@@ -1277,7 +1277,7 @@ const TypePreviewSheet = ({ type, onClose, onUse, children }) => {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-x-0 bottom-0 flex max-h-[100dvh] flex-col rounded-t-3xl bg-white shadow-2xl"
+            className="absolute inset-x-0 bottom-0 flex max-h-[100dvh] flex-col rounded-t-2xl bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between gap-3 px-4 py-2">
               <h3 className="truncate text-sm font-semibold text-gray-900">{type.label}</h3>
@@ -2794,7 +2794,7 @@ export default function CreateQrPage() {
         </div>
 
         {/* Right: live preview. While choosing a type on smaller screens, it opens in a sheet instead. */}
-        <aside ref={previewPanel} className={`min-w-0 scroll-mt-20 lg:sticky lg:top-[5.5rem] lg:min-w-[19rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
+        <aside ref={previewPanel} className={`min-w-0 scroll-mt-4 lg:sticky lg:top-3 lg:min-w-[19rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
           <div className="glass rise rounded-2xl p-4 [--i:2]">
             {!choosing && (
               <div className="mb-3 flex items-center justify-between gap-3">

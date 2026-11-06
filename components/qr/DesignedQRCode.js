@@ -161,7 +161,7 @@ export default function DesignedQRCode({
             
             {/* QR Code */}
             <div
-              className="rounded-lg flex items-center justify-center p-4"
+              className="rounded-[8px] flex items-center justify-center p-4"
               style={{
                 background: parsedDesignData?.patternBgTransparent || parsedDesignData?.bgTransparent
                   ? "transparent"
@@ -187,7 +187,7 @@ export default function DesignedQRCode({
           </div>
         ) : (
           <div
-            className="rounded-lg flex items-center justify-center p-4 border border-gray-200 bg-white"
+            className="rounded-[8px] flex items-center justify-center p-4 border border-gray-200 bg-white"
             style={{
               background: parsedDesignData?.patternBgTransparent || parsedDesignData?.bgTransparent
                 ? "transparent"
@@ -275,7 +275,7 @@ export default function DesignedQRCode({
           
           {/* QR Code */}
           <div
-            className="rounded-lg flex items-center justify-center p-4"
+            className="rounded-[8px] flex items-center justify-center p-4"
             style={{
               background: parsedDesignData?.patternBgTransparent || parsedDesignData?.bgTransparent
                 ? "transparent"
@@ -289,7 +289,7 @@ export default function DesignedQRCode({
         </div>
       ) : (
         <div
-          className="rounded-lg flex items-center justify-center p-2 border border-gray-200 bg-white"
+          className="rounded-[8px] flex items-center justify-center p-2 border border-gray-200 bg-white"
           style={{
             background: parsedDesignData?.patternBgTransparent || parsedDesignData?.bgTransparent
               ? "transparent"
