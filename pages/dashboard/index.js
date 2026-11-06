@@ -7,6 +7,7 @@ import QrDownloadModal from "@/components/qr/QrDownloadModal";
 import DesignedQRCode from "@/components/qr/DesignedQRCode";
 import FolderHeader from "@/components/dashboard/FolderHeader";
 import { CountUp, Portal, SegmentedControl, ToastHost, useToast } from "@/components/dashboard/DashboardUi";
+import { CodesSkeleton } from "@/components/layout/PageSkeleton";
 import { TRIAL_QR_LIMIT } from "@/lib/billing/subscription";
 import { qrTypeById, isPageType, qrTypeLabel, releasedTypeCount } from "@/lib/qr/qrTypes";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
@@ -491,19 +492,6 @@ function QrRow({ code, design, origin, selected, onToggleSelect, menuOpen, onTog
   );
 }
 
-function RowSkeleton() {
-  return (
-    <li className="glass flex items-center gap-4 rounded-2xl p-5">
-      <div className="dash-skeleton h-[82px] w-[82px] flex-none !rounded-lg" />
-      <div className="min-w-0 flex-1 space-y-3">
-        <div className="dash-skeleton h-3 w-40 !rounded" />
-        <div className="dash-skeleton h-4 w-56 max-w-full !rounded" />
-        <div className="dash-skeleton h-3 w-72 max-w-full !rounded" />
-      </div>
-    </li>
-  );
-}
-
 function Modal({ title, icon: Icon, danger, onClose, children }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -869,6 +857,8 @@ export default function Dashboard() {
       title="My QR codes"
       description="Manage, organise and track every QR code you've created."
     >
+      {loading && <CodesSkeleton />}
+
       {!loading && liveCodes.length > 0 && (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <StatCard
@@ -884,6 +874,7 @@ export default function Dashboard() {
         </div>
       )}
 
+      {!loading && (
       <section className="mb-4" aria-labelledby="folders-heading">
         <h2 id="folders-heading" className="mb-2 text-sm font-semibold text-gray-900">
           Folders
@@ -910,8 +901,9 @@ export default function Dashboard() {
           </button>
         </div>
       </section>
+      )}
 
-      {activeFolder && (
+      {!loading && activeFolder && (
         <FolderHeader
           folder={{ ...activeFolder, qrCodes: undefined, _count: { qrCodes: folderCounts[activeFolder.id] || 0 } }}
           onFolderUpdated={handleFolderUpdated}
@@ -958,13 +950,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {loading ? (
-        <ul className="space-y-3" aria-label="Loading QR codes">
-          <RowSkeleton />
-          <RowSkeleton />
-          <RowSkeleton />
-        </ul>
-      ) : liveCodes.length === 0 ? (
+      {loading ? null : liveCodes.length === 0 ? (
         <div className="glass dash-rise rounded-3xl px-6 py-14 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
             <FaQrcode className="h-7 w-7" />

@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { QR_TYPES } from "@/lib/qr/qrTypes";
 import { AnimatedBar, BarList, CountUp, SegmentedControl, countryName } from "@/components/dashboard/DashboardUi";
+import { AnalyticsSkeleton } from "@/components/layout/PageSkeleton";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useReducedMotion } from "motion/react";
 import {
@@ -205,29 +206,6 @@ function Heatmap({ grid }) {
   );
 }
 
-function Skeleton() {
-  return (
-    <div className="space-y-4" aria-label="Loading analytics">
-      <div className="glass grid gap-6 rounded-3xl p-4 sm:p-6 xl:grid-cols-[17rem_minmax(0,1fr)]">
-        <div className="space-y-3">
-          <div className="dash-skeleton h-16" />
-          <div className="dash-skeleton h-14" />
-          <div className="dash-skeleton h-14" />
-          <div className="dash-skeleton h-14" />
-        </div>
-        <div className="dash-skeleton h-72" />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="glass rounded-2xl p-5">
-            <div className="dash-skeleton h-52" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function AnalyticsPage({ initialQrId }) {
   const router = useRouter();
   const reducedMotion = useReducedMotion();
@@ -377,7 +355,7 @@ export default function AnalyticsPage({ initialQrId }) {
       )}
 
       {loading && !data ? (
-        <Skeleton />
+        <AnalyticsSkeleton />
       ) : hasNoCodes ? (
         <div className="glass dash-rise rounded-3xl px-6 py-14 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30">

@@ -69,15 +69,15 @@ export function HeroTitle({ title, highlight, subtitle, compact = false, classNa
 // Eyebrow, heading and intro shared by the sections below the hero
 export function SectionHeading({ eyebrow, title, description, children }) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
+    <div className="mx-auto max-w-5xl text-center">
       <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
         <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" aria-hidden="true" />
         {eyebrow}
       </span>
-      <h2 className="mt-5 text-balance text-3xl font-bold tracking-[-0.015em] text-slate-900 sm:text-4xl lg:text-5xl">
+      <h2 className="mt-5 text-balance text-[1.75rem] font-bold leading-[1.2] tracking-[-0.015em] text-slate-900 sm:text-[2rem] lg:text-[2.625rem]">
         {title}
       </h2>
-      {description && <p className="mx-auto mt-4 text-balance text-lg leading-relaxed text-slate-600">{description}</p>}
+      {description && <p className="mx-auto mt-4 max-w-3xl text-balance text-lg leading-relaxed text-slate-600">{description}</p>}
       {children}
     </div>
   );

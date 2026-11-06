@@ -130,7 +130,7 @@ export default function PricingCards({ prices = null, currentUser = null, onSele
                     <span className={featured ? "text-indigo-200" : "text-slate-500"}>/month</span>
                   </>
                 ) : (
-                  <span className={`h-12 w-32 animate-pulse rounded-lg ${featured ? "bg-white/10" : "bg-slate-100"}`} aria-hidden="true" />
+                  <span className={`site-skeleton block h-12 w-32 !rounded-lg ${featured ? "!bg-white/10" : ""}`} aria-hidden="true" />
                 )}
               </p>
               <p className={`mt-2 text-sm ${featured ? "text-indigo-200" : "text-slate-600"}`}>

@@ -216,6 +216,42 @@ body {
     background: rgb(255 255 255 / 0.85);
   }
 
+  /* The QR types on the create page, all on screen without scrolling. Row heights share what the window has left: 20 types
+     make 4 rows of 5 from xl, or 7 rows of 3 beside the preview from lg. */
+  .dash-type-grid {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 4.25rem;
+  }
+  @media (min-width: 640px) {
+    .dash-type-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .dash-type-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-rows: clamp(3.75rem, calc((100dvh - 21rem) / 7), 5.5rem);
+    }
+  }
+  @media (min-width: 1280px) {
+    .dash-type-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-rows: clamp(4.25rem, calc((100dvh - 17.5rem) / 4), 6rem);
+    }
+  }
+
+  /* The phone in the create page's preview scrolls like a real one: no scrollbars on its screen or anything inside it */
+  .phone-screen,
+  .phone-screen * {
+    scrollbar-width: none;
+  }
+  .phone-screen::-webkit-scrollbar,
+  .phone-screen *::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Sliding tabs: the white pill moves between options (SegmentedControl) */
   .dash-segment {
     display: inline-flex;
@@ -232,14 +268,21 @@ body {
     box-shadow: 0 1px 2px rgb(49 46 129 / 0.1), 0 4px 10px -4px rgb(49 46 129 / 0.16);
   }
 
-  /* Placeholder while data loads: a band of light passes over it */
-  .dash-skeleton {
+  /* Placeholder while something loads: a band of light passes over it (components/layout/PageSkeleton.js). dash- on glass,
+     site- on the white public pages. */
+  .dash-skeleton,
+  .site-skeleton {
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
-    background: rgb(255 255 255 / 0.55);
+    /* Tinted, because white shapes would vanish on white glass */
+    background: rgb(79 70 229 / 0.08);
   }
-  .dash-skeleton::after {
+  .site-skeleton {
+    background: theme('colors.slate.100');
+  }
+  .dash-skeleton::after,
+  .site-skeleton::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -310,18 +353,6 @@ body {
   .dash-tooltip {
     animation: dash-fade 0.15s ease-out backwards;
   }
-  /* Thin bar at the top while the next page loads; it waits a moment so quick loads show nothing */
-  .dash-progress {
-    position: fixed;
-    z-index: 70;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    transform-origin: left;
-    background: linear-gradient(90deg, theme('colors.brand.gradient.from'), theme('colors.brand.gradient.to'));
-    animation: dash-progress 8s cubic-bezier(0.1, 0.8, 0.2, 1) 0.12s backwards;
-  }
 }
 
 @keyframes dash-rise {
@@ -370,21 +401,13 @@ body {
   }
 }
 
-@keyframes dash-progress {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(0.9);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dash-rail-enter,
   .dash-page,
   .dash-rise,
   .dash-tooltip,
-  .dash-skeleton::after {
+  .dash-skeleton::after,
+  .site-skeleton::after {
     animation: none;
   }
   .dash-rail,
@@ -398,10 +421,6 @@ body {
   }
   .glass-hover:hover {
     transform: none;
-  }
-  .dash-progress {
-    animation: none;
-    transform: scaleX(0.6);
   }
 }
 

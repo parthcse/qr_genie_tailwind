@@ -28,8 +28,20 @@ export default function Admin() {
 
   if (!data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
-        <p className="text-[11px]">Loading admin dashboard…</p>
+      <div className="min-h-screen bg-slate-50" role="status" aria-label="Loading admin dashboard">
+        <div className="border-b border-slate-200 bg-white">
+          <div className="mx-auto max-w-5xl px-4 py-3">
+            <div className="site-skeleton h-7 w-36 !rounded-lg" />
+          </div>
+        </div>
+        <div className="mx-auto max-w-5xl space-y-4 px-4 py-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="site-skeleton h-24" />
+            <div className="site-skeleton h-24" />
+            <div className="site-skeleton h-24" />
+          </div>
+          <div className="site-skeleton h-72" />
+        </div>
       </div>
     );
   }

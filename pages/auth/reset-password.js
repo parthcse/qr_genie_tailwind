@@ -188,7 +188,12 @@ export default function ResetPassword() {
         <SeoMeta title="Choose a new password | QR-Genie" path="/auth/reset-password" noindex />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 text-center border border-indigo-100">
-            <p className="text-sm text-gray-600">Loading...</p>
+            <div className="space-y-4 text-left" role="status" aria-label="Loading">
+              <div className="site-skeleton h-8 w-2/3 !rounded-lg" />
+              <div className="site-skeleton h-11 !rounded-xl" />
+              <div className="site-skeleton h-11 !rounded-xl" />
+              <div className="site-skeleton h-12 !rounded-xl" />
+            </div>
           </div>
         </div>
       </PublicLayout>

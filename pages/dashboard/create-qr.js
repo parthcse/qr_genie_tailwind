@@ -13,7 +13,7 @@ import { getSchemaForType } from "@/lib/qr/qrSchemas";
 import { createQRConfig } from "@/lib/qr/qrConfig";
 import { downloadDesignedQR } from "@/lib/qr/qrDownload";
 import { prepareLogo, MAX_IMAGE_LABEL } from "@/lib/qr/imageUpload";
-import { QR_TYPES, QR_TYPE_CATEGORIES, qrTypeById, isPageType } from "@/lib/qr/qrTypes";
+import { QR_TYPES, qrTypeById, isPageType } from "@/lib/qr/qrTypes";
 import { emptyContent, normalizeContent, contentToForm } from "@/lib/qr/qrContent";
 import { previewContent } from "@/lib/qr/previewSamples";
 import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
@@ -38,7 +38,7 @@ export async function getServerSideProps(context) {
 // Dynamically import QRCodeSVG to avoid SSR issues
 const QRCodeSVG = dynamic(() => import("qrcode.react").then((mod) => mod.QRCodeSVG), {
   ssr: false,
-  loading: () => <div className="w-48 h-48 bg-slate-100 animate-pulse rounded-lg"></div>
+  loading: () => <div className="site-skeleton h-48 w-48 !rounded-lg" />
 });
 
 // Dynamically import QRCodeStyling for advanced customization
@@ -49,39 +49,6 @@ if (typeof window !== "undefined") {
   });
 }
 
-// QR Scanning Preloader Component
-const QRScanningPreloader = ({ message = "Scanning QR Code..." }) => {
-  return (
-    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="relative">
-        {/* Main Preloader Icon */}
-        <div className="flex items-center gap-3 mb-1 animate-pulse">
-          {/* Left: Hollow square with dot */}
-          <div className="relative">
-            <div className="w-14 h-14 border-2 border-slate-700 rounded-sm flex items-center justify-center" style={{ borderWidth: '3px' }}>
-              <div className="w-2.5 h-2.5 bg-slate-700 rounded-full animate-ping"></div>
-            </div>
-          </div>
-          {/* Right: Solid filled square */}
-          <div className="w-14 h-14 bg-slate-700 rounded-sm"></div>
-        </div>
-        
-        {/* Reflection Effect */}
-        <div className="flex items-center gap-3 opacity-25" style={{ transform: 'scaleY(-1)', filter: 'blur(1px)' }}>
-          <div className="relative">
-            <div className="w-14 h-14 border-2 border-slate-400 rounded-sm flex items-center justify-center" style={{ borderWidth: '3px' }}>
-              <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>
-            </div>
-          </div>
-          <div className="w-14 h-14 bg-slate-400 rounded-sm"></div>
-        </div>
-      </div>
-      
-      {/* Loading Text */}
-      <p className="mt-5 text-sm text-slate-600 font-medium">{message}</p>
-    </div>
-  );
-};
 import {
   FaQrcode,
   FaGlobe,
@@ -313,15 +280,33 @@ const StyledQRCode = ({ value, designData, size = 200 }) => {
 };
 
 // Mobile Preview Component
-// How tall the phone may be beside the page from lg up, so it always fits the window while sticky: what's around it differs
-const PHONE_HEIGHT = {
-  choosing: "lg:h-[min(640px,max(420px,calc(100dvh-18rem)))]",
-  page: "lg:h-[min(640px,max(420px,calc(100dvh-12.5rem)))]",
-  qr: "lg:h-[min(640px,max(420px,calc(100dvh-17.5rem)))]",
-  sheet: "!h-[min(640px,calc(100dvh-18rem))]",
+// A real phone's shape (9:19.5). It's always drawn at this size and scaled as a whole to fit the room it has, so it can
+// never end up wide and squat, and everything on its screen keeps its proportions.
+const PHONE_WIDTH = 320;
+const PHONE_HEIGHT = 693;
+// What's around the phone, in px, when it has to fit the window: the sticky panel's offset, padding and the row with it
+const PHONE_ROOM = { beside: 186, besideWithNote: 266, sheet: 168 };
+
+const usePhoneScale = (holder, reserve, alwaysFitHeight) => {
+  const [scale, setScale] = useState(null);
+  useEffect(() => {
+    const fit = () => {
+      const beside = window.matchMedia("(min-width: 1024px)").matches;
+      const byHeight = beside || alwaysFitHeight ? (window.innerHeight - reserve) / PHONE_HEIGHT : 1;
+      // Beside the page its column takes the phone's width, so only narrower screens can limit it
+      const byWidth = beside ? 1 : (holder.current?.parentElement?.clientWidth || PHONE_WIDTH) / PHONE_WIDTH;
+      setScale(Math.max(0.5, Math.min(1, byHeight, byWidth)));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [holder, reserve, alwaysFitHeight]);
+  return scale;
 };
 
-const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef, showSamples = false, qrKey = "qr", heightClass = PHONE_HEIGHT.page }) => {
+const MobilePreview = ({ qrType, formData, designData, previewMode = "destination", qrCodeUrl, qrPreviewRef, showSamples = false, qrKey = "qr", reserve = PHONE_ROOM.beside, alwaysFitHeight = false }) => {
+  const holder = useRef(null);
+  const scale = usePhoneScale(holder, reserve, alwaysFitHeight);
   // While a hosted page is being edited, keep the part that's changing in view inside the phone
   const screenRef = useRef(null);
   const pageForm = isPageType(qrType) ? formData[qrType] : null;
@@ -346,7 +331,9 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
     const box = screen.getBoundingClientRect();
     const rect = part.getBoundingClientRect();
     if (rect.top < box.top + 40 || rect.bottom > box.bottom - 16) {
-      screen.scrollTo({ top: screen.scrollTop + rect.top - box.top - 56, behavior: "smooth" });
+      // The phone may be scaled, and scrollTop counts in its own unscaled pixels
+      const zoom = box.height / screen.offsetHeight || 1;
+      screen.scrollTo({ top: screen.scrollTop + (rect.top - box.top) / zoom - 56, behavior: "smooth" });
     }
   }, [pageForm, qrType]);
 
@@ -1123,27 +1110,33 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
   };
 
   return (
-    // From lg the preview stays on screen while the page scrolls, so the phone is only as tall as the window has room for
-    // (below that it sits under the form at full height). Its screen scrolls inside.
-    <div className={`relative mx-auto h-[640px] w-[320px] max-w-full ${heightClass}`}>
+    // From lg the preview stays on screen while the page scrolls, so the phone is scaled to what the window has room for
+    // (below that it sits under the form at full size). Its screen scrolls inside, without scrollbars, like a real phone's.
+    // Hidden until it's measured, so it doesn't jump on first load.
+    <div
+      ref={holder}
+      className="relative mx-auto flex-none"
+      style={{ width: PHONE_WIDTH * (scale ?? 1), height: PHONE_HEIGHT * (scale ?? 1), visibility: scale === null ? "hidden" : undefined }}
+    >
+    <div className="absolute left-0 top-0 h-[693px] w-[320px] origin-top-left" style={{ transform: `scale(${scale ?? 1})` }}>
 
       {/* Modern iPhone Style - Dark Purplish-Gray Frame */}
       <div className="absolute inset-0 rounded-[3rem] p-1 shadow-2xl" style={{ 
         background: 'linear-gradient(to bottom, #4a5568, #2d3748, #1a202c)'
       }}>
         {/* Volume Buttons (Left Side) */}
-        <div className="absolute left-0 top-32 w-1 h-12 rounded-l-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
-        <div className="absolute left-0 top-48 w-1 h-12 rounded-l-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
+        <div className="absolute -left-0.5 top-32 w-1 h-12 rounded-l-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
+        <div className="absolute -left-0.5 top-48 w-1 h-12 rounded-l-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
         
         {/* Power Button (Right Side) */}
-        <div className="absolute right-0 top-36 w-1 h-16 rounded-r-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
+        <div className="absolute -right-0.5 top-36 w-1 h-16 rounded-r-full" style={{ background: 'linear-gradient(to bottom, #4a5568, #2d3748)' }}></div>
         {/* Thin uniform black bezels with rounded corners */}
         <div className="h-full bg-black rounded-[2.8rem] overflow-hidden relative">
           {/* Screen with thin bezels */}
-          <div className="h-full bg-white rounded-[2.6rem] overflow-hidden relative m-0.5">
+          <div className="phone-screen h-full bg-white rounded-[2.6rem] overflow-hidden relative m-0.5">
             {/* Dynamic Island (Pill-shaped) */}
             <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20">
-              <div className="w-28 h-7 bg-black rounded-full flex items-center justify-center shadow-lg">
+              <div className="w-[6.25rem] h-7 bg-black rounded-full flex items-center justify-center shadow-lg">
                 <div className="flex items-center gap-2 px-3">
                   <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
                   <div className="w-0.5 h-3 bg-slate-500 rounded-full"></div>
@@ -1152,7 +1145,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
             
             {/* Status Bar */}
-            <div className="h-8 pt-2 bg-white flex items-center relative z-10">
+            <div className="h-11 bg-white flex items-center relative z-10">
               <div className="flex items-center justify-between text-slate-900 text-xs font-semibold w-full px-6">
                 <span className="font-bold">9:41</span>
                 <div className="flex items-center gap-2">
@@ -1174,7 +1167,7 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             </div>
             
             {/* Screen Content */}
-            <div ref={screenRef} className="relative h-[calc(100%-2rem)] overflow-auto">
+            <div ref={screenRef} className="relative h-[calc(100%-2.75rem)] overflow-auto">
               {/* One page fades into the next while the phone stays still. A QR code redraws on each design change without fading. */}
               <AnimatePresence mode="popLayout" initial={false}>
                 <m.div
@@ -1192,11 +1185,12 @@ const MobilePreview = ({ qrType, formData, designData, previewMode = "destinatio
             
             {/* Home Indicator (modern iPhone style) */}
             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="w-32 h-1 bg-slate-900 rounded-full"></div>
+              <div className="w-[6.75rem] h-1 bg-slate-900 rounded-full"></div>
             </div>
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
@@ -1253,28 +1247,6 @@ const StepIndicator = ({ currentStep, onStepClick, allDone = false }) => {
   );
 };
 
-const KIND_NOTES = {
-  redirect: "Change where it points after printing, and see every scan.",
-  page: "We host this page. Change it any time, and see every scan.",
-  static: "Works straight from the camera. It can't be changed or counted later.",
-};
-
-/** Which type is being previewed, and what's useful to know before choosing it */
-const TypeSummary = ({ type }) => {
-  const Icon = qrTypeVisual(type.id).icon;
-  return (
-    <div className="flex min-w-0 items-start gap-3">
-      <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${typeAccent(type.id)}`}>
-        <Icon className="h-[18px] w-[18px]" />
-      </span>
-      <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-gray-900">{type.label}</h3>
-        <p className="text-xs leading-snug text-gray-600">{KIND_NOTES[type.kind] || type.description}</p>
-      </div>
-    </div>
-  );
-};
-
 /** Choosing on a phone: a tap opens this sheet with the preview, and only its button chooses the type */
 const TypePreviewSheet = ({ type, onClose, onUse, children }) => {
   const closeButton = useRef(null);
@@ -1307,8 +1279,8 @@ const TypePreviewSheet = ({ type, onClose, onUse, children }) => {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="absolute inset-x-0 bottom-0 flex max-h-[100dvh] flex-col rounded-t-3xl bg-white shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-3 p-4 pb-3">
-              <TypeSummary type={type} />
+            <div className="flex items-center justify-between gap-3 px-4 py-2">
+              <h3 className="truncate text-sm font-semibold text-gray-900">{type.label}</h3>
               <button
                 ref={closeButton}
                 type="button"
@@ -1319,7 +1291,7 @@ const TypePreviewSheet = ({ type, onClose, onUse, children }) => {
                 <FaTimes className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 pb-3">{children}</div>
+            <div className="flex min-h-0 flex-1 justify-center overflow-hidden px-4 pb-3">{children}</div>
             <div className="flex-none border-t border-gray-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
@@ -1778,7 +1750,6 @@ export default function CreateQrPage() {
   const renderStep1 = () => (
     <QrTypePicker
       types={qrTypes}
-      categories={QR_TYPE_CATEGORIES}
       selectedType={selectedType}
       previewType={previewType}
       onPreview={setPreviewType}
@@ -2598,7 +2569,7 @@ export default function CreateQrPage() {
       title={editId ? "Edit page" : "Create a QR code"}
       description={editId ? "Change what people see when they scan. Your printed code stays the same." : "Choose a type, add your content and make it yours."}
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
         {/* Left: steps */}
         <div className="min-w-0 space-y-4">
           {editId ? (
@@ -2615,8 +2586,11 @@ export default function CreateQrPage() {
           )}
 
           {editId && editState === "loading" ? (
-            <div className="glass rounded-2xl p-5" aria-label="Loading">
-              <div className="dash-skeleton h-72" />
+            <div className="glass space-y-4 rounded-2xl p-5" role="status" aria-label="Loading">
+              <div className="dash-skeleton h-6 w-48 !rounded" />
+              <div className="dash-skeleton h-11 !rounded-xl" />
+              <div className="dash-skeleton h-11 !rounded-xl" />
+              <div className="dash-skeleton h-32 !rounded-xl" />
             </div>
           ) : editId && editState === "failed" ? (
             <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
@@ -2725,7 +2699,7 @@ export default function CreateQrPage() {
                 if (step < 3 && !editId) goNext();
               }}
             >
-              <div className="glass rounded-2xl p-4 sm:p-6">
+              <div className={`glass rounded-2xl ${choosing ? "p-3 sm:p-4" : "p-4 sm:p-6"}`}>
                 <div key={step} className="dash-rise">
                   {step === 1 && renderStep1()}
                   {step === 2 && renderStep2()}
@@ -2741,6 +2715,8 @@ export default function CreateQrPage() {
                 )}
               </div>
 
+              {/* Choosing a type moves on by itself, so step 1 has no buttons here */}
+              {!choosing && (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {editId ? (
                   <Link
@@ -2753,9 +2729,7 @@ export default function CreateQrPage() {
                   <button
                     type="button"
                     onClick={goBack}
-                    className={`btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 ${
-                      step === 1 ? "invisible" : ""
-                    }`}
+                    className="btn-shine btn-shine-soft inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
                   >
                     <FaArrowLeft className="h-3 w-3" />
                     Back
@@ -2784,7 +2758,7 @@ export default function CreateQrPage() {
                       disabled={nextDisabled}
                       className="btn-shine inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                     >
-                      {step === 1 ? "Continue" : "Next: style it"}
+                      Next: style it
                       <FaArrowRight className="h-3 w-3" />
                     </button>
                   ) : (
@@ -2801,6 +2775,7 @@ export default function CreateQrPage() {
                   )}
                 </div>
               </div>
+              )}
             </form>
           )}
 
@@ -2818,33 +2793,10 @@ export default function CreateQrPage() {
         </div>
 
         {/* Right: live preview. While choosing a type on smaller screens, it opens in a sheet instead. */}
-        <aside ref={previewPanel} className={`min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-[5.5rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
-          <div className="glass rounded-2xl p-4 sm:p-5">
-            {choosing ? (
-              <div className="mb-3 min-h-[6.25rem]">
-                {shownInfo ? (
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <m.div key={shownInfo.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>
-                      <TypeSummary type={shownInfo} />
-                      <button
-                        type="button"
-                        onClick={() => chooseType(shownInfo.id)}
-                        className="btn-shine mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
-                      >
-                        Use {shownInfo.label}
-                        <FaArrowRight className="h-3 w-3" />
-                      </button>
-                    </m.div>
-                  </AnimatePresence>
-                ) : (
-                  <>
-                    <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
-                    <p className="text-xs text-gray-600">Nothing is chosen yet, so look around.</p>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="mb-4 flex items-center justify-between gap-3">
+        <aside ref={previewPanel} className={`min-w-0 scroll-mt-20 lg:sticky lg:top-[5.5rem] lg:min-w-[19rem] lg:self-start ${choosing ? "hidden lg:block" : ""}`}>
+          <div className="glass rounded-2xl p-4">
+            {!choosing && (
+              <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-gray-900">Live preview</h3>
                   <p className="truncate text-xs text-gray-600">
@@ -2883,7 +2835,7 @@ export default function CreateQrPage() {
               <MobilePreview
                 // Only the QR code is redrawn on each change: the page keeps its scroll position (and a playing video or audio)
                 qrKey={`qr-${selectedType}-${previewKey}`}
-                heightClass={choosing ? PHONE_HEIGHT.choosing : previewMode === "qr" ? PHONE_HEIGHT.qr : PHONE_HEIGHT.page}
+                reserve={previewMode === "qr" && !success && willBeDynamic && selectedType ? PHONE_ROOM.besideWithNote : PHONE_ROOM.beside}
                 showSamples={showSamples}
                 qrType={shownType}
                 formData={formData}
@@ -2894,10 +2846,22 @@ export default function CreateQrPage() {
               />
             </div>
 
-            {choosing && isPageType(shownType) && <p className="mt-2 text-center text-xs text-gray-600">Faded parts are examples</p>}
+            {choosing &&
+              (shownInfo ? (
+                <button
+                  type="button"
+                  onClick={() => chooseType(shownInfo.id)}
+                  className="btn-shine mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+                >
+                  Use {shownInfo.label}
+                  <FaArrowRight className="h-3 w-3" />
+                </button>
+              ) : (
+                <p className="mt-3 flex h-10 items-center justify-center rounded-xl border border-dashed border-indigo-200 text-xs text-gray-600">Choose a type to preview it</p>
+              ))}
 
             {previewMode === "qr" && !success && willBeDynamic && selectedType && (
-              <p className="mt-4 flex items-start gap-2 rounded-xl bg-indigo-50/70 p-3 text-xs leading-relaxed text-indigo-800">
+              <p className="mt-3 flex items-start gap-2 rounded-xl bg-indigo-50/70 p-3 text-xs leading-relaxed text-indigo-800">
                 <FaInfoCircle className="mt-0.5 h-3 w-3 flex-none" />
                 Preview only. Your finished code will hold its own short link, created when you click Create QR code.
               </p>
@@ -2908,7 +2872,7 @@ export default function CreateQrPage() {
 
       {/* Phones and tablets: tapping a type previews it here. Only this sheet's button chooses it. */}
       <TypePreviewSheet type={previewSheetOpen && previewType ? qrTypeById(previewType) : null} onClose={closePreviewSheet} onUse={() => chooseType(previewType)}>
-        <MobilePreview heightClass={PHONE_HEIGHT.sheet} showSamples qrType={previewType} formData={formData} designData={designData} previewMode="destination" />
+        <MobilePreview reserve={PHONE_ROOM.sheet} alwaysFitHeight showSamples qrType={previewType} formData={formData} designData={designData} previewMode="destination" />
       </TypePreviewSheet>
 
       {/* Below lg the preview is under the form, so this jumps to it */}

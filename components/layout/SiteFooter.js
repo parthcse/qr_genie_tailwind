@@ -34,7 +34,7 @@ export default function SiteFooter({ showCta = false, isAuthenticated = false })
               <div>
                 <h2
                   id="footer-cta-heading"
-                  className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl"
+                  className="max-w-2xl text-balance text-[1.75rem] font-bold leading-[1.2] tracking-tight text-white sm:text-[2rem] lg:text-[2.625rem]"
                 >
                   Print once. Change the link whenever you like.
                 </h2>

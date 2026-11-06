@@ -113,7 +113,7 @@ export default function SiteHeader({ isAuthenticated = false, loading = false, o
 
   let actions;
   if (loading) {
-    actions = <div className="h-10 w-[84px] animate-pulse rounded-xl bg-gray-100" aria-hidden="true" />;
+    actions = <div className="site-skeleton h-10 w-[84px] !rounded-xl" aria-hidden="true" />;
   } else if (isAuthenticated) {
     actions = (
       <div className="flex items-center gap-1.5">

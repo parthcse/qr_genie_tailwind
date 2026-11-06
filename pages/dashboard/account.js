@@ -5,6 +5,7 @@ import { AuthInput, AuthSelect, AuthAlert, AuthSuccess, PasswordStrength, FieldT
 import CodeInput, { emptyCode } from "@/components/auth/CodeInput";
 import DeleteAccountModal from "@/components/dashboard/DeleteAccountModal";
 import { SegmentedControl } from "@/components/dashboard/DashboardUi";
+import { AccountSkeleton } from "@/components/layout/PageSkeleton";
 import {
   FaUser,
   FaEnvelope,
@@ -263,6 +264,7 @@ export default function AccountPage({ user: initialUser }) {
   const [billing, setBilling] = useState({ busy: false, error: "", success: "", shake: 0 });
 
   // Load saved details and any email change waiting for its code
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     (async () => {
       try {
@@ -304,6 +306,8 @@ export default function AccountPage({ user: initialUser }) {
         }
       } catch (err) {
         console.error("Failed to load account details:", err);
+      } finally {
+        setLoaded(true);
       }
     })();
   }, []);
@@ -447,6 +451,8 @@ export default function AccountPage({ user: initialUser }) {
 
   return (
     <DashboardLayout title="My Account" description="Manage your personal details, password and billing information.">
+      {!loaded && <AccountSkeleton />}
+      <div className={loaded ? "contents" : "hidden"}>
       {/* Tabs: full width on phones */}
       <SegmentedControl
         label="Account sections"
@@ -686,6 +692,7 @@ export default function AccountPage({ user: initialUser }) {
           </Section>
         </div>
       )}
+      </div>
     </DashboardLayout>
   );
 }

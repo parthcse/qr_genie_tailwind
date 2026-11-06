@@ -6,6 +6,7 @@ import { FaQrcode, FaArrowLeft, FaEdit, FaCheck, FaTimes, FaLock, FaLockOpen, Fa
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useReducedMotion } from "motion/react";
 import { BarList, CountUp, SegmentedControl, ToastHost, countryName, useToast } from "@/components/dashboard/DashboardUi";
+import { DetailsSkeleton } from "@/components/layout/PageSkeleton";
 import { isPageType, qrTypeLabel } from "@/lib/qr/qrTypes";
 import { contentSummary, contentTitle } from "@/lib/qr/qrContent";
 
@@ -297,14 +298,7 @@ export default function QrDetailPage({ qrId }) {
   if (loading && !qr) {
     return (
       <DashboardLayout title="QR Code" description="View and edit QR code details.">
-        <div className="space-y-4" aria-label="Loading">
-          <div className="glass rounded-2xl p-6">
-            <div className="dash-skeleton h-44" />
-          </div>
-          <div className="glass rounded-2xl p-6">
-            <div className="dash-skeleton h-64" />
-          </div>
-        </div>
+        <DetailsSkeleton />
       </DashboardLayout>
     );
   }

@@ -22,6 +22,7 @@ import {
 } from "react-icons/fa";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { planNameFor } from "@/lib/billing/terms";
+import { DashboardContentSkeleton, SIDEBAR_PIN_KEY, useRouteTarget } from "@/components/layout/PageSkeleton";
 
 const createItem = { href: "/dashboard/create-qr", label: "Create QR code", icon: FaPlus };
 const navGroups = [
@@ -42,7 +43,6 @@ const navGroups = [
   },
 ];
 
-const PIN_KEY = "qrgenie.sidebarPinned";
 const EASE = [0.16, 1, 0.3, 1];
 const ACTIVE_PLANS = ["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"];
 
@@ -447,25 +447,6 @@ function PhoneDrawer({ open, onClose, isActive, user, subscriptionStatus, onLogo
   );
 }
 
-/** Thin progress bar while the next dashboard page loads */
-function RouteProgress() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const start = () => setLoading(true);
-    const stop = () => setLoading(false);
-    router.events.on("routeChangeStart", start);
-    router.events.on("routeChangeComplete", stop);
-    router.events.on("routeChangeError", stop);
-    return () => {
-      router.events.off("routeChangeStart", start);
-      router.events.off("routeChangeComplete", stop);
-      router.events.off("routeChangeError", stop);
-    };
-  }, [router.events]);
-  return loading ? <div className="dash-progress" aria-hidden="true" /> : null;
-}
-
 /** Shell of every dashboard page: glass sidebar and top bar over the backdrop, with the page content beside them */
 export default function DashboardLayout({ children, title, description, actions }) {
   const router = useRouter();
@@ -479,7 +460,7 @@ export default function DashboardLayout({ children, title, description, actions 
   useEffect(() => {
     sidebarEntered = true;
     try {
-      pinnedChoice = window.localStorage.getItem(PIN_KEY) === "1";
+      pinnedChoice = window.localStorage.getItem(SIDEBAR_PIN_KEY) === "1";
       setPinned(pinnedChoice);
     } catch {
       // Blocked storage only means the sidebar starts closed
@@ -517,7 +498,7 @@ export default function DashboardLayout({ children, title, description, actions 
     pinnedChoice = next;
     setPinned(next);
     try {
-      window.localStorage.setItem(PIN_KEY, next ? "1" : "0");
+      window.localStorage.setItem(SIDEBAR_PIN_KEY, next ? "1" : "0");
     } catch {
       // The choice just won't be remembered
     }
@@ -549,6 +530,10 @@ export default function DashboardLayout({ children, title, description, actions 
   const plan = subscriptionStatus ? planSummary(user, subscriptionStatus) : null;
   const year = new Date().getFullYear();
   const closeDrawer = () => setDrawerOpen(false);
+  // Moving to another dashboard page: the shell stays and its content area shows that page's outline. The old page stays
+  // mounted underneath, in case the move fails.
+  const target = useRouteTarget();
+  const movingTo = target === "/dashboard" || target?.startsWith("/dashboard/") ? target : null;
 
   return (
     <LazyMotion features={domMax}>
@@ -559,7 +544,6 @@ export default function DashboardLayout({ children, title, description, actions 
             <span className="dash-finder dash-finder-b" />
             <span className="dash-finder dash-finder-c" />
           </div>
-          <RouteProgress />
 
           <Sidebar
             isActive={isActive}
@@ -587,10 +571,16 @@ export default function DashboardLayout({ children, title, description, actions 
                 <FaBars className="h-5 w-5" />
               </button>
               <div className="min-w-0 flex-1">
-                {title && <h1 className="truncate text-base font-bold tracking-tight text-gray-900 sm:text-lg">{title}</h1>}
-                {description && <p className="hidden truncate text-xs text-gray-600 lg:block">{description}</p>}
+                {movingTo ? (
+                  <div className="dash-skeleton h-5 w-40 !rounded" />
+                ) : (
+                  <>
+                    {title && <h1 className="truncate text-base font-bold tracking-tight text-gray-900 sm:text-lg">{title}</h1>}
+                    {description && <p className="hidden truncate text-xs text-gray-600 lg:block">{description}</p>}
+                  </>
+                )}
               </div>
-              {actions && <div className="flex flex-none items-center gap-2">{actions}</div>}
+              {actions && !movingTo && <div className="flex flex-none items-center gap-2">{actions}</div>}
               {plan && (plan.trial || plan.ended) && (
                 <Link
                   href="/dashboard/billing"
@@ -615,8 +605,10 @@ export default function DashboardLayout({ children, title, description, actions 
             </header>
 
             {/* overflow-x-clip (not hidden), so the create page's sticky preview isn't trapped in a scroll container */}
-            <main className="dash-page flex w-full min-w-0 flex-1 flex-col overflow-x-clip px-3 pb-6 pt-4 md:pt-3">
-              {description && <p className="mb-4 text-sm text-gray-700 lg:hidden">{description}</p>}
+            <main className={`dash-page flex w-full min-w-0 flex-1 flex-col overflow-x-clip px-3 pt-4 md:pt-3 ${onCreatePage ? "pb-3" : "pb-6"}`}>
+              {movingTo && <DashboardContentSkeleton path={movingTo} />}
+              <div className={movingTo ? "hidden" : "contents"}>
+              {description && !onCreatePage && <p className="mb-4 text-sm text-gray-700 lg:hidden">{description}</p>}
               {showEndedNotice && (
                 <div className="mb-4 flex flex-col gap-4 rounded-2xl bg-amber-50 p-4 ring-1 ring-inset ring-amber-200 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                   <div className="flex gap-3">
@@ -641,8 +633,11 @@ export default function DashboardLayout({ children, title, description, actions 
                 </div>
               )}
               {children}
+              </div>
             </main>
 
+            {/* The create page is a workspace that should fit the window */}
+            {!onCreatePage && (
             <footer className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pb-5 text-xs text-gray-600">
               <p>&copy; {year} QR-Genie</p>
               <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1">
@@ -652,6 +647,7 @@ export default function DashboardLayout({ children, title, description, actions 
                 <Link href="/refund-policy" className="!text-gray-600 hover:!text-indigo-700">Refund policy</Link>
               </nav>
             </footer>
+            )}
           </div>
         </div>
       </MotionConfig>
