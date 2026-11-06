@@ -43,6 +43,7 @@ const navGroups = [
   },
 ];
 
+const RAIL_ICON = "h-[18px] w-[18px]";
 const EASE = [0.16, 1, 0.3, 1];
 const ACTIVE_PLANS = ["TRIAL_ACTIVE", "SUBSCRIPTION_ACTIVE"];
 
@@ -64,7 +65,7 @@ function initialsOf(user) {
 function BrandMark({ className = "" }) {
   return (
     <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/25 ${className}`}>
-      <FaQrcode className="h-5 w-5 text-white" />
+      <FaQrcode className={`${RAIL_ICON} text-white`} />
     </span>
   );
 }
@@ -145,27 +146,29 @@ function PlanCard({ user, subscriptionStatus, onNavigate }) {
 /** Icon-only sidebar. See .dash-rail in styles/globals.css for how it opens. */
 function Sidebar({ isActive, open, pinned, onTogglePin, user, subscriptionStatus, entering }) {
   const plan = subscriptionStatus ? planSummary(user, subscriptionStatus) : null;
-  const itemBase = "flex h-11 items-center gap-3.5 rounded-xl px-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400";
+  // Every item looks the same: a 40 px tile with an 18 px icon, in grey with no background. Only the current page's tile is filled.
+  const itemBase = "group flex h-11 items-center gap-3 rounded-xl px-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400";
+  const itemText = (active) => (active ? "font-semibold !text-indigo-700" : "font-medium !text-gray-700 hover:bg-white/60 hover:!text-gray-900");
+  const tile = (active) =>
+    `flex h-10 w-10 flex-none items-center justify-center rounded-xl transition ${
+      active ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30" : "text-gray-500 group-hover:text-indigo-600"
+    }`;
   return (
-    <aside className={`dash-rail glass hidden flex-col px-1 py-3 md:flex ${entering ? "dash-rail-enter" : ""}`} data-open={open} aria-label="Sidebar">
-      <Link href="/" title="QR-Genie home" className="mb-3 flex h-11 flex-none items-center gap-3 rounded-xl px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400">
+    <aside className={`dash-rail glass hidden flex-col px-2 py-3 md:flex ${entering ? "dash-rail-enter" : ""}`} data-open={open} aria-label="Sidebar">
+      <Link href="/" title="QR-Genie home" className="mb-3 flex h-11 flex-none items-center gap-3 rounded-xl px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400">
         <BrandMark />
         <span className="dash-rail-label bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text font-display text-xl font-bold tracking-tight text-transparent">QR-Genie</span>
       </Link>
 
-      <nav className="-mx-1 flex-1 overflow-y-auto overflow-x-hidden px-1" aria-label="Dashboard">
+      <nav className="-mx-2 flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Dashboard">
         <Link
           href={createItem.href}
           title={createItem.label}
           aria-current={isActive(createItem.href) ? "page" : undefined}
-          className={`group ${itemBase} mb-2 font-semibold ${isActive(createItem.href) ? "bg-white/90 !text-indigo-700 shadow-sm" : "!text-indigo-700 hover:bg-white/60"}`}
+          className={`${itemBase} mb-2 ${itemText(isActive(createItem.href))}`}
         >
-          <span
-            className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg transition ${
-              isActive(createItem.href) ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30" : "bg-indigo-100 text-indigo-700 group-hover:bg-indigo-200"
-            }`}
-          >
-            <FaPlus className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90 motion-reduce:transform-none" />
+          <span className={tile(isActive(createItem.href))}>
+            <FaPlus className={`${RAIL_ICON} transition-transform duration-300 group-hover:rotate-90 motion-reduce:transform-none`} />
           </span>
           <span className="dash-rail-label">{createItem.label}</span>
         </Link>
@@ -183,14 +186,10 @@ function Sidebar({ isActive, open, pinned, onTogglePin, user, subscriptionStatus
                     href={item.href}
                     title={item.label}
                     aria-current={active ? "page" : undefined}
-                    className={`group ${itemBase} ${active ? "bg-white/90 font-semibold !text-indigo-700 shadow-sm" : "font-medium !text-gray-700 hover:bg-white/60 hover:!text-gray-900"}`}
+                    className={`${itemBase} ${itemText(active)}`}
                   >
-                    <span
-                      className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg transition ${
-                        active ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30" : "text-gray-500 group-hover:text-indigo-600"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
+                    <span className={tile(active)}>
+                      <Icon className={RAIL_ICON} />
                     </span>
                     <span className="dash-rail-label">{item.label}</span>
                   </Link>
@@ -203,9 +202,10 @@ function Sidebar({ isActive, open, pinned, onTogglePin, user, subscriptionStatus
 
       <div className="mt-2 flex-none space-y-1 border-t border-indigo-950/[0.06] pt-2">
         {plan && (
-          <Link href="/dashboard/billing" title={`${plan.title}: ${plan.detail}`} className={`${itemBase} font-medium !text-gray-700 hover:bg-white/60`}>
-            <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${plan.ended ? "bg-amber-100 text-amber-700" : "text-indigo-600"}`}>
-              {plan.ended ? <FaExclamationTriangle className="h-3.5 w-3.5" /> : <FaCrown className="h-4 w-4" />}
+          <Link href="/dashboard/billing" title={`${plan.title}: ${plan.detail}`} className={`${itemBase} ${itemText(false)}`}>
+            {/* Amber is the one exception to the grey: it's a warning that the plan has ended */}
+            <span className={`${tile(false)} ${plan.ended ? "!text-amber-600" : ""}`}>
+              {plan.ended ? <FaExclamationTriangle className={RAIL_ICON} /> : <FaCrown className={RAIL_ICON} />}
             </span>
             <span className="dash-rail-label min-w-0 leading-tight">
               <span className="block truncate font-semibold text-gray-900">{plan.title}</span>
@@ -218,10 +218,10 @@ function Sidebar({ isActive, open, pinned, onTogglePin, user, subscriptionStatus
           onClick={onTogglePin}
           aria-pressed={pinned}
           title={pinned ? "Let the sidebar close" : "Keep the sidebar open"}
-          className={`${itemBase} w-full text-left font-medium text-gray-600 hover:bg-white/60 hover:text-gray-900`}
+          className={`${itemBase} ${itemText(false)} w-full text-left`}
         >
-          <span className="flex h-8 w-8 flex-none items-center justify-center">
-            <FaThumbtack className={`h-3.5 w-3.5 transition-transform duration-200 motion-reduce:transform-none ${pinned ? "text-indigo-600" : "-rotate-45"}`} />
+          <span className={`${tile(false)} ${pinned ? "!text-indigo-600" : ""}`}>
+            <FaThumbtack className={`${RAIL_ICON} transition-transform duration-200 motion-reduce:transform-none ${pinned ? "" : "-rotate-45"}`} />
           </span>
           <span className="dash-rail-label">{pinned ? "Let it close" : "Keep open"}</span>
         </button>

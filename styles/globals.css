@@ -385,7 +385,7 @@ body {
     top: 0.75rem;
     bottom: 0.75rem;
     left: var(--dash-edge);
-    width: 3.5rem;
+    width: 4.5rem;
     overflow: hidden;
     border-radius: 0.75rem;
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -430,7 +430,7 @@ body {
   @media (min-width: 768px) {
     .dash-main {
       /* The closed sidebar and a gap */
-      padding-left: calc(var(--dash-edge) + 4.25rem);
+      padding-left: calc(var(--dash-edge) + 5.25rem);
       padding-right: var(--dash-edge);
       transition: padding-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }

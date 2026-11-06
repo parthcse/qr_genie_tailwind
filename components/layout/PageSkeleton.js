@@ -305,10 +305,10 @@ function DashboardPageSkeleton({ path }) {
         <span className="dash-finder dash-finder-b" />
         <span className="dash-finder dash-finder-c" />
       </div>
-      <div className="dash-rail glass hidden flex-col gap-2 px-1 py-3 md:flex" data-open={pinned}>
-        <G className="h-11 w-11 flex-none !rounded-xl" />
+      <div className="dash-rail glass hidden flex-col gap-2 px-2 py-3 md:flex" data-open={pinned}>
+        <G className="mx-2 h-10 w-10 flex-none !rounded-xl" />
         {repeat(6).map((i) => (
-          <G key={i} className="mt-1 h-11 flex-none !rounded-xl" />
+          <G key={i} className="mx-2 mt-1 h-10 w-10 flex-none !rounded-xl" />
         ))}
       </div>
       <div className="dash-main" data-pinned={pinned}>
