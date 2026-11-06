@@ -95,7 +95,7 @@ function TypeCard({ type, createHref }) {
   const blurb = BLURBS[type.id] || { text: type.description };
   const page = TYPE_PAGES[type.id];
   return (
-    <li className="group flex flex-col rounded-3xl bg-white p-6 ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-900/5 hover:ring-indigo-200 motion-reduce:transform-none">
+    <li id={`type-${type.id}`} className="group flex scroll-mt-32 flex-col rounded-3xl bg-white p-6 ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-900/5 hover:ring-indigo-200 motion-reduce:transform-none">
       <div className="flex items-start justify-between gap-3">
         <span className={`flex h-12 w-12 flex-none items-center justify-center rounded-2xl ring-1 ring-inset ring-black/5 ${visual.accent}`}>
           <Icon className="h-5 w-5" />

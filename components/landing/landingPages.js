@@ -1,3 +1,4 @@
+import { TYPE_PAGES } from "./typePages";
 import {
   FaBolt,
   FaBookOpen,
@@ -41,15 +42,7 @@ import { TRIAL_DAYS } from "@/lib/billing/subscription";
  * its page), faqs (also sent as FAQ structured data, so plain text), related (paths of other pages).
  */
 
-// Short labels and pages of the QR types, for the badges on ideas and the related links
-export const TYPE_PAGES = {
-  website: { label: "Website QR code", path: "/website-qr-code" },
-  menu: { label: "Menu QR code", path: "/restaurant-menu-qr-code" },
-  links: { label: "List of links QR code", path: "/multiple-links-qr-code" },
-  wifi: { label: "Wi-Fi QR code", path: "/wifi-qr-code" },
-  whatsapp: { label: "WhatsApp QR code", path: "/whatsapp-qr-code" },
-  instagram: { label: "Instagram QR code", path: "/instagram-qr-code" },
-};
+export { TYPE_PAGES };
 
 // The pages for the related links (long, descriptive label) and the footer (short label)
 export const LANDING_LINKS = {

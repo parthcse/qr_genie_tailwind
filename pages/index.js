@@ -15,13 +15,9 @@ import {
   FaRocket,
   FaStar,
   FaArrowRight,
-  FaThLarge,
   FaCog,
   FaLink,
   FaQuoteLeft,
-  FaWifi,
-  FaWhatsapp,
-  FaInstagram,
   FaUtensils,
   FaStore,
   FaTicketAlt,
@@ -33,7 +29,6 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SeoMeta from "@/components/layout/SeoMeta";
 import PricingCards, { PricingFootnote } from "@/components/landing/PricingCards";
-import { PhonePreview } from "@/components/landing/TypeScreen";
 import {
   container,
   sectionSpacing,
@@ -50,10 +45,13 @@ import {
 import { formatMonthly, cheapestPlan } from "@/lib/billing/price";
 import { TRIAL_DAYS } from "@/lib/billing/subscription";
 import { QR_TYPES } from "@/lib/qr/qrTypes";
+import { TYPE_PAGES } from "@/components/landing/typePages";
+import { qrTypeVisual } from "@/components/qr/qrTypeVisuals";
 
-const RELEASED_TYPE_COUNT = QR_TYPES.filter((type) => type.released).length;
 import { SITE_URL, DASHBOARD_HOME } from "@/lib/site";
 import { organizationSchema, softwareApplicationSchema, faqPageSchema, pricesForSearch, ORGANIZATION_ID } from "@/lib/seo";
+
+const releasedTypes = QR_TYPES.filter((type) => type.released);
 
 // Server-side auth check
 export async function getServerSideProps(context) {
@@ -271,131 +269,6 @@ const businessTypes = [
   }
 ];
 
-// "A QR code for every need": only the types that can be created today (see qrTypes in create-qr.js)
-const qrTypeShowcase = [
-  {
-    id: "website",
-    label: "Website",
-    tagline: "Open any web page",
-    icon: FaGlobe,
-    accent: "bg-indigo-50 text-indigo-600 ring-indigo-100",
-    qrColor: "#4338ca",
-    tab: {
-      hover: "hover:ring-indigo-300 hover:shadow-indigo-500/15",
-      selected: "ring-2 ring-indigo-500 shadow-indigo-500/20",
-      tint: "from-indigo-50",
-      chipHover: "group-hover:from-indigo-500 group-hover:to-violet-600 group-hover:shadow-indigo-500/30",
-      chipSelected: "from-indigo-500 to-violet-600 shadow-indigo-500/30",
-      label: "text-indigo-700",
-      labelHover: "group-hover:text-indigo-700",
-      bar: "from-indigo-500 to-violet-500",
-    },
-    kind: "Dynamic",
-    title: "Website QR code",
-    description:
-      "Send people to your menu, booking page, shop or any other page. Because the code is dynamic, you can change where it points after it's printed, and every scan shows up in your analytics.",
-    points: [
-      "Change the link any time, no reprinting",
-      "Scans by day, country and device",
-      "Optional password before the page opens",
-      "Pause it when a campaign ends",
-    ],
-    cta: "Create a website QR code",
-    page: "/website-qr-code",
-  },
-  {
-    id: "links",
-    label: "List of links",
-    tagline: "All your links on one page",
-    icon: FaLink,
-    accent: "bg-violet-50 text-violet-700 ring-violet-100",
-    qrColor: "#6d28d9",
-    tab: {
-      hover: "hover:ring-violet-300 hover:shadow-violet-500/15",
-      selected: "ring-2 ring-violet-500 shadow-violet-500/20",
-      tint: "from-violet-50",
-      chipHover: "group-hover:from-violet-500 group-hover:to-fuchsia-600 group-hover:shadow-violet-500/30",
-      chipSelected: "from-violet-500 to-fuchsia-600 shadow-violet-500/30",
-      label: "text-violet-700",
-      labelHover: "group-hover:text-violet-700",
-      bar: "from-violet-500 to-fuchsia-500",
-    },
-    kind: "Dynamic",
-    title: "List of links QR code",
-    description:
-      "One code for everything you want to share: your menu, bookings, shop, reviews and social profiles. We host a mobile page with your photo and a button for each link, and you can change it any time after printing.",
-    points: [
-      "Your photo or logo, a title and a short description",
-      "Up to 20 buttons, in the order you choose",
-      "Eight colour themes to match your brand",
-      "Edit the page any time; every scan is counted",
-    ],
-    cta: "Create a list of links",
-    more: "More about QR codes for multiple links",
-    page: "/multiple-links-qr-code",
-  },
-  {
-    id: "whatsapp",
-    label: "WhatsApp",
-    tagline: "Start a chat with you",
-    icon: FaWhatsapp,
-    accent: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    qrColor: "#047857",
-    tab: {
-      hover: "hover:ring-emerald-300 hover:shadow-emerald-500/15",
-      selected: "ring-2 ring-emerald-500 shadow-emerald-500/20",
-      tint: "from-emerald-50",
-      chipHover: "group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/30",
-      chipSelected: "from-emerald-500 to-green-600 shadow-emerald-500/30",
-      label: "text-emerald-700",
-      labelHover: "group-hover:text-emerald-700",
-      bar: "from-emerald-500 to-green-500",
-    },
-    kind: "Dynamic",
-    title: "WhatsApp QR code",
-    description:
-      "Let customers message you in one scan. WhatsApp opens with your number and, if you like, a message already typed, so asking a question or placing an order takes seconds.",
-    points: [
-      "Opens a chat with your number",
-      "Optional ready-typed message",
-      "See how many people scan it",
-      "Great on counters, packaging and flyers",
-    ],
-    cta: "Create a WhatsApp QR code",
-    page: "/whatsapp-qr-code",
-  },
-  {
-    id: "instagram",
-    label: "Instagram",
-    tagline: "Open your profile",
-    icon: FaInstagram,
-    accent: "bg-pink-50 text-pink-600 ring-pink-100",
-    qrColor: "#be185d",
-    tab: {
-      hover: "hover:ring-pink-300 hover:shadow-pink-500/15",
-      selected: "ring-2 ring-pink-500 shadow-pink-500/20",
-      tint: "from-pink-50",
-      chipHover: "group-hover:from-amber-400 group-hover:via-pink-500 group-hover:to-purple-600 group-hover:shadow-pink-500/30",
-      chipSelected: "from-amber-400 via-pink-500 to-purple-600 shadow-pink-500/30",
-      label: "text-pink-700",
-      labelHover: "group-hover:text-pink-700",
-      bar: "from-pink-500 to-purple-500",
-    },
-    kind: "Dynamic",
-    title: "Instagram QR code",
-    description:
-      "Turn people who see your posters, packaging or shop window into followers. One scan opens your profile, ready for them to tap Follow.",
-    points: [
-      "Opens your profile in one scan",
-      "Opens in the Instagram app when it's installed",
-      "See how many people scan it",
-      "Styled in your brand colours",
-    ],
-    cta: "Create an Instagram QR code",
-    page: "/instagram-qr-code",
-  },
-];
-
 /**
  * Counts a stat such as "50K+", "2M+" or "99.9%" up from zero the first time it scrolls into view.
  * The server HTML and screen readers get the final text; the counting copy is visual only, and an
@@ -521,165 +394,46 @@ function HeroVisual() {
   );
 }
 
-// Tabs for the QR code types we offer, with a description and a phone showing the result of a scan
-function QrTypesShowcase({ isAuthenticated }) {
-  const [active, setActive] = useState(qrTypeShowcase[0].id);
-  const tabRefs = useRef([]);
-  const ctaHref = (type) => (isAuthenticated ? `/dashboard/create-qr?type=${type.id}` : "/auth/register");
-
-  // Arrow keys, Home and End move between the tabs
-  const onTabKeyDown = (e, index) => {
-    const last = qrTypeShowcase.length - 1;
-    const next = { ArrowRight: index === last ? 0 : index + 1, ArrowLeft: index === 0 ? last : index - 1, Home: 0, End: last }[e.key];
-    if (next === undefined) return;
-    e.preventDefault();
-    setActive(qrTypeShowcase[next].id);
-    tabRefs.current[next]?.focus();
-  };
-
+// Every QR code type, each leading to its own page or, without one, to its card on /qr-code-types
+function QrTypesGrid() {
   return (
     <>
-      <div className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3 lg:mt-14 lg:grid-cols-5">
-        {/* The tabs sit in the grid next to the "All QR code types" link, which is a link, not a tab */}
-        <div role="tablist" aria-label="QR code types" className="contents">
-        {qrTypeShowcase.map((type, index) => {
-          const selected = type.id === active;
-          const Icon = type.icon;
+      {/* Small square boxes with just the name, to keep the page short: 3 rows of 7 on a computer with the shorter last row
+          centred, 4 rows of 5 on small tablets and 5 rows of 4 on phones. Each width below is (100% - the gaps) / the number across. */}
+      <ul className="rise-group mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-2 sm:gap-3 lg:mt-12">
+        {releasedTypes.map((type) => {
+          const { icon: Icon, accent } = qrTypeVisual(type.id);
           return (
-            <button
-              key={type.id}
-              style={{ "--i": index }}
-              ref={(el) => (tabRefs.current[index] = el)}
-              id={`qr-type-tab-${type.id}`}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={`qr-type-panel-${type.id}`}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setActive(type.id)}
-              onKeyDown={(e) => onTabKeyDown(e, index)}
-              className={`rise group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-3 py-3 text-left shadow-lg transition duration-300 ease-out focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:flex-col sm:gap-0 sm:py-5 sm:text-center ${
-                selected
-                  ? type.tab.selected
-                  : `shadow-transparent ring-1 ring-slate-200 hover:-translate-y-1 ${type.tab.hover}`
-              }`}
-            >
-              {/* Hover (and selected): a tint in the type's colour fades in from the top, and a sheen sweeps across once */}
-              <span
-                className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${type.tab.tint} to-transparent transition-opacity duration-300 ${
-                  selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                }`}
-                aria-hidden="true"
-              />
-              <span
-                className="pointer-events-none absolute inset-0 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
-                aria-hidden="true"
-              />
-              {/* The icon tile fills with the type's gradient and pops with a slight tilt */}
-              <span
-                className={`relative flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br ring-1 ring-inset transition-all duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-white group-hover:shadow-md group-hover:ring-transparent motion-reduce:transform-none sm:h-12 sm:w-12 ${
-                  selected ? `${type.tab.chipSelected} text-white shadow-md ring-transparent` : `${type.accent} ${type.tab.chipHover}`
-                }`}
+            <li key={type.id} className="w-[calc(33.333%-0.334rem)] min-[360px]:w-[calc(25%-0.375rem)] min-[480px]:w-[calc(20%-0.4rem)] sm:w-[calc(20%-0.6rem)] md:w-[calc((100%-4.5rem)/7)]">
+              <Link
+                href={TYPE_PAGES[type.id]?.path || `/qr-code-types#type-${type.id}`}
+                className="group relative flex aspect-square flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-b from-indigo-50/70 to-white p-1 text-center shadow-lg shadow-transparent ring-1 ring-indigo-100 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-indigo-500/15 hover:ring-indigo-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none lg:gap-2"
               >
-                <Icon className="h-5 w-5" />
-              </span>
-              <span className="relative min-w-0 sm:mt-3">
+                {/* Hover: the tint deepens from the top, and a sheen sweeps across once */}
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-indigo-100/80 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
                 <span
-                  className={`block font-display text-[15px] font-semibold transition-colors duration-300 ${
-                    selected ? type.tab.label : `text-slate-900 ${type.tab.labelHover}`
-                  }`}
-                >
-                  {type.label}
-                </span>
-                <span className="mt-0.5 hidden text-xs text-slate-500 sm:block">{type.tagline}</span>
-                {/* Underline in the type's colours that grows on hover and stays on the selected tab */}
-                <span
-                  className={`mx-auto mt-2.5 hidden h-0.5 rounded-full bg-gradient-to-r ${type.tab.bar} transition-all duration-300 ease-out sm:block ${
-                    selected ? "w-8 opacity-100" : "w-0 opacity-0 group-hover:w-8 group-hover:opacity-100"
-                  }`}
+                  className="pointer-events-none absolute inset-0 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
                   aria-hidden="true"
                 />
-              </span>
-            </button>
+                <span className={`relative flex h-8 w-8 flex-none items-center justify-center rounded-lg ring-1 ring-inset ring-black/5 transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transform-none min-[400px]:h-9 min-[400px]:w-9 sm:h-10 sm:w-10 lg:h-11 lg:w-11 ${accent}`}>
+                  <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+                </span>
+                {/* Search engines and screen readers read "Website QR code" */}
+                <h3 className="relative min-w-0 font-display text-xs font-semibold leading-tight text-slate-900 transition-colors duration-300 group-hover:text-indigo-700 sm:text-[13px]">
+                  {type.label}
+                  <span className="sr-only"> QR code</span>
+                </h3>
+              </Link>
+            </li>
           );
         })}
-        </div>
+      </ul>
 
-        <Link
-          href="/qr-code-types"
-          style={{ "--i": qrTypeShowcase.length }}
-          className="rise group relative col-span-2 flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-3 py-3 text-left ring-1 ring-indigo-200 transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/15 hover:ring-indigo-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 motion-reduce:transform-none sm:col-span-1 sm:flex-col sm:gap-0 sm:py-5 sm:text-center"
-        >
-          <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30 transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transform-none sm:h-12 sm:w-12">
-            <FaThLarge className="h-5 w-5" />
-          </span>
-          <span className="relative min-w-0 flex-1 sm:mt-3 sm:flex-none">
-            <span className="block font-display text-[15px] font-semibold text-indigo-700">All QR code types</span>
-            <span className="mt-0.5 block text-xs text-slate-500">See all {RELEASED_TYPE_COUNT} types</span>
-          </span>
-          <FaArrowRight className="relative h-3.5 w-3.5 flex-none text-indigo-500 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none sm:mt-2.5" aria-hidden="true" />
+      <div className="rise mt-8 text-center">
+        <Link href="/qr-code-types" className={`${secondaryButton} gap-2`}>
+          See what each type does
+          <FaArrowRight className="h-3.5 w-3.5" />
         </Link>
-      </div>
-
-      <div className="rise relative isolate mt-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-50 via-white to-purple-50 ring-1 ring-indigo-100 lg:mt-10">
-        <div className="pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full bg-purple-200/40 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />
-
-        {/* Every type's panel is in the page (search engines read them all); only the selected one is shown */}
-        {qrTypeShowcase.map((type) => {
-          const TypeIcon = type.icon;
-          return (
-            <div
-              key={type.id}
-              id={`qr-type-panel-${type.id}`}
-              role="tabpanel"
-              aria-labelledby={`qr-type-tab-${type.id}`}
-              hidden={type.id !== active}
-            >
-              <div className="grid items-center gap-10 p-5 motion-safe:animate-fade-in sm:gap-12 sm:p-10 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:p-14">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${type.accent}`}>
-                      <TypeIcon className="h-5 w-5" />
-                    </span>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
-                      {type.kind} QR code
-                    </span>
-                  </div>
-                  <h3 className="mt-5 text-2xl font-bold tracking-[-0.01em] text-slate-900 sm:text-3xl">{type.title}</h3>
-                  <p className="mt-3 text-pretty leading-relaxed text-slate-600 sm:text-lg">{type.description}</p>
-                  <ul className="mt-7 grid gap-3.5 sm:grid-cols-2">
-                    {type.points.map((point) => (
-                      <li key={point} className="flex items-start gap-3 text-[15px] text-slate-700">
-                        <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                          <FaCheck className="h-2.5 w-2.5" />
-                        </span>
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-                    <Link href={ctaHref(type)} className={primaryButton}>
-                      {type.cta}
-                      <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
-                    </Link>
-                    <Link
-                      href={type.page}
-                      className="group/more inline-flex items-center justify-center gap-1.5 text-[15px] font-semibold !text-indigo-700 transition-colors hover:!text-purple-700"
-                    >
-                      {type.more || `More about ${type.label} QR codes`}
-                      <FaArrowRight className="h-3 w-3 transition-transform group-hover/more:translate-x-1 motion-reduce:transform-none" />
-                    </Link>
-                  </div>
-                  <p className="mt-4 text-center text-sm text-slate-600 sm:text-left">Your colours, logo and frame on every type</p>
-                </div>
-
-                {/* Phone showing the result of a scan, with the code beside it */}
-                <PhonePreview type={type.id} qrColor={type.qrColor} />
-              </div>
-            </div>
-          );
-        })}
       </div>
     </>
   );
@@ -890,10 +644,14 @@ export default function Landing({ initialUser, prices = null, plans = {} }) {
           <div className={container}>
             <SectionHeading
               eyebrow="QR code types"
-              title="Create website, list of links, WhatsApp and Instagram QR codes"
-              description={`Choose what happens when someone scans: open your website, show a page with all your links, start a WhatsApp chat or visit your Instagram. Wi-Fi, social media and the other types are one click away. Every type is styled with your own colours and logo.`}
+              title="A QR code for everything you want to share"
+              description={
+                <>
+                  Websites, menus, contact cards, <span className="whitespace-nowrap">Wi-Fi</span>, PDFs and more. Pick a type, add your details and make the code yours with your colours and logo.
+                </>
+              }
             />
-            <QrTypesShowcase isAuthenticated={isAuthenticated} />
+            <QrTypesGrid />
           </div>
         </section>
 
