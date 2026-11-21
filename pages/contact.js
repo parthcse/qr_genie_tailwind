@@ -78,6 +78,23 @@ export default function ContactPage() {
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef(null);
+  const sentRef = useRef(false);
+
+  // Back from the thank-you page, the browser may restore this page just as it was left: the sent message still filled in
+  // and the button on "Sending…". Empty the message and ready the button, so the same message isn't sent twice by mistake.
+  useEffect(() => {
+    const onPageShow = (event) => {
+      if (!event.persisted || !sentRef.current) return;
+      sentRef.current = false;
+      setForm((f) => ({ ...f, message: "", website: "" }));
+      setFieldErrors({});
+      setError("");
+      setSending(false);
+      if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   // Pre-fill from the signed-in account and from ?topic= (e.g. links from billing)
   useEffect(() => {
@@ -144,7 +161,10 @@ export default function ContactPage() {
       } catch {
         // Blocked storage: the thank-you page simply doesn't show the name and email
       }
-      router.push("/contact/thank-you");
+      sentRef.current = true;
+      // A full page load, not router.push: Tag Manager's page-view triggers fire only when a page loads, so the
+      // thank-you page counts as a conversion the same way as when it's opened directly
+      window.location.assign("/contact/thank-you");
     } catch {
       setError(`We couldn't send your message. Please email us at ${SUPPORT_EMAIL}.`);
     } finally {

@@ -7,6 +7,8 @@ import { CONTACT_SENT_KEY, SUPPORT_EMAIL } from "@/lib/site";
 
 // sessionStorage never changes while this page is open, so there's nothing to subscribe to
 const noUpdates = () => () => {};
+const onClient = () => true;
+const onServer = () => false;
 const readSent = () => {
   try {
     return sessionStorage.getItem(CONTACT_SENT_KEY);
@@ -16,12 +18,14 @@ const readSent = () => {
 };
 
 /**
- * Where the contact form sends people once their message is saved (pages/contact.js). It isn't indexed, isn't in the sitemap
- * and nothing links to it, so a Tag Manager conversion can count visits to it. The sender's name and email come from
- * sessionStorage (never the address bar); opened directly, the page just says thanks. useSyncExternalStore reads it during the
- * first render after a page change, so the name doesn't pop in, and after a reload it fills in without a hydration error.
+ * Where the contact form sends people once their message is saved (pages/contact.js), with a full page load so Tag Manager's
+ * page-view triggers fire. It isn't indexed, isn't in the sitemap and nothing links to it, so a Tag Manager conversion can
+ * count visits to it. The sender's name and email come from sessionStorage (never the address bar); opened directly, the
+ * page just says thanks. The server can't know who sent it, so the heading and the reply line stay hidden until the page
+ * runs in the browser, then fade in: nobody sees "Thanks for your message" turn into "Thanks, Priya".
  */
 export default function ContactThankYouPage() {
+  const inBrowser = useSyncExternalStore(noUpdates, onClient, onServer);
   const raw = useSyncExternalStore(noUpdates, readSent, () => null);
   const sent = useMemo(() => {
     try {
@@ -32,6 +36,7 @@ export default function ContactThankYouPage() {
     }
   }, [raw]);
   const firstName = sent?.name?.trim().split(/\s+/)[0] || "";
+  const personal = `transition-opacity duration-300 motion-reduce:transition-none ${inBrowser ? "opacity-100" : "opacity-0"}`;
 
   return (
     <PublicLayout>
@@ -42,8 +47,8 @@ export default function ContactThankYouPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-8 ring-emerald-50 motion-safe:animate-badge-pop">
             <FaCheck className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h1 className="mt-7 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{firstName ? `Thanks, ${firstName}` : "Thanks for your message"}</h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-gray-600">
+          <h1 className={`mt-7 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl ${personal}`}>{firstName ? `Thanks, ${firstName}` : "Thanks for your message"}</h1>
+          <p className={`mt-3 text-[15px] leading-relaxed text-gray-600 ${personal}`}>
             Your message has reached the QR-Genie team. We&apos;ll reply to{" "}
             {sent ? <span className="break-all font-medium text-gray-900">{sent.email}</span> : "the email address you gave us"}.
           </p>
