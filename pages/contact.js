@@ -21,7 +21,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import SeoMeta from "@/components/layout/SeoMeta";
 import Turnstile from "@/components/auth/Turnstile";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { SUPPORT_EMAIL, CONTACT_TOPICS } from "@/lib/site";
+import { SUPPORT_EMAIL, CONTACT_TOPICS, CONTACT_SENT_KEY } from "@/lib/site";
 
 const MAX_MESSAGE = 5000;
 // Cloudflare Turnstile; the check is skipped when no site key is configured
@@ -74,7 +74,6 @@ export default function ContactPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
-  const [sentTo, setSentTo] = useState(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -126,6 +125,7 @@ export default function ContactPage() {
     setSending(true);
     setError("");
     setFieldErrors({});
+    let sent = false;
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -138,14 +138,22 @@ export default function ContactPage() {
         setError(data.error || `We couldn't send your message. Please email us at ${SUPPORT_EMAIL}.`);
         return;
       }
-      setSentTo({ name: form.name.trim(), email: form.email.trim() });
-      setForm((f) => ({ ...f, message: "" }));
+      sent = true;
+      try {
+        sessionStorage.setItem(CONTACT_SENT_KEY, JSON.stringify({ name: form.name.trim(), email: form.email.trim() }));
+      } catch {
+        // Blocked storage: the thank-you page simply doesn't show the name and email
+      }
+      router.push("/contact/thank-you");
     } catch {
       setError(`We couldn't send your message. Please email us at ${SUPPORT_EMAIL}.`);
     } finally {
-      setSending(false);
-      // Each Turnstile token works once, so get a fresh one for the next attempt
-      if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
+      // Once it's sent, the button stays on "Sending…" until the thank-you page opens, so a second click can't send it twice
+      if (!sent) {
+        setSending(false);
+        // Each Turnstile token works once, so get a fresh one for the next attempt
+        if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
+      }
     }
   };
 
@@ -231,188 +239,161 @@ export default function ContactPage() {
         <section aria-label="Contact form" className="relative rounded-3xl bg-white px-4 py-6 shadow-xl shadow-indigo-900/[0.06] ring-1 ring-indigo-100 sm:p-10">
           <div className="pointer-events-none absolute inset-x-10 -top-px h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent" aria-hidden="true" />
 
-          {sentTo ? (
-            <div className="py-8 text-center sm:py-12" role="status">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-8 ring-emerald-50 motion-safe:animate-badge-pop">
-                <FaCheck className="h-6 w-6" aria-hidden="true" />
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Send us a message</h2>
+                <p className="mt-1 text-sm text-gray-600">We&apos;ll reply by email.</p>
               </div>
-              <h2 className="mt-7 text-2xl font-bold tracking-tight text-gray-900">Message sent</h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-600">
-                Thanks{sentTo.name ? `, ${sentTo.name}` : ""}. We&apos;ll reply to <span className="font-medium text-gray-900">{sentTo.email}</span>.
-              </p>
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setSentTo(null)}
-                  className="btn-shine btn-shine-soft rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                >
-                  Send another message
-                </button>
-                <Link
-                  href="/"
-                  className="btn-shine rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold !text-white shadow-md shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700"
-                >
-                  Back to home
-                </Link>
-              </div>
+              <span
+                className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
+                aria-hidden="true"
+              >
+                <FaPaperPlane className="h-4 w-4" />
+              </span>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Send us a message</h2>
-                  <p className="mt-1 text-sm text-gray-600">We&apos;ll reply by email.</p>
+
+            {error && (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                {error}
+              </div>
+            )}
+
+            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-gray-700">Your name</label>
+                <div className="relative">
+                  <FaUser className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+                  <input
+                    id="contact-name"
+                    type="text"
+                    autoComplete="name"
+                    maxLength={100}
+                    value={form.name}
+                    onChange={update("name")}
+                    aria-invalid={!!fieldErrors.name}
+                    aria-describedby={fieldErrors.name ? "contact-name-error" : undefined}
+                    className={`${inputClass(fieldErrors.name)} pl-10`}
+                  />
                 </div>
-                <span
-                  className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
-                  aria-hidden="true"
-                >
-                  <FaPaperPlane className="h-4 w-4" />
-                </span>
+                <FieldError id="contact-name-error" message={fieldErrors.name} />
+              </div>
+              <div>
+                <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
+                <div className="relative">
+                  <FaEnvelope className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+                  <input
+                    id="contact-email"
+                    type="email"
+                    autoComplete="email"
+                    maxLength={200}
+                    value={form.email}
+                    onChange={update("email")}
+                    aria-invalid={!!fieldErrors.email}
+                    aria-describedby={fieldErrors.email ? "contact-email-error" : undefined}
+                    className={`${inputClass(fieldErrors.email)} pl-10`}
+                  />
+                </div>
+                <FieldError id="contact-email-error" message={fieldErrors.email} />
               </div>
 
-              {error && (
-                <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-                  {error}
-                </div>
-              )}
-
-              <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-gray-700">Your name</label>
-                  <div className="relative">
-                    <FaUser className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-                    <input
-                      id="contact-name"
-                      type="text"
-                      autoComplete="name"
-                      maxLength={100}
-                      value={form.name}
-                      onChange={update("name")}
-                      aria-invalid={!!fieldErrors.name}
-                      aria-describedby={fieldErrors.name ? "contact-name-error" : undefined}
-                      className={`${inputClass(fieldErrors.name)} pl-10`}
-                    />
-                  </div>
-                  <FieldError id="contact-name-error" message={fieldErrors.name} />
-                </div>
-                <div>
-                  <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
-                  <div className="relative">
-                    <FaEnvelope className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-                    <input
-                      id="contact-email"
-                      type="email"
-                      autoComplete="email"
-                      maxLength={200}
-                      value={form.email}
-                      onChange={update("email")}
-                      aria-invalid={!!fieldErrors.email}
-                      aria-describedby={fieldErrors.email ? "contact-email-error" : undefined}
-                      className={`${inputClass(fieldErrors.email)} pl-10`}
-                    />
-                  </div>
-                  <FieldError id="contact-email-error" message={fieldErrors.email} />
-                </div>
-
-                {/* Topic as tappable cards (radio buttons underneath) */}
-                <fieldset className="sm:col-span-2">
-                  <legend className="mb-2 block text-sm font-medium text-gray-700">What&apos;s it about?</legend>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                    {CONTACT_TOPICS.map((t) => {
-                      const Icon = TOPIC_ICONS[t.value] || FaQuestionCircle;
-                      const selected = form.topic === t.value;
-                      return (
-                        <label
-                          key={t.value}
-                          className={`group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition duration-200 focus-within:ring-4 focus-within:ring-indigo-100 ${
-                            selected
-                              ? "border-indigo-500 bg-indigo-50/70 font-semibold text-indigo-800 shadow-sm"
-                              : "border-gray-200 bg-white font-medium text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/30"
+              {/* Topic as tappable cards (radio buttons underneath) */}
+              <fieldset className="sm:col-span-2">
+                <legend className="mb-2 block text-sm font-medium text-gray-700">What&apos;s it about?</legend>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                  {CONTACT_TOPICS.map((t) => {
+                    const Icon = TOPIC_ICONS[t.value] || FaQuestionCircle;
+                    const selected = form.topic === t.value;
+                    return (
+                      <label
+                        key={t.value}
+                        className={`group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition duration-200 focus-within:ring-4 focus-within:ring-indigo-100 ${
+                          selected
+                            ? "border-indigo-500 bg-indigo-50/70 font-semibold text-indigo-800 shadow-sm"
+                            : "border-gray-200 bg-white font-medium text-gray-700 hover:border-indigo-200 hover:bg-indigo-50/30"
+                        }`}
+                      >
+                        <input type="radio" name="topic" value={t.value} checked={selected} onChange={update("topic")} className="sr-only" />
+                        <span
+                          className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg transition-colors ${
+                            selected ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white" : "bg-gray-100 text-gray-500 group-hover:text-indigo-600"
                           }`}
                         >
-                          <input type="radio" name="topic" value={t.value} checked={selected} onChange={update("topic")} className="sr-only" />
-                          <span
-                            className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg transition-colors ${
-                              selected ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white" : "bg-gray-100 text-gray-500 group-hover:text-indigo-600"
-                            }`}
-                          >
-                            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                          </span>
-                          <span className="leading-tight">{t.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {tip && (
-                    <p className="mt-3 flex items-start gap-2 rounded-xl bg-indigo-50/70 px-3.5 py-2.5 text-sm text-indigo-900 ring-1 ring-inset ring-indigo-100">
-                      <FaInfoCircle className="mt-0.5 h-3.5 w-3.5 flex-none text-indigo-500" aria-hidden="true" />
-                      {tip}
-                    </p>
-                  )}
-                </fieldset>
-
-                <div className="sm:col-span-2">
-                  <div className="mb-1.5 flex items-baseline justify-between gap-4">
-                    <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700">Message</label>
-                    <span className="text-xs tabular-nums text-gray-500" aria-hidden="true">
-                      {form.message.length} / {MAX_MESSAGE}
-                    </span>
-                  </div>
-                  <textarea
-                    id="contact-message"
-                    rows={6}
-                    maxLength={MAX_MESSAGE}
-                    value={form.message}
-                    onChange={update("message")}
-                    aria-invalid={!!fieldErrors.message}
-                    aria-describedby={fieldErrors.message ? "contact-message-error" : undefined}
-                    className={`${inputClass(fieldErrors.message)} resize-y`}
-                  />
-                  <FieldError id="contact-message-error" message={fieldErrors.message} />
+                          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                        </span>
+                        <span className="leading-tight">{t.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
-                {/* Hidden from people; bots that fill it in are ignored */}
-                <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
-                  <label htmlFor="contact-website">Website</label>
-                  <input id="contact-website" type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={update("website")} />
-                </div>
-              </div>
-
-              {TURNSTILE_SITE_KEY && (
-                <div className="mt-6">
-                  <Turnstile siteKey={TURNSTILE_SITE_KEY} action="contact" onToken={setTurnstileToken} resetKey={turnstileReset} />
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={sending}
-                className="btn-shine group mt-7 flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {sending ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
-                    Sending…
-                  </>
-                ) : (
-                  <>
-                    Send message
-                    <FaPaperPlane
-                      className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-1 motion-reduce:transform-none"
-                      aria-hidden="true"
-                    />
-                  </>
+                {tip && (
+                  <p className="mt-3 flex items-start gap-2 rounded-xl bg-indigo-50/70 px-3.5 py-2.5 text-sm text-indigo-900 ring-1 ring-inset ring-indigo-100">
+                    <FaInfoCircle className="mt-0.5 h-3.5 w-3.5 flex-none text-indigo-500" aria-hidden="true" />
+                    {tip}
+                  </p>
                 )}
-              </button>
-              <p className="mt-4 text-center text-xs text-gray-500">
-                We only use your details to reply. See our{" "}
-                <Link href="/privacy" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">
-                  privacy policy
-                </Link>
-                .
-              </p>
-            </form>
-          )}
+              </fieldset>
+
+              <div className="sm:col-span-2">
+                <div className="mb-1.5 flex items-baseline justify-between gap-4">
+                  <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700">Message</label>
+                  <span className="text-xs tabular-nums text-gray-500" aria-hidden="true">
+                    {form.message.length} / {MAX_MESSAGE}
+                  </span>
+                </div>
+                <textarea
+                  id="contact-message"
+                  rows={6}
+                  maxLength={MAX_MESSAGE}
+                  value={form.message}
+                  onChange={update("message")}
+                  aria-invalid={!!fieldErrors.message}
+                  aria-describedby={fieldErrors.message ? "contact-message-error" : undefined}
+                  className={`${inputClass(fieldErrors.message)} resize-y`}
+                />
+                <FieldError id="contact-message-error" message={fieldErrors.message} />
+              </div>
+              {/* Hidden from people; bots that fill it in are ignored */}
+              <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+                <label htmlFor="contact-website">Website</label>
+                <input id="contact-website" type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={update("website")} />
+              </div>
+            </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <div className="mt-6">
+                <Turnstile siteKey={TURNSTILE_SITE_KEY} action="contact" onToken={setTurnstileToken} resetKey={turnstileReset} />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="btn-shine group mt-7 flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {sending ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  Send message
+                  <FaPaperPlane
+                    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-1 motion-reduce:transform-none"
+                    aria-hidden="true"
+                  />
+                </>
+              )}
+            </button>
+            <p className="mt-4 text-center text-xs text-gray-500">
+              We only use your details to reply. See our{" "}
+              <Link href="/privacy" className="font-medium !text-gray-600 underline decoration-gray-300 underline-offset-2 hover:!text-indigo-700">
+                privacy policy
+              </Link>
+              .
+            </p>
+          </form>
         </section>
       </div>
     </PublicLayout>

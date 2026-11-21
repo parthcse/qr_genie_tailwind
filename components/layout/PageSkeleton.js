@@ -459,6 +459,24 @@ function FormBones() {
   );
 }
 
+// A short message in a centred card, such as the contact form's thank-you page
+function NoticeBones() {
+  return (
+    <div className="mx-auto w-full max-w-lg px-4 py-12 sm:py-20">
+      <div className="flex flex-col items-center rounded-2xl px-6 py-10 ring-1 ring-slate-100 sm:px-10">
+        <P className="h-16 w-16 !rounded-full" />
+        <P className="mt-7 h-8 w-3/4 !rounded-lg" />
+        <P className="mt-4 h-4 w-full !rounded" />
+        <P className="mt-2 h-4 w-2/3 !rounded" />
+        <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+          <P className="h-11 !rounded-xl sm:w-36" />
+          <P className="h-11 !rounded-xl sm:w-48" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PublicPageSkeleton({ path }) {
   let body;
   if (path === "/") body = <HomeBones />;
@@ -480,6 +498,7 @@ function PublicPageSkeleton({ path }) {
     );
   } else if (["/privacy", "/terms", "/refund-policy"].includes(path)) body = <DocumentBones />;
   else if (path === "/contact") body = <FormBones />;
+  else if (path === "/contact/thank-you") body = <NoticeBones />;
   else {
     body = (
       <>
